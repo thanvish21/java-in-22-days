@@ -51,6 +51,8 @@
     toolbar.appendChild(copyBtn);
 
     const out = el("div", "run-out");
+    out.setAttribute("role", "status");
+    out.setAttribute("aria-live", "polite");
 
     if (opts.noRun) {
       // Input-based / illustrative code: nothing to reveal, just copy & run elsewhere.
@@ -104,15 +106,17 @@
     }
 
     copyBtn.addEventListener("click", async () => {
+      let copied = false;
       try {
         await navigator.clipboard.writeText(code);
+        copied = true;
       } catch (e) {
         const ta = document.createElement("textarea");
         ta.value = code; document.body.appendChild(ta); ta.select();
-        try { document.execCommand("copy"); } catch (e2) { /* ignore */ }
+        try { copied = document.execCommand("copy"); } catch (e2) { copied = false; }
         document.body.removeChild(ta);
       }
-      copyBtn.textContent = "✓ Copied!";
+      copyBtn.textContent = copied ? "✓ Copied!" : "Press Ctrl+C to copy";
       setTimeout(() => { copyBtn.textContent = "📋 Copy"; }, 1500);
     });
 
@@ -151,8 +155,12 @@
     card.appendChild(toolbar);
 
     const out = el("div", "run-out");
+    out.setAttribute("role", "status");
+    out.setAttribute("aria-live", "polite");
     card.appendChild(out);
     const feedback = el("div", "feedback");
+    feedback.setAttribute("role", "status");
+    feedback.setAttribute("aria-live", "polite");
     card.appendChild(feedback);
 
     checkBtn.addEventListener("click", () => {
@@ -189,7 +197,8 @@
       return needles.every((n) => code.includes(String(n)));
     }
     if (check.regex != null) return new RegExp(check.regex, "m").test(code);
-    return true;
+    // check object present but malformed (no code_includes / regex): fail closed.
+    return false;
   }
 
   // ---- block renderers ----
@@ -251,9 +260,10 @@
         answered = true;
         const correct = i === b.answerIndex;
         btn.classList.add(correct ? "correct" : "wrong");
+        btn.textContent += correct ? " ✓" : " ✗";
         if (!correct) {
           const right = opts.children[b.answerIndex];
-          if (right) right.classList.add("correct");
+          if (right) { right.classList.add("correct"); right.textContent += " ✓"; }
         }
         explain.classList.add("show");
       });

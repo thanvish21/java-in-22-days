@@ -5,16 +5,24 @@
   const TOTAL_DAYS = 22;
   const STORE_KEY = "java22_progress_v1";
   const app = document.getElementById("app");
+  let advanceTimer = null;
 
   // ---- progress state (localStorage) ----
   function loadProgress() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const p = JSON.parse(raw);
+        const completed = (p && typeof p.completed === "object" && p.completed) ? p.completed : {};
+        const lastDay = (p && Number.isFinite(p.lastDay)) ? p.lastDay : 1;
+        return { completed: completed, lastDay: lastDay };
+      }
     } catch (e) { /* ignore */ }
     return { completed: {}, lastDay: 1 };
   }
-  function saveProgress(p) { localStorage.setItem(STORE_KEY, JSON.stringify(p)); }
+  function saveProgress(p) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }
+  }
   let progress = loadProgress();
 
   const isDone = (d) => !!progress.completed[d];
@@ -44,7 +52,11 @@
 
   async function getLesson(day) {
     const res = await fetch("data/day" + String(day).padStart(2, "0") + ".json");
-    if (!res.ok) throw new Error("Lesson not found");
+    if (!res.ok) {
+      const err = new Error("Lesson not found");
+      err.status = res.status;
+      throw err;
+    }
     return res.json();
   }
 
@@ -63,7 +75,7 @@
       '<section class="hero">' +
         "<h1>Learn <span class=\"accent\">Java</span> in 22 Days ☕</h1>" +
         "<p>Friendly bite-sized lessons with real Java code. Read it, predict what it prints, then reveal the real output — and check your own code as you write it. Simple enough for a curious kid, deep enough to take you from zero to pro.</p>" +
-        '<button class="hero-cta" id="startBtn">' + (done > 0 ? "▶ Continue Day " + progress.lastDay : "🚀 Start Day 1") + "</button>" +
+        '<button class="hero-cta" id="startBtn">' + (done > 0 ? "▶ Continue Day " + (Number(progress.lastDay) || 1) : "🚀 Start Day 1") + "</button>" +
         '<div class="progress-wrap">' +
           '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
           '<div class="progress-label">' + done + " of 22 days done · " + pct + "% to pro</div>" +
@@ -112,7 +124,10 @@
     let data;
     try { data = await getLesson(day); }
     catch (e) {
-      app.innerHTML = '<div class="center-msg">📝 Day ' + day + " is being written! Check back soon." +
+      const msg = e.status === 404
+        ? "📝 Day " + day + " is being written! Check back soon."
+        : "😕 Couldn't load Day " + day + ". Run this on a server (see README) — opening the files directly with file:// won't work.";
+      app.innerHTML = '<div class="center-msg">' + msg +
         '<br><br><a class="hero-cta" href="#/">🏠 Back home</a></div>';
       return;
     }
@@ -139,7 +154,7 @@
       if (!wasDone) {
         celebrate(day);
         if (day < TOTAL_DAYS) {
-          setTimeout(() => { location.hash = "#/day/" + (day + 1); }, 1400);
+          advanceTimer = setTimeout(() => { location.hash = "#/day/" + (day + 1); }, 1400);
         }
       }
     });
@@ -192,6 +207,7 @@
 
   // ---- router ----
   function route() {
+    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
     const hash = location.hash || "#/";
     let m;
     if ((m = hash.match(/^#\/day\/(\d+)/))) viewDay(m[1]);
