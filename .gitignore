@@ -1,0 +1,15 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Java verifier cruft
+__pycache__/
+*.pyc
+*.class
+Main.java
+
+# Vercel
+.vercel

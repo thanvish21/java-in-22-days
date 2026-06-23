@@ -1,0 +1,136 @@
+{
+    "day": 18,
+    "emoji": "🗂️",
+    "title": "HashMap & Set",
+    "subtitle": "Store things by name with a HashMap, and keep a list with no duplicates using a Set.",
+    "goal": "Use a HashMap to store key-value pairs (put, get, containsKey, getOrDefault) and a HashSet to store unique values (add, contains), and know when to reach for each one.",
+    "estMinutes": 180,
+    "tags": ["collections"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "What is a HashMap? 🗂️",
+            "html": "<p>An array stores things by a number (position 0, 1, 2...). A <strong>HashMap</strong> stores things by a <em>name</em> you pick. Each entry is a <strong>key</strong> (the name you look it up by) pointing to a <strong>value</strong> (the thing it holds).</p><p>Think of a phone book: you look up a person's <em>name</em> (the key) to find their <em>number</em> (the value). To use one, you import it at the top of your file:</p><p><code class=\"inline\">import java.util.HashMap;</code> and <code class=\"inline\">import java.util.Map;</code></p>"
+        },
+        {
+            "type": "text",
+            "heading": "Putting things in and getting them back",
+            "html": "<p>You create a HashMap like this: <code class=\"inline\">Map&lt;String, String&gt; book = new HashMap&lt;&gt;();</code>. The two types in the angle brackets are the <strong>key type</strong> and the <strong>value type</strong> — here both are <code class=\"inline\">String</code>.</p><p>Then you use <code class=\"inline\">put(key, value)</code> to add an entry and <code class=\"inline\">get(key)</code> to look one up. <code class=\"inline\">containsKey(key)</code> tells you <code class=\"inline\">true</code> or <code class=\"inline\">false</code> if a key is there.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A phone book with names and numbers",
+            "code": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class Main {\n    public static void main(String[] args) {\n        Map<String, String> phoneBook = new HashMap<>();\n        phoneBook.put(\"Maya\", \"555-1234\");\n        phoneBook.put(\"Leo\", \"555-6789\");\n        phoneBook.put(\"Sam\", \"555-0000\");\n\n        System.out.println(\"Maya's number: \" + phoneBook.get(\"Maya\"));\n        System.out.println(\"Leo's number: \" + phoneBook.get(\"Leo\"));\n        System.out.println(\"Is Sam in the book? \" + phoneBook.containsKey(\"Sam\"));\n        System.out.println(\"Is Zoe in the book? \" + phoneBook.containsKey(\"Zoe\"));\n    }\n}",
+            "output": "Maya's number: 555-1234\nLeo's number: 555-6789\nIs Sam in the book? true\nIs Zoe in the book? false",
+            "explain": "put(\"Maya\", \"555-1234\") stores the number under the name Maya. get(\"Maya\") looks it back up. containsKey checks if a name exists without crashing — Sam is in the book (true) but Zoe is not (false)."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Order is NOT promised!</strong> A HashMap does not remember the order you added things in. If you loop over it, names may print in any order. That is why we look things up with <code class=\"inline\">get()</code> in these examples — the answer is always the same."
+        },
+        {
+            "type": "text",
+            "heading": "Counting things with getOrDefault 🔢",
+            "html": "<p>A super common job is <strong>counting</strong>: how many times does each word appear? The trick is <code class=\"inline\">getOrDefault(key, fallback)</code>. It returns the value for a key, OR a fallback if the key is missing yet.</p><p>So <code class=\"inline\">counts.getOrDefault(word, 0) + 1</code> means: take the count so far (or 0 if it's the first time we've seen it), then add one.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Counting how often each word shows up",
+            "code": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class Main {\n    public static void main(String[] args) {\n        String[] words = {\"apple\", \"banana\", \"apple\", \"cherry\", \"apple\", \"banana\"};\n\n        Map<String, Integer> counts = new HashMap<>();\n        for (String word : words) {\n            counts.put(word, counts.getOrDefault(word, 0) + 1);\n        }\n\n        System.out.println(\"apple appears \" + counts.get(\"apple\") + \" times\");\n        System.out.println(\"banana appears \" + counts.get(\"banana\") + \" times\");\n        System.out.println(\"cherry appears \" + counts.get(\"cherry\") + \" times\");\n    }\n}",
+            "output": "apple appears 3 times\nbanana appears 2 times\ncherry appears 1 times",
+            "explain": "The first time we see a word, getOrDefault returns 0, so we store 1. Every time after, it returns the count so far and we add 1. We print specific get() lookups (not a loop) so the order is always the same."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Looping a HashMap:</strong> when you DO want every entry, use <code class=\"inline\">keySet()</code> to loop the keys, or <code class=\"inline\">entrySet()</code> to loop key-and-value pairs together. Just remember the order is not guaranteed — sort the keys first if you need a tidy order.",
+            "variant": "success"
+        },
+        {
+            "type": "text",
+            "heading": "What is a HashSet? 🎯",
+            "html": "<p>A <strong>HashSet</strong> is like a bag that only keeps <strong>unique</strong> things — it throws away duplicates automatically. There are no keys and values, just a collection of values where each one appears at most once.</p><p>Import it with <code class=\"inline\">import java.util.HashSet;</code> and <code class=\"inline\">import java.util.Set;</code>. Use <code class=\"inline\">add(value)</code> to put something in and <code class=\"inline\">contains(value)</code> to check if it's there. Adding the same thing twice does nothing the second time.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Counting unique visitors (duplicates ignored)",
+            "code": "import java.util.HashSet;\nimport java.util.Set;\n\npublic class Main {\n    public static void main(String[] args) {\n        Set<String> visitors = new HashSet<>();\n        visitors.add(\"Maya\");\n        visitors.add(\"Leo\");\n        visitors.add(\"Maya\");\n        visitors.add(\"Sam\");\n        visitors.add(\"Leo\");\n\n        System.out.println(\"Unique visitors: \" + visitors.size());\n        System.out.println(\"Did Maya visit? \" + visitors.contains(\"Maya\"));\n        System.out.println(\"Did Zoe visit? \" + visitors.contains(\"Zoe\"));\n    }\n}",
+            "output": "Unique visitors: 3\nDid Maya visit? true\nDid Zoe visit? false",
+            "explain": "We added 5 names but Maya and Leo were repeated, so the set keeps only 3 unique ones. size() counts them. contains() checks membership: Maya is in (true), Zoe was never added (false)."
+        },
+        {
+            "type": "text",
+            "heading": "When do I use which? 🤔",
+            "html": "<p>Pick a <strong>HashMap</strong> when each thing needs an attached value — a <em>name to a number</em>, a <em>word to its count</em>, a <em>student to their grade</em>. Pick a <strong>HashSet</strong> when you only care <em>whether something is in the group</em> and want no duplicates — a list of <em>unique visitors</em>, <em>tags already used</em>, or <em>seats already taken</em>.</p><p>Short version: <strong>HashMap = lookup table</strong> (key gives you a value). <strong>HashSet = guest list</strong> (just \"is it in or not?\").</p>"
+        },
+        {
+            "type": "quiz",
+            "question": "In a HashMap, what does get(\"Maya\") return?",
+            "options": [
+                "The value stored under the key \"Maya\"",
+                "The position number of Maya",
+                "All the keys in the map",
+                "true or false"
+            ],
+            "answerIndex": 0,
+            "explain": "get(key) looks up the value paired with that key. If we stored phoneBook.put(\"Maya\", \"555-1234\"), then get(\"Maya\") returns \"555-1234\"."
+        },
+        {
+            "type": "quiz",
+            "question": "You add \"Leo\" to a HashSet twice. How many times is \"Leo\" stored?",
+            "options": [
+                "Twice",
+                "Once — a Set keeps only unique values",
+                "Zero times",
+                "It causes an error"
+            ],
+            "answerIndex": 1,
+            "explain": "A HashSet ignores duplicates. Adding \"Leo\" a second time does nothing, so it is stored only once."
+        },
+        {
+            "type": "quiz",
+            "question": "Why do these lessons print get() lookups instead of looping over the HashMap?",
+            "options": [
+                "Looping is not allowed in Java",
+                "get() is faster to type",
+                "A HashMap's iteration order is not guaranteed, so looking up specific keys keeps the output the same every time",
+                "You cannot loop over a HashMap at all"
+            ],
+            "answerIndex": 2,
+            "explain": "HashMap and HashSet do not promise any order when you loop them. Printing specific get() results gives the same output on every run."
+        },
+        {
+            "type": "tryit",
+            "title": "Build a pet age book",
+            "instructions": "Add the cat to the HashMap with the key \"cat\" and the value \"9\", so both lines print. Press Check.",
+            "starter": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class Main {\n    public static void main(String[] args) {\n        Map<String, String> ages = new HashMap<>();\n        ages.put(\"dog\", \"12\");\n        ___\n\n        System.out.println(\"The dog is \" + ages.get(\"dog\"));\n        System.out.println(\"The cat is \" + ages.get(\"cat\"));\n    }\n}",
+            "check": { "code_includes": "ages.put(\"cat\", \"9\")" },
+            "solution": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class Main {\n    public static void main(String[] args) {\n        Map<String, String> ages = new HashMap<>();\n        ages.put(\"dog\", \"12\");\n        ages.put(\"cat\", \"9\");\n\n        System.out.println(\"The dog is \" + ages.get(\"dog\"));\n        System.out.println(\"The cat is \" + ages.get(\"cat\"));\n    }\n}",
+            "solutionOutput": "The dog is 12\nThe cat is 9",
+            "passMsg": "Nice — your map now holds both pets, looked up by name!",
+            "failMsg": "Add the line ages.put(\"cat\", \"9\"); below the dog line so the cat has a value too."
+        },
+        {
+            "type": "tryit",
+            "title": "Count unique numbers",
+            "instructions": "We add 5, 5, 8, 5, 2 to a HashSet. Finish the print line to show how many UNIQUE numbers it holds using numbers.size(). Press Check.",
+            "starter": "import java.util.HashSet;\nimport java.util.Set;\n\npublic class Main {\n    public static void main(String[] args) {\n        Set<Integer> numbers = new HashSet<>();\n        numbers.add(5);\n        numbers.add(5);\n        numbers.add(8);\n        numbers.add(5);\n        numbers.add(2);\n\n        System.out.println(\"How many unique numbers? \" + ___);\n    }\n}",
+            "check": { "code_includes": "numbers.size()" },
+            "solution": "import java.util.HashSet;\nimport java.util.Set;\n\npublic class Main {\n    public static void main(String[] args) {\n        Set<Integer> numbers = new HashSet<>();\n        numbers.add(5);\n        numbers.add(5);\n        numbers.add(8);\n        numbers.add(5);\n        numbers.add(2);\n\n        System.out.println(\"How many unique numbers? \" + numbers.size());\n    }\n}",
+            "solutionOutput": "How many unique numbers? 3",
+            "passMsg": "Spot on — the duplicates of 5 only count once, so the answer is 3!",
+            "failMsg": "Use numbers.size() to count the unique values. The repeated 5s only count once."
+        }
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "Vote counter with a map and a set",
+        "instructions": "Loop over the votes array. For each vote, bump its count in the HashMap with getOrDefault(vote, 0) + 1, and add it to the HashSet. Then the prints will show how many different foods there are and the count for each. Press Check.",
+        "starter": "import java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.Map;\nimport java.util.Set;\n\npublic class Main {\n    public static void main(String[] args) {\n        String[] votes = {\"pizza\", \"tacos\", \"pizza\", \"pizza\", \"tacos\"};\n\n        Map<String, Integer> tally = new HashMap<>();\n        Set<String> foods = new HashSet<>();\n        for (String vote : votes) {\n            // 1) update the count in tally\n            // 2) add vote to foods\n        }\n\n        System.out.println(\"Different foods: \" + foods.size());\n        System.out.println(\"pizza votes: \" + tally.get(\"pizza\"));\n        System.out.println(\"tacos votes: \" + tally.get(\"tacos\"));\n    }\n}",
+        "check": { "code_includes": "getOrDefault(vote, 0) + 1" },
+        "solution": "import java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.Map;\nimport java.util.Set;\n\npublic class Main {\n    public static void main(String[] args) {\n        String[] votes = {\"pizza\", \"tacos\", \"pizza\", \"pizza\", \"tacos\"};\n\n        Map<String, Integer> tally = new HashMap<>();\n        Set<String> foods = new HashSet<>();\n        for (String vote : votes) {\n            tally.put(vote, tally.getOrDefault(vote, 0) + 1);\n            foods.add(vote);\n        }\n\n        System.out.println(\"Different foods: \" + foods.size());\n        System.out.println(\"pizza votes: \" + tally.get(\"pizza\"));\n        System.out.println(\"tacos votes: \" + tally.get(\"tacos\"));\n    }\n}",
+        "solutionOutput": "Different foods: 2\npizza votes: 3\ntacos votes: 2",
+        "hint": "Inside the loop write two lines: tally.put(vote, tally.getOrDefault(vote, 0) + 1); and foods.add(vote);",
+        "passMsg": "🏆 You used a HashMap to count and a HashSet to find unique items — two of the most useful tools in all of programming. Day 18 complete!",
+        "failMsg": "In the loop, count with tally.put(vote, tally.getOrDefault(vote, 0) + 1); and track unique foods with foods.add(vote);"
+    }
+}

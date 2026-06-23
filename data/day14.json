@@ -1,0 +1,130 @@
+{
+    "day": 14,
+    "emoji": "🎭",
+    "title": "Polymorphism & Abstract",
+    "subtitle": "One word, many forms — let your objects wear different masks.",
+    "goal": "Understand how a parent-type variable can hold any child object, how the right overridden method runs automatically, and how abstract classes force children to fill in the blanks.",
+    "estMinutes": 180,
+    "tags": ["oop"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "What is polymorphism? 🎭",
+            "html": "<p><strong>Polymorphism</strong> is a big word that means <em>“many forms.”</em> In Java it means one variable can take on many shapes depending on what you put inside it.</p><p>Imagine a box labeled <code class=\"inline\">Animal</code>. You can drop a <code class=\"inline\">Dog</code> in it, or a <code class=\"inline\">Cat</code>, or a <code class=\"inline\">Cow</code> — the box still says <code class=\"inline\">Animal</code>, but what's inside decides how it behaves. 🐶🐱🐮</p>"
+        },
+        {
+            "type": "text",
+            "heading": "A parent box holding a child",
+            "html": "<p>If <code class=\"inline\">Dog</code> extends <code class=\"inline\">Animal</code>, then this line is perfectly legal:</p><p><code class=\"inline\">Animal a = new Dog();</code></p><p>The <em>left side</em> is the box type (Animal). The <em>right side</em> is the real object (a Dog). When you call <code class=\"inline\">a.speak()</code>, Java looks at the <strong>real object</strong> and runs the Dog's version. This is called <strong>dynamic method dispatch</strong> — a fancy name for “the overridden method runs.”</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A parent variable, a child object",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        Animal b = new Cat();\n        a.speak();\n        b.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"Some animal sound\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}",
+            "output": "Woof!\nMeow!",
+            "explain": "Even though a and b are declared as Animal, Java runs the Dog and Cat versions of speak(). The real object decides which method runs — not the box label."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Remember:</strong> the variable type (left side) is the <em>box</em>; the object (right side) is what's <em>inside</em>. The object always wins when deciding which overridden method to run.",
+            "variant": "info"
+        },
+        {
+            "type": "text",
+            "heading": "Treating many objects the same way 🔁",
+            "html": "<p>The real magic is that you can put lots of different children into one <strong>parent array</strong> and loop over them with the same code. You don't need to know exactly what each one is — you just say <code class=\"inline\">speak()</code> and each object does its own thing.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "One loop, many different sounds",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal[] zoo = { new Dog(), new Cat(), new Cow() };\n        for (Animal animal : zoo) {\n            animal.speak();\n        }\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}\n\nclass Cow extends Animal {\n    void speak() {\n        System.out.println(\"Moo!\");\n    }\n}",
+            "output": "Woof!\nMeow!\nMoo!",
+            "explain": "The array is an Animal[], but it holds a Dog, a Cat, and a Cow. The loop calls speak() once per animal, and each one answers in its own voice. One loop, three behaviors — that's polymorphism in action."
+        },
+        {
+            "type": "text",
+            "heading": "Abstract classes: a promise to fill in later 📝",
+            "html": "<p>Sometimes a parent class doesn't make sense on its own. What is the “area” of a plain <code class=\"inline\">Shape</code>? You can't say — it depends on whether it's a circle or a square.</p><p>So we mark the class <code class=\"inline\">abstract</code>. An <strong>abstract class</strong> cannot be created directly (no <code class=\"inline\">new Shape()</code>). It can have <strong>abstract methods</strong> — methods with no body, just a promise. Any child <em>must</em> fill them in, or the code won't compile.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Abstract Shape with Circle and Square",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(2.0), new Square(3.0) };\n        for (Shape shape : shapes) {\n            System.out.println(\"Area: \" + shape.area());\n        }\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Circle extends Shape {\n    double radius;\n\n    Circle(double radius) {\n        this.radius = radius;\n    }\n\n    double area() {\n        return 3.14 * radius * radius;\n    }\n}\n\nclass Square extends Shape {\n    double side;\n\n    Square(double side) {\n        this.side = side;\n    }\n\n    double area() {\n        return side * side;\n    }\n}",
+            "output": "Area: 12.56\nArea: 9.0",
+            "explain": "Shape promises an area() but doesn't define it. Circle and Square each keep the promise with their own formula. You can store both in a Shape[] and ask for area() without caring which shape it really is."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Heads up:</strong> writing <code class=\"inline\">new Shape()</code> on an abstract class is an error — Java won't let you build something that has unfinished (abstract) methods. You can only build the finished children.",
+            "variant": "warn"
+        },
+        {
+            "type": "quiz",
+            "question": "What does Animal a = new Dog(); a.speak(); print, if Dog overrides speak() to say \"Woof!\"?",
+            "options": [
+                "Some animal sound",
+                "Woof!",
+                "An error, because a is an Animal",
+                "Both the Animal and Dog versions"
+            ],
+            "answerIndex": 1,
+            "explain": "The real object is a Dog, so Java runs the Dog's overridden speak(). That's dynamic method dispatch — the object wins, not the box label."
+        },
+        {
+            "type": "quiz",
+            "question": "Why do we make a class abstract?",
+            "options": [
+                "To make it run faster",
+                "So it can be created with new many times",
+                "Because it's incomplete on its own and forces children to fill in certain methods",
+                "To hide it from other files"
+            ],
+            "answerIndex": 2,
+            "explain": "An abstract class represents an idea that isn't complete by itself. It cannot be instantiated, and its abstract methods must be implemented by each child."
+        },
+        {
+            "type": "quiz",
+            "question": "What's the benefit of putting different child objects in one Animal[] array?",
+            "options": [
+                "It saves memory automatically",
+                "You can loop over them with the same code and each behaves in its own way",
+                "It deletes the children when done",
+                "It turns them all into the same animal"
+            ],
+            "answerIndex": 1,
+            "explain": "A parent array lets you treat many objects uniformly. One loop, one method call, but each object responds with its own overridden behavior."
+        },
+        {
+            "type": "tryit",
+            "title": "Give the parrot a voice",
+            "instructions": "A Parrot is an Animal, but right now its speak() just prints ___. Change the text inside Parrot's speak() so it prints Squawk! Then press Check.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"___\");\n    }\n}",
+            "check": { "code_includes": "Squawk!" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"Squawk!\");\n    }\n}",
+            "solutionOutput": "Squawk!",
+            "passMsg": "Squawk! The parrot found its voice — that's an overridden method running through a parent variable.",
+            "failMsg": "Keep pet declared as Animal, and make Parrot's speak() print exactly Squawk! inside the quotes."
+        },
+        {
+            "type": "tryit",
+            "title": "Finish the abstract Shape",
+            "instructions": "Rectangle extends the abstract Shape but its area() returns 0.0 — wrong! Make area() return width * height so the program prints Area: 20.0.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return 0.0;\n    }\n}",
+            "check": { "regex": "width\\s*\\*\\s*height" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return width * height;\n    }\n}",
+            "solutionOutput": "Area: 20.0",
+            "passMsg": "Perfect — Rectangle kept the promise made by abstract Shape, and 4 * 5 gives 20.0.",
+            "failMsg": "Inside Rectangle's area(), return width * height instead of 0.0."
+        }
+    ],
+    "challenge": {
+        "title": "Build a one-line band 🥁🎸🎹",
+        "instructions": "Make an abstract class Instrument with an abstract method play(). Create three children — Drum, Guitar, and Piano — that each override play() to print their own sound. Put all three in an Instrument[] array and loop over it so the program prints:\nBoom boom!\nTwang!\nPlink plink!",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\n// Add Guitar and Piano classes below, then add them to the band array.\n",
+        "check": { "regex": "new\\s+Drum\\(\\)[\\s\\S]*new\\s+Guitar\\(\\)[\\s\\S]*new\\s+Piano\\(\\)" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum(), new Guitar(), new Piano() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\nclass Guitar extends Instrument {\n    void play() {\n        System.out.println(\"Twang!\");\n    }\n}\n\nclass Piano extends Instrument {\n    void play() {\n        System.out.println(\"Plink plink!\");\n    }\n}",
+        "solutionOutput": "Boom boom!\nTwang!\nPlink plink!",
+        "hint": "Each instrument needs its own class that extends Instrument and overrides play(). Then write { new Drum(), new Guitar(), new Piano() } in the array so the loop plays all three.",
+        "passMsg": "🏆 The whole band plays from one loop — that's polymorphism plus abstract classes working together. Day 14 done!"
+    }
+}

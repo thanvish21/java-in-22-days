@@ -1,0 +1,129 @@
+{
+    "day": 6,
+    "emoji": "✅",
+    "title": "Conditionals",
+    "subtitle": "Teach your programs to make decisions, just like you do.",
+    "goal": "Use booleans, comparison and logical operators, if / else if / else, nesting, and the ternary operator to make a program choose what to do.",
+    "estMinutes": 180,
+    "tags": ["logic"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "Programs that decide 🤔",
+            "html": "<p>Until now your programs did the same thing every time. Today they get to <strong>make choices</strong>: <em>if</em> it's raining, take an umbrella; <em>else</em> wear sunglasses.</p><p>To choose, a program asks a yes/no question. In Java a yes/no answer has a special type called <code class=\"inline\">boolean</code>, and it can only be <code class=\"inline\">true</code> or <code class=\"inline\">false</code>.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Comparison operators",
+            "html": "<p>We ask questions using <strong>comparison operators</strong>. Each one gives back a <code class=\"inline\">boolean</code>:</p><ul><li><code class=\"inline\">==</code> equal to (careful: two equals signs!)</li><li><code class=\"inline\">!=</code> not equal to</li><li><code class=\"inline\">&lt;</code> less than, <code class=\"inline\">&gt;</code> greater than</li><li><code class=\"inline\">&lt;=</code> less or equal, <code class=\"inline\">&gt;=</code> greater or equal</li></ul>"
+        },
+        {
+            "type": "code",
+            "caption": "A boolean is just true or false",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        int score = 82;\n        boolean passed = score >= 60;\n        System.out.println(\"Score: \" + score);\n        System.out.println(\"Passed? \" + passed);\n        System.out.println(\"Is it a perfect 100? \" + (score == 100));\n    }\n}",
+            "output": "Score: 82\nPassed? true\nIs it a perfect 100? false",
+            "explain": "score >= 60 is true, so passed is true. score == 100 is false. Notice == compares; a single = would try to assign instead."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>One equals vs two!</strong> A single <code class=\"inline\">=</code> means \"put this value into the box.\" Two <code class=\"inline\">==</code> means \"are these equal?\" Mixing them up is the most common beginner bug."
+        },
+        {
+            "type": "text",
+            "heading": "if / else if / else",
+            "html": "<p>The <code class=\"inline\">if</code> statement runs a block of code <em>only when</em> its question is true. The code to run goes inside curly braces <code class=\"inline\">{ }</code>.</p><p>You can chain <code class=\"inline\">else if</code> for more choices, and a final <code class=\"inline\">else</code> as the \"otherwise\" catch-all. Java checks them top to bottom and stops at the first one that's true.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Turn a score into a letter grade",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        int score = 82;\n        if (score >= 90) {\n            System.out.println(\"Grade: A\");\n        } else if (score >= 80) {\n            System.out.println(\"Grade: B\");\n        } else if (score >= 70) {\n            System.out.println(\"Grade: C\");\n        } else {\n            System.out.println(\"Grade: F\");\n        }\n    }\n}",
+            "output": "Grade: B",
+            "explain": "score is 82. The first question (>= 90) is false, so Java tries the next: 82 >= 80 is true, so it prints Grade: B and skips the rest."
+        },
+        {
+            "type": "quiz",
+            "question": "What values can a boolean hold?",
+            "options": [
+                "Any number",
+                "Only true or false",
+                "Only text in quotes",
+                "Yes, no, or maybe"
+            ],
+            "answerIndex": 1,
+            "explain": "A boolean is the simplest type in Java: it is either true or false, nothing else."
+        },
+        {
+            "type": "text",
+            "heading": "Logical operators: && || !",
+            "html": "<p>Sometimes one question isn't enough. <strong>Logical operators</strong> join booleans together:</p><ul><li><code class=\"inline\">&amp;&amp;</code> AND — true only if <em>both</em> sides are true</li><li><code class=\"inline\">||</code> OR — true if <em>either</em> side is true</li><li><code class=\"inline\">!</code> NOT — flips true to false and back</li></ul><p>Also: to compare <strong>text</strong>, use <code class=\"inline\">.equals()</code>, not <code class=\"inline\">==</code>. For example <code class=\"inline\">name.equals(\"Sam\")</code>.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "even/odd with %, and a can-you-ride check",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        int number = 7;\n        boolean isEven = number % 2 == 0;\n        String label = isEven ? \"even\" : \"odd\";\n        System.out.println(number + \" is \" + label);\n\n        int height = 120;\n        boolean hasTicket = true;\n        if (height >= 110 && hasTicket) {\n            System.out.println(\"You can ride! 🎢\");\n        } else {\n            System.out.println(\"Sorry, not yet.\");\n        }\n    }\n}",
+            "output": "7 is odd\nYou can ride! 🎢",
+            "explain": "number % 2 is the remainder after dividing by 2; if it's 0 the number is even. The ride needs height >= 110 AND a ticket — && is true only when both are true."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Ternary shortcut:</strong> <code class=\"inline\">condition ? a : b</code> is a tiny if/else that gives back a value: if the condition is true you get <code class=\"inline\">a</code>, otherwise <code class=\"inline\">b</code>. Great for picking between two values in one line.",
+            "variant": "info"
+        },
+        {
+            "type": "quiz",
+            "question": "When is height >= 110 && hasTicket true?",
+            "options": [
+                "When at least one part is true",
+                "Only when both parts are true",
+                "Never",
+                "When both parts are false"
+            ],
+            "answerIndex": 1,
+            "explain": "&& means AND. Both the height check AND hasTicket must be true for the whole thing to be true."
+        },
+        {
+            "type": "quiz",
+            "question": "How should you compare two Strings in Java?",
+            "options": [
+                "with ==",
+                "with the .equals() method",
+                "with the % operator",
+                "you can't compare text"
+            ],
+            "answerIndex": 1,
+            "explain": "For text, use name.equals(\"...\"). Using == on Strings can give surprising results, so .equals() is the safe choice."
+        },
+        {
+            "type": "tryit",
+            "title": "Teenager check",
+            "instructions": "The variable age is 15. Write an if/else that prints \"You are a teenager.\" when age is 13 or more, otherwise prints \"Not a teenager yet.\" Then press Check.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        int age = 15;\n        // TODO: print \"You are a teenager.\" if age is 13 or more, else print \"Not a teenager yet.\"\n        System.out.println(\"change me\");\n    }\n}",
+            "check": { "code_includes": "age >= 13" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        int age = 15;\n        if (age >= 13) {\n            System.out.println(\"You are a teenager.\");\n        } else {\n            System.out.println(\"Not a teenager yet.\");\n        }\n    }\n}",
+            "solutionOutput": "You are a teenager.",
+            "passMsg": "Nice — your program made its first real decision! 🎉",
+            "failMsg": "Use an if with the condition age >= 13, and an else for the other case."
+        },
+        {
+            "type": "tryit",
+            "title": "Password checker",
+            "instructions": "Change guess so it matches password, then use guess.equals(password) in an if to print \"Access granted! ✅\". If it doesn't match, print \"Wrong password. ❌\".",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        String password = \"java123\";\n        String guess = \"hello\";\n        // TODO: use guess.equals(password) to check the password\n        System.out.println(\"change me\");\n    }\n}",
+            "check": { "code_includes": ".equals(password)" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        String password = \"java123\";\n        String guess = \"java123\";\n        if (guess.equals(password)) {\n            System.out.println(\"Access granted! ✅\");\n        } else {\n            System.out.println(\"Wrong password. ❌\");\n        }\n    }\n}",
+            "solutionOutput": "Access granted! ✅",
+            "passMsg": "Correct — that's exactly how Java compares text. 🔐",
+            "failMsg": "Use guess.equals(password) inside the if, and make sure guess matches password."
+        }
+    ],
+    "challenge": {
+        "title": "Weather outfit picker",
+        "instructions": "The variable temperature is 30. Use if / else if / else to print clothing advice: 30 or hotter prints a hot-weather message, 15 or warmer (but under 30) prints a mild message, and anything colder prints a cold message. Try changing temperature and re-running!",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        int temperature = 30;\n        // TODO: hot if 30+, mild if 15+, else cold\n        System.out.println(\"change me\");\n    }\n}",
+        "check": { "code_includes": "else if" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        int temperature = 30;\n        if (temperature >= 30) {\n            System.out.println(\"It's hot! Wear shorts. ☀️\");\n        } else if (temperature >= 15) {\n            System.out.println(\"Nice weather. Wear a t-shirt. 🙂\");\n        } else {\n            System.out.println(\"It's cold! Wear a jacket. 🧥\");\n        }\n    }\n}",
+        "solutionOutput": "It's hot! Wear shorts. ☀️",
+        "hint": "Check the hottest case first with if (temperature >= 30), then else if (temperature >= 15), then a plain else for the cold case.",
+        "passMsg": "🏆 Brilliant! You taught a program to dress for the weather. Day 6 complete — you can make decisions now!"
+    }
+}

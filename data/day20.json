@@ -1,0 +1,131 @@
+{
+    "day": 20,
+    "emoji": "🏷️",
+    "title": "Enums & Records",
+    "subtitle": "Give your data tidy name tags and build mini data classes in one short line.",
+    "goal": "Use an enum to hold a fixed set of named choices (and switch on them), and use a record to make a short, read-only data class with free getters, equals, and toString.",
+    "estMinutes": 180,
+    "tags": ["modern"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "Why enums? A fixed set of choices 🏷️",
+            "html": "<p>Some things in life have a <strong>fixed set of options</strong>. A traffic light is RED, YELLOW, or GREEN — never \"purple\". The days of the week are MON through SUN — never \"Funday\".</p><p>An <strong>enum</strong> (short for <em>enumeration</em>) lets you give Java that exact list of allowed names. Once you do, Java won't let anyone sneak in a value that isn't on the list. No typos, no surprises.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "An enum is just a list of named constants",
+            "code": "public class Main {\n    enum TrafficLight { RED, YELLOW, GREEN }\n\n    public static void main(String[] args) {\n        TrafficLight light = TrafficLight.RED;\n        System.out.println(\"The light is \" + light);\n\n        switch (light) {\n            case RED -> System.out.println(\"Stop! 🛑\");\n            case YELLOW -> System.out.println(\"Slow down. ⚠️\");\n            case GREEN -> System.out.println(\"Go! 🟢\");\n        }\n    }\n}",
+            "output": "The light is RED\nStop! 🛑",
+            "explain": "enum TrafficLight { RED, YELLOW, GREEN } says \"the only valid lights are these three.\" Each name is a constant you reach with TrafficLight.RED. A switch can branch on every option, and the arrow -> form is short and tidy."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Enum names are SHOUTY.</strong> By tradition we write enum constants in <code class=\"inline\">UPPER_CASE</code> like <code class=\"inline\">RED</code> and <code class=\"inline\">GREEN</code>. It makes them easy to spot as fixed values."
+        },
+        {
+            "type": "text",
+            "heading": "Enums can carry extra info 🎴",
+            "html": "<p>An enum constant can be more than a name — it can hold its own little piece of data. Here each card suit also remembers the symbol that's printed on the card.</p><p>You add a field, a tiny constructor, and a method to read it. Then you can loop over every option with <code class=\"inline\">values()</code>.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Each suit knows its own symbol",
+            "code": "public class Main {\n    enum Suit {\n        HEARTS(\"♥\"),\n        DIAMONDS(\"♦\"),\n        CLUBS(\"♣\"),\n        SPADES(\"♠\");\n\n        private final String symbol;\n\n        Suit(String symbol) {\n            this.symbol = symbol;\n        }\n\n        String getSymbol() {\n            return symbol;\n        }\n    }\n\n    public static void main(String[] args) {\n        for (Suit s : Suit.values()) {\n            System.out.println(s + \" looks like \" + s.getSymbol());\n        }\n    }\n}",
+            "output": "HEARTS looks like ♥\nDIAMONDS looks like ♦\nCLUBS looks like ♣\nSPADES looks like ♠",
+            "explain": "HEARTS(\"♥\") passes the symbol into the constructor, which saves it in the symbol field. values() gives you every constant in order, so the loop visits all four suits. Notice the field is final — once set, a suit's symbol never changes."
+        },
+        {
+            "type": "quiz",
+            "question": "What is an enum best used for?",
+            "options": [
+                "Storing a number that changes a lot",
+                "A fixed set of named choices, like RED, YELLOW, GREEN",
+                "Reading text typed by the user",
+                "Doing math faster"
+            ],
+            "answerIndex": 1,
+            "explain": "An enum locks in a fixed list of allowed values. Java then refuses anything not on that list, which stops typos and invalid states."
+        },
+        {
+            "type": "text",
+            "heading": "Records: a data class in one line 📦",
+            "html": "<p>Lots of the time you just want a little bag of data — a <code class=\"inline\">Point</code> with an x and a y, or a <code class=\"inline\">Person</code> with a name and an age. The old way meant writing a class with fields, a constructor, getters, <code class=\"inline\">equals</code>, and <code class=\"inline\">toString</code> by hand. Tedious!</p><p>A <strong>record</strong> (Java 16+) writes all of that <em>for you</em>. You declare the pieces of data, and Java fills in the rest.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "One short line gives you a full data class",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Point p = new Point(1, 2);\n        System.out.println(p);\n        System.out.println(\"x is \" + p.x() + \", y is \" + p.y());\n\n        Person alice = new Person(\"Alice\", 30);\n        Person alice2 = new Person(\"Alice\", 30);\n        System.out.println(alice);\n        System.out.println(\"Same person? \" + alice.equals(alice2));\n    }\n}\n\nrecord Point(int x, int y) {}\n\nrecord Person(String name, int age) {}",
+            "output": "Point[x=1, y=2]\nx is 1, y is 2\nPerson[name=Alice, age=30]\nSame person? true",
+            "explain": "record Point(int x, int y) {} hands you a constructor (new Point(1, 2)), getters named x() and y(), a neat toString that prints Point[x=1, y=2], and an equals that says two records are equal when all their parts match — which is why alice.equals(alice2) is true. Records are immutable: once built, their values can't change."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Record getters have no \"get\".</strong> You read a record's value with <code class=\"inline\">p.x()</code>, not <code class=\"inline\">p.getX()</code>. The method is named after the field itself.",
+            "variant": "info"
+        },
+        {
+            "type": "text",
+            "heading": "Record or regular class? 🤔",
+            "html": "<p>Reach for a <strong>record</strong> when the object is mostly just data that never changes — coordinates, a person's name and age, a setting. You get clean code for free.</p><p>Reach for a <strong>regular class</strong> when the object needs to <em>change</em> over time, hide its insides, or do a lot of behavior. Records are locked and read-only on purpose, so they aren't the right tool when you need mutation.</p>"
+        },
+        {
+            "type": "quiz",
+            "question": "What does a record give you automatically?",
+            "options": [
+                "A getter, equals, and a readable toString",
+                "A way to change its fields later",
+                "A database connection",
+                "Nothing — you write it all yourself"
+            ],
+            "answerIndex": 0,
+            "explain": "A record auto-generates the constructor, getters (named like the fields), equals, hashCode, and toString. Its data is immutable, so it does NOT give you a way to change fields later."
+        },
+        {
+            "type": "quiz",
+            "question": "How does a record's toString print a Point(1, 2)?",
+            "options": [
+                "Point(1, 2)",
+                "Point{x:1, y:2}",
+                "Point[x=1, y=2]",
+                "{1, 2}"
+            ],
+            "answerIndex": 2,
+            "explain": "A record's built-in toString uses the format Name[field=value, field=value], so a Point with x=1 and y=2 prints exactly Point[x=1, y=2]."
+        },
+        {
+            "type": "tryit",
+            "title": "Make your own enum",
+            "instructions": "Inside Main, create an enum called Pet with three constants: DOG, CAT, and FISH. The loop already prints every value — just fill in the enum line so it compiles and runs.",
+            "starter": "public class Main {\n    enum Pet { /* add DOG, CAT, FISH here */ }\n\n    public static void main(String[] args) {\n        for (Pet p : Pet.values()) {\n            System.out.println(\"Pet: \" + p);\n        }\n    }\n}",
+            "check": { "code_includes": "enum Pet { DOG, CAT, FISH }" },
+            "solution": "public class Main {\n    enum Pet { DOG, CAT, FISH }\n\n    public static void main(String[] args) {\n        for (Pet p : Pet.values()) {\n            System.out.println(\"Pet: \" + p);\n        }\n    }\n}",
+            "solutionOutput": "Pet: DOG\nPet: CAT\nPet: FISH",
+            "passMsg": "Nice! You listed a fixed set of choices and looped over every one. 🐾",
+            "failMsg": "Put the three names inside the braces: enum Pet { DOG, CAT, FISH }"
+        },
+        {
+            "type": "tryit",
+            "title": "Build a record",
+            "instructions": "Declare a record named Animal with a String name and an int age. The main method already builds one and prints it — just add the record line at the bottom so it compiles.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Animal(\"Rex\", 5);\n        System.out.println(a);\n        System.out.println(a.name() + \" is \" + a.age() + \" years old\");\n    }\n}\n\n// add your record below\n",
+            "check": { "regex": "record\\s+Animal\\s*\\(\\s*String\\s+name\\s*,\\s*int\\s+age\\s*\\)" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Animal(\"Rex\", 5);\n        System.out.println(a);\n        System.out.println(a.name() + \" is \" + a.age() + \" years old\");\n    }\n}\n\nrecord Animal(String name, int age) {}",
+            "solutionOutput": "Animal[name=Rex, age=5]\nRex is 5 years old",
+            "passMsg": "One line, a whole data class! Look at that free toString. 📦",
+            "failMsg": "Add this at the bottom: record Animal(String name, int age) {}"
+        }
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "A robot that knows where it faces",
+        "instructions": "Combine both ideas! Make a top-level enum Direction with NORTH, EAST, SOUTH, WEST, and a record Robot(String name, Direction facing). In main, build a robot named Bolt facing NORTH, print it, print which way it faces, and use a switch on r.facing() to print a heading message. Match the expected output exactly.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Robot r = new Robot(\"Bolt\", Direction.NORTH);\n        System.out.println(r);\n        System.out.println(r.name() + \" is facing \" + r.facing());\n\n        switch (r.facing()) {\n            // add a case for each direction\n        }\n    }\n}\n\n// add the enum and the record below\n",
+        "check": { "regex": "record\\s+Robot\\s*\\(\\s*String\\s+name\\s*,\\s*Direction\\s+facing\\s*\\)" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Robot r = new Robot(\"Bolt\", Direction.NORTH);\n        System.out.println(r);\n        System.out.println(r.name() + \" is facing \" + r.facing());\n\n        switch (r.facing()) {\n            case NORTH -> System.out.println(\"Heading up! ⬆️\");\n            case EAST -> System.out.println(\"Heading right! ➡️\");\n            case SOUTH -> System.out.println(\"Heading down! ⬇️\");\n            case WEST -> System.out.println(\"Heading left! ⬅️\");\n        }\n    }\n}\n\nenum Direction { NORTH, EAST, SOUTH, WEST }\n\nrecord Robot(String name, Direction facing) {}",
+        "solutionOutput": "Robot[name=Bolt, facing=NORTH]\nBolt is facing NORTH\nHeading up! ⬆️",
+        "hint": "A record can store an enum just like any other type: record Robot(String name, Direction facing) {}. Inside the switch, use the bare constant name (case NORTH ->), not Direction.NORTH.",
+        "passMsg": "🏆 You combined an enum, a record, and a switch — that's exactly how modern Java models tidy data. Day 20 done!",
+        "failMsg": "Make sure Direction has all four constants and Robot is a record with (String name, Direction facing)."
+    }
+}

@@ -1,0 +1,140 @@
+{
+    "day": 15,
+    "emoji": "🔌",
+    "title": "Interfaces",
+    "subtitle": "Write a promise once, and let many different classes keep it their own way.",
+    "goal": "Learn what an interface is, write your own with interface and implements, let one class implement several interfaces at once, use default methods, and understand when to pick an interface over an abstract class.",
+    "estMinutes": 180,
+    "tags": ["oop"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "An interface is a promise 🤝",
+            "html": "<p>Imagine a wall socket. Anything with the right plug can use it — a lamp, a phone charger, a toaster. The socket doesn't care <em>what</em> you plug in, only that you have the right plug. That plug shape is a <strong>contract</strong>: \"if you fit, you work.\"</p><p>In Java an <strong>interface</strong> is exactly that kind of contract. It lists method names a class <em>promises</em> to provide, but it doesn't say how. Each class that signs the contract fills in the details its own way.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Writing one: interface and implements",
+            "html": "<p>You create a contract with the word <code class=\"inline\">interface</code>. Inside, you list methods with no body — just the promise:</p><p><code class=\"inline\">interface Drawable { void draw(); }</code></p><p>A class signs the contract with the word <code class=\"inline\">implements</code>. When it does, it <strong>must</strong> write a real <code class=\"inline\">draw()</code> method, or Java refuses to run:</p><p><code class=\"inline\">class Circle implements Drawable { ... }</code></p>"
+        },
+        {
+            "type": "code",
+            "caption": "Two classes keep the same promise differently",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Drawable circle = new Circle();\n        Drawable square = new Square();\n        circle.draw();\n        square.draw();\n    }\n}\n\ninterface Drawable {\n    void draw();\n}\n\nclass Circle implements Drawable {\n    public void draw() {\n        System.out.println(\"Drawing a round circle: O\");\n    }\n}\n\nclass Square implements Drawable {\n    public void draw() {\n        System.out.println(\"Drawing a square: []\");\n    }\n}",
+            "output": "Drawing a round circle: O\nDrawing a square: []",
+            "explain": "Drawable is the contract — it just promises a draw() method. Circle and Square each keep that promise in their own way. Notice we can call draw() on both because both signed the same contract."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Methods in an interface have no body.</strong> You write <code class=\"inline\">void draw();</code> with a semicolon, not <code class=\"inline\">{ }</code> curly braces. The body lives in the class that implements it.",
+            "variant": "info"
+        },
+        {
+            "type": "text",
+            "heading": "One class, many contracts 🎯",
+            "html": "<p>Remember inheritance? A class can only <code class=\"inline\">extends</code> <strong>one</strong> parent — that's <em>single inheritance</em>. But a class can <code class=\"inline\">implements</code> <strong>as many interfaces as you like</strong>, separated by commas!</p><p>A duck can be both a <code class=\"inline\">Swimmer</code> and a <code class=\"inline\">Runner</code>. It just signs both contracts: <code class=\"inline\">class Duck implements Swimmer, Runner</code>.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Default methods (Java 8+)",
+            "html": "<p>Normally interface methods have no body. But sometimes you want to share a ready-made method that every class gets for free. That's a <strong>default method</strong> — it uses the word <code class=\"inline\">default</code> and <em>does</em> have a body:</p><p><code class=\"inline\">default void describe() { ... }</code></p><p>Classes get it automatically and can use it as-is, or replace it with their own version.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A Duck implements TWO interfaces, plus a free default method",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Duck duck = new Duck();\n        duck.swim();\n        duck.run();\n        duck.describe();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Runner {\n    void run();\n\n    default void describe() {\n        System.out.println(\"I can move on land and in water!\");\n    }\n}\n\nclass Duck implements Swimmer, Runner {\n    public void swim() {\n        System.out.println(\"The duck paddles across the pond.\");\n    }\n\n    public void run() {\n        System.out.println(\"The duck waddles along the shore.\");\n    }\n}",
+            "output": "The duck paddles across the pond.\nThe duck waddles along the shore.\nI can move on land and in water!",
+            "explain": "Duck signs both Swimmer and Runner, so it must write swim() and run(). It gets describe() for free because Runner gave it a default body — Duck never wrote describe() itself!"
+        },
+        {
+            "type": "text",
+            "heading": "Interface vs abstract class — which one? 🤔",
+            "html": "<p>Both let you list methods that subclasses must fill in, so when do you pick which?</p><ul><li><strong>Interface</strong> — use it for a <em>can-do</em> ability that unrelated things might share. A Bird and a Plane have nothing in common, yet both are <code class=\"inline\">Flyable</code>. A class can implement many interfaces.</li><li><strong>Abstract class</strong> — use it for an <em>is-a</em> family that shares real code and fields. A <code class=\"inline\">Dog</code> and a <code class=\"inline\">Cat</code> are both an <code class=\"inline\">Animal</code> and share a name field. A class can extend only one.</li></ul><p>Rule of thumb: <strong>shared ability → interface; shared family with shared code → abstract class.</strong></p>"
+        },
+        {
+            "type": "text",
+            "heading": "Programming to an interface",
+            "html": "<p>Here's the superpower. If your code only mentions the <em>interface</em> (the contract) instead of any one class, it works for <strong>every</strong> class that signs that contract — even ones you write later!</p><p>A method that takes a <code class=\"inline\">Flyable</code> can fly a Bird today and a Plane tomorrow, with zero changes. This is called <em>programming to an interface</em>, and it keeps code flexible.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "One method, any Flyable thing",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Flyable bird = new Bird();\n        Flyable plane = new Plane();\n        letItFly(bird);\n        letItFly(plane);\n    }\n\n    static void letItFly(Flyable thing) {\n        thing.fly();\n    }\n}\n\ninterface Flyable {\n    void fly();\n}\n\nclass Bird implements Flyable {\n    public void fly() {\n        System.out.println(\"The bird flaps its wings and soars.\");\n    }\n}\n\nclass Plane implements Flyable {\n    public void fly() {\n        System.out.println(\"The plane roars down the runway and lifts off.\");\n    }\n}",
+            "output": "The bird flaps its wings and soars.\nThe plane roars down the runway and lifts off.",
+            "explain": "letItFly() only knows about Flyable, not Bird or Plane. So it happily flies BOTH. If you invented a Rocket that implements Flyable, letItFly would work on it too — no changes needed. That's programming to an interface."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Java already gives you interfaces!</strong> <code class=\"inline\">Comparable</code> is a built-in contract with one method, <code class=\"inline\">compareTo</code>. Any class that implements it can be sorted automatically. You're already surrounded by interfaces.",
+            "variant": "info"
+        },
+        {
+            "type": "quiz",
+            "question": "What does an interface actually contain?",
+            "options": [
+                "A list of methods a class promises to provide (the contract)",
+                "The full working code for every method",
+                "Only variables, never methods",
+                "A copy of the main() method"
+            ],
+            "answerIndex": 0,
+            "explain": "An interface is a contract: it lists method names a class promises to provide. The real code lives in the class that implements it (except for default methods)."
+        },
+        {
+            "type": "quiz",
+            "question": "How many interfaces can a single class implement?",
+            "options": [
+                "Exactly one, just like extends",
+                "As many as you want, separated by commas",
+                "Zero — interfaces can't be implemented",
+                "At most two"
+            ],
+            "answerIndex": 1,
+            "explain": "Unlike extends (single inheritance, one parent only), a class can implement many interfaces: class Duck implements Swimmer, Runner."
+        },
+        {
+            "type": "quiz",
+            "question": "You have unrelated things — a Bird and a Plane — that should both be able to fly. What fits best?",
+            "options": [
+                "An abstract class they both extend",
+                "A Flyable interface they both implement",
+                "Copy the fly() code into each one separately",
+                "Nothing — they can't share anything"
+            ],
+            "answerIndex": 1,
+            "explain": "A shared can-do ability across unrelated classes is exactly what an interface is for. Bird and Plane aren't the same family, so an abstract class is a poor fit."
+        },
+        {
+            "type": "tryit",
+            "title": "Sign your first contract",
+            "instructions": "Finish the Robot class so it keeps the Greetable promise. Write a greet() method that prints a greeting from the robot. Your code must use implements and the interface Greetable.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Greetable robot = new Robot();\n        robot.greet();\n    }\n}\n\ninterface Greetable {\n    void greet();\n}\n\nclass Robot implements Greetable {\n    public void greet() {\n        // print a greeting from the robot here\n        System.out.println(\"...\");\n    }\n}",
+            "check": { "code_includes": ["interface", "implements", "greet"] },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Greetable robot = new Robot();\n        robot.greet();\n    }\n}\n\ninterface Greetable {\n    void greet();\n}\n\nclass Robot implements Greetable {\n    public void greet() {\n        System.out.println(\"Beep boop, hello human!\");\n    }\n}",
+            "solutionOutput": "Beep boop, hello human!",
+            "passMsg": "Contract signed! Robot kept its promise to greet.",
+            "failMsg": "Keep the Greetable interface and Robot implements Greetable, and make greet() print a greeting."
+        },
+        {
+            "type": "tryit",
+            "title": "One animal, two abilities",
+            "instructions": "Make the Frog implement BOTH Swimmer and Jumper. Fill in swim() to print how the frog swims, and jump() to print how it jumps. Your code must implement both interfaces.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Frog frog = new Frog();\n        frog.swim();\n        frog.jump();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Jumper {\n    void jump();\n}\n\nclass Frog implements Swimmer, Jumper {\n    public void swim() {\n        // make the frog swim\n        System.out.println(\"...\");\n    }\n\n    public void jump() {\n        // make the frog jump\n        System.out.println(\"...\");\n    }\n}",
+            "check": { "code_includes": ["implements Swimmer, Jumper", "swim", "jump"] },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Frog frog = new Frog();\n        frog.swim();\n        frog.jump();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Jumper {\n    void jump();\n}\n\nclass Frog implements Swimmer, Jumper {\n    public void swim() {\n        System.out.println(\"The frog kicks through the water.\");\n    }\n\n    public void jump() {\n        System.out.println(\"The frog leaps high into the air!\");\n    }\n}",
+            "solutionOutput": "The frog kicks through the water.\nThe frog leaps high into the air!",
+            "passMsg": "Two contracts, one frog — that's the power interfaces give you!",
+            "failMsg": "Frog must implement Swimmer, Jumper (both, comma-separated) and fill in swim() and jump()."
+        }
+    ],
+    "challenge": {
+        "title": "Build a Pet contract with a default method",
+        "instructions": "Create an interface Pet with a method makeSound() and a DEFAULT method play() that prints a generic play message. Make a Cat that implements Pet and prints a cat sound (it should use the free default play()). Make a Dog that implements Pet, prints a dog sound, AND writes its OWN play() that prints something dog-specific. In main, create both as Pet, then call makeSound() and play() on each.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Pet cat = new Cat();\n        Pet dog = new Dog();\n        // call makeSound() and play() on cat, then on dog\n    }\n}\n\ninterface Pet {\n    void makeSound();\n\n    default void play() {\n        // print a generic play message\n        System.out.println(\"...\");\n    }\n}\n\nclass Cat implements Pet {\n    public void makeSound() {\n        // print a cat sound\n        System.out.println(\"...\");\n    }\n}\n\nclass Dog implements Pet {\n    public void makeSound() {\n        // print a dog sound\n        System.out.println(\"...\");\n    }\n    // give Dog its OWN play() that overrides the default\n}",
+        "check": { "code_includes": ["interface Pet", "default void play", "implements Pet", "makeSound"] },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Pet cat = new Cat();\n        Pet dog = new Dog();\n        cat.makeSound();\n        cat.play();\n        dog.makeSound();\n        dog.play();\n    }\n}\n\ninterface Pet {\n    void makeSound();\n\n    default void play() {\n        System.out.println(\"This pet loves to play!\");\n    }\n}\n\nclass Cat implements Pet {\n    public void makeSound() {\n        System.out.println(\"Meow!\");\n    }\n}\n\nclass Dog implements Pet {\n    public void makeSound() {\n        System.out.println(\"Woof!\");\n    }\n\n    public void play() {\n        System.out.println(\"The dog fetches the ball!\");\n    }\n}",
+        "solutionOutput": "Meow!\nThis pet loves to play!\nWoof!\nThe dog fetches the ball!",
+        "hint": "Cat doesn't write play() at all — it gets the default one for free, so it prints the generic message. Dog writes its own play(), which replaces (overrides) the default. That's why their play() outputs differ.",
+        "passMsg": "🏆 Day 15 complete! You wrote a contract, implemented it two ways, and used a default method. Interfaces are how big Java programs stay flexible — you're thinking like a real engineer now."
+    }
+}

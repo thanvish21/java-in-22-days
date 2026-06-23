@@ -1,0 +1,131 @@
+{
+    "day": 17,
+    "emoji": "📋",
+    "title": "ArrayList",
+    "subtitle": "A list that grows and shrinks whenever you want — no fixed size.",
+    "goal": "Create an ArrayList, add and read items, change and remove them, loop over the list, and use generics to keep it type-safe.",
+    "estMinutes": 180,
+    "tags": ["collections"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "Why arrays aren't enough 📋",
+            "html": "<p>Remember arrays? They are great, but they have one big rule: once you make an array, its <strong>size never changes</strong>. If you make room for 3 names and a 4th friend shows up, you are stuck.</p><p>An <strong>ArrayList</strong> fixes that. It is a list that can <em>grow</em> when you add things and <em>shrink</em> when you remove them. Think of it like a to-do list on paper — you can always write one more line or cross one out.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Making your first ArrayList",
+            "html": "<p>ArrayList lives in a toolbox called <code class=\"inline\">java.util</code>, so we tell Java to grab it with <code class=\"inline\">import</code> at the top of the file. We import two things:</p><p><code class=\"inline\">import java.util.ArrayList;</code><br><code class=\"inline\">import java.util.List;</code></p><p>Then we make one like this:</p><p><code class=\"inline\">List&lt;String&gt; names = new ArrayList&lt;&gt;();</code></p><p>The <code class=\"inline\">&lt;String&gt;</code> part is a promise: <em>this list will only hold Strings</em>. That promise is called <strong>generics</strong>, and it keeps your list tidy and safe.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Add names, then read the list",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> names = new ArrayList<>();\n        names.add(\"Maya\");\n        names.add(\"Leo\");\n        names.add(\"Sam\");\n        System.out.println(\"First name: \" + names.get(0));\n        System.out.println(\"How many names? \" + names.size());\n        System.out.println(\"All names: \" + names);\n    }\n}",
+            "output": "First name: Maya\nHow many names? 3\nAll names: [Maya, Leo, Sam]",
+            "explain": "add() puts something at the end of the list. get(0) reads the item at position 0 (lists start counting at 0, just like arrays). size() tells you how many items are in the list right now. Printing the whole list shows everything inside square brackets."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Counting starts at 0!</strong> The first item is <code class=\"inline\">get(0)</code>, the second is <code class=\"inline\">get(1)</code>, and so on. The last item is always at <code class=\"inline\">size() - 1</code>."
+        },
+        {
+            "type": "text",
+            "heading": "Change, remove, check, and loop",
+            "html": "<p>An ArrayList gives you handy commands:</p><ul><li><code class=\"inline\">set(i, value)</code> — replace the item at position <code class=\"inline\">i</code></li><li><code class=\"inline\">remove(value)</code> — take an item out (the list shrinks)</li><li><code class=\"inline\">contains(value)</code> — ask \"is this in the list?\" (gives back true or false)</li><li><code class=\"inline\">size()</code> — how many items are there</li></ul><p>To visit every item, use a <strong>for-each</strong> loop: <code class=\"inline\">for (String task : todo)</code> means \"for each task in the todo list.\"</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A to-do list you can edit",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> todo = new ArrayList<>();\n        todo.add(\"Brush teeth\");\n        todo.add(\"Do homwork\");\n        todo.add(\"Feed cat\");\n\n        todo.set(1, \"Do homework\");\n        todo.remove(\"Brush teeth\");\n\n        System.out.println(\"Things left to do:\");\n        for (String task : todo) {\n            System.out.println(\"- \" + task);\n        }\n        System.out.println(\"Is 'Feed cat' on the list? \" + todo.contains(\"Feed cat\"));\n    }\n}",
+            "output": "Things left to do:\n- Do homework\n- Feed cat\nIs 'Feed cat' on the list? true",
+            "explain": "set(1, ...) fixed the typo at position 1. remove(\"Brush teeth\") took that task out, so the list shrank from 3 items to 2. The for-each loop printed each remaining task, and contains() confirmed \"Feed cat\" is still there."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Lists shrink too!</strong> After <code class=\"inline\">remove()</code>, everything after the removed item slides up to fill the gap, and <code class=\"inline\">size()</code> goes down by one. You never have empty holes.",
+            "variant": "success"
+        },
+        {
+            "type": "text",
+            "heading": "Lists of numbers: List&lt;Integer&gt; 🔢",
+            "html": "<p>A list can hold numbers too — you write <code class=\"inline\">List&lt;Integer&gt;</code>. Notice it is <strong>Integer</strong> with a capital I, not the little <code class=\"inline\">int</code>. Generics need the full object name.</p><p>The cool part: you can still write <code class=\"inline\">scores.add(90)</code> with a plain number, and Java quietly turns it into an Integer for you. That automatic wrapping is called <strong>autoboxing</strong> — you don't have to think about it.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Add up a list of scores",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> scores = new ArrayList<>();\n        scores.add(90);\n        scores.add(75);\n        scores.add(100);\n\n        int total = 0;\n        for (int s : scores) {\n            total = total + s;\n        }\n        System.out.println(\"Number of scores: \" + scores.size());\n        System.out.println(\"Total: \" + total);\n        System.out.println(\"Average: \" + (total / scores.size()));\n    }\n}",
+            "output": "Number of scores: 3\nTotal: 265\nAverage: 88",
+            "explain": "List<Integer> holds whole numbers. We added 90, 75, and 100 — autoboxing turned each plain number into an Integer automatically. The for-each loop added every score into total, then we divided by size() to get the average (265 / 3 = 88, since int division drops the leftover)."
+        },
+        {
+            "type": "quiz",
+            "question": "What is the main advantage of an ArrayList over a plain array?",
+            "options": [
+                "It can change size — you can add and remove items anytime",
+                "It runs faster than everything else",
+                "It does not need to be imported",
+                "It can only hold three items"
+            ],
+            "answerIndex": 0,
+            "explain": "Arrays have a fixed size forever. An ArrayList grows when you add and shrinks when you remove, so you are never stuck with a size that is too small or too big."
+        },
+        {
+            "type": "quiz",
+            "question": "In List<String> names = new ArrayList<>();, what does the <String> part promise?",
+            "options": [
+                "The list can hold any type at all",
+                "The list will only hold Strings (this is generics keeping it type-safe)",
+                "The list is named String",
+                "The list can hold exactly one item"
+            ],
+            "answerIndex": 1,
+            "explain": "The <String> is generics. It promises the list only holds Strings, so Java catches mistakes early and you always know what is inside."
+        },
+        {
+            "type": "quiz",
+            "question": "Which type do you use for a list of whole numbers?",
+            "options": [
+                "List<int>",
+                "List<number>",
+                "List<Integer>",
+                "List<digits>"
+            ],
+            "answerIndex": 2,
+            "explain": "Generics need the object name Integer (capital I), not the small int. Thanks to autoboxing you can still call add(90) with a plain number."
+        },
+        {
+            "type": "tryit",
+            "title": "Build a fruit list",
+            "instructions": "Add \"apple\" and \"banana\" to the list using add(), in that order. Then it gets printed. Press Check.",
+            "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = new ArrayList<>();\n        // add \"apple\" and \"banana\" here\n\n        System.out.println(\"My fruits: \" + fruits);\n    }\n}",
+            "check": { "regex": "fruits\\.add\\(\"apple\"\\)[\\s\\S]*fruits\\.add\\(\"banana\"\\)" },
+            "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = new ArrayList<>();\n        fruits.add(\"apple\");\n        fruits.add(\"banana\");\n        System.out.println(\"My fruits: \" + fruits);\n    }\n}",
+            "solutionOutput": "My fruits: [apple, banana]",
+            "passMsg": "Nice — your list grew as you added each fruit!",
+            "failMsg": "Use fruits.add(\"apple\"); then fruits.add(\"banana\"); on separate lines."
+        },
+        {
+            "type": "tryit",
+            "title": "Loop over numbers",
+            "instructions": "The list already holds 3, 6, and 9. Finish the for-each loop so it prints each number on its own line. Press Check.",
+            "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>();\n        nums.add(3);\n        nums.add(6);\n        nums.add(9);\n        for (int n : nums) {\n            // print n here\n        }\n    }\n}",
+            "check": { "code_includes": "System.out.println(n)" },
+            "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>();\n        nums.add(3);\n        nums.add(6);\n        nums.add(9);\n        for (int n : nums) {\n            System.out.println(n);\n        }\n    }\n}",
+            "solutionOutput": "3\n6\n9",
+            "passMsg": "Great — the for-each loop visited every number in order!",
+            "failMsg": "Inside the loop, write System.out.println(n); to print each number."
+        }
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "Fix and tidy a shopping list",
+        "instructions": "The list has \"milk\", \"eggs\", and \"bred\" (a typo). Use set(2, \"bread\") to fix the typo, then remove(\"eggs\") to take eggs out. Then print how many items are left and loop over each one with \"- \" in front. Press Check.",
+        "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> shopping = new ArrayList<>();\n        shopping.add(\"milk\");\n        shopping.add(\"eggs\");\n        shopping.add(\"bred\");\n        // fix \"bred\" to \"bread\" with set\n        // remove \"eggs\"\n        System.out.println(\"Items left: \" + shopping.size());\n        // loop and print each item with \"- \" in front\n    }\n}",
+        "check": { "regex": "shopping\\.set\\(2,\\s*\"bread\"\\)[\\s\\S]*shopping\\.remove\\(\"eggs\"\\)" },
+        "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> shopping = new ArrayList<>();\n        shopping.add(\"milk\");\n        shopping.add(\"eggs\");\n        shopping.add(\"bred\");\n        shopping.set(2, \"bread\");\n        shopping.remove(\"eggs\");\n        System.out.println(\"Items left: \" + shopping.size());\n        for (String item : shopping) {\n            System.out.println(\"- \" + item);\n        }\n    }\n}",
+        "solutionOutput": "Items left: 2\n- milk\n- bread",
+        "hint": "set(2, \"bread\") replaces the item at position 2. remove(\"eggs\") shrinks the list to 2 items. Then use for (String item : shopping) and print \"- \" + item inside.",
+        "passMsg": "🏆 You fixed a typo, removed an item, and looped the whole list — that is real list-wrangling. Day 17 complete!",
+        "failMsg": "Use shopping.set(2, \"bread\"); to fix the typo, then shopping.remove(\"eggs\"); before the loop."
+    }
+}

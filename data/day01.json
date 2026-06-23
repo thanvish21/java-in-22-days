@@ -1,0 +1,134 @@
+{
+  "day": 1,
+  "emoji": "☕",
+  "title": "Hello Java",
+  "subtitle": "Meet the language that runs on billions of devices — phones, games, banks, and more.",
+  "goal": "Understand what Java is and the JVM, write a complete Hello-World program, and use System.out.println and comments.",
+  "estMinutes": 180,
+  "tags": ["basics", "beginner"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "What is Java? ☕",
+      "html": "<p>Java is a programming language — a way to give a computer step-by-step instructions. It powers Android apps, huge websites, video games like Minecraft, and the software banks use to move money safely.</p><p>Java has been around for nearly 30 years and is still one of the most popular languages on Earth. Learn it well, and you can build almost anything.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "Write once, run anywhere: the JVM",
+      "html": "<p>Here's Java's superpower. When you write Java, it gets turned into a special middle-language called <strong>bytecode</strong>. That bytecode runs on something called the <code class=\"inline\">JVM</code> — the <strong>Java Virtual Machine</strong>.</p><p>Every kind of computer (Windows, Mac, phone, fridge…) has its own JVM. So the <em>same</em> Java program runs everywhere without changes. People call this <strong>“write once, run anywhere.”</strong> 🌍</p>"
+    },
+    {
+      "type": "tip",
+      "html": "Java runs on the JVM, so it can't run for free inside a web browser like some languages can. On this site you'll <strong>read the code, predict what it prints, then reveal the real answer</strong> — a skill real programmers use every day."
+    },
+    {
+      "type": "text",
+      "heading": "Every Java program needs a class and a main",
+      "html": "<p>Java is tidy: all code lives inside a <strong>class</strong>. To <em>start</em> a program, Java looks for one special method called <code class=\"inline\">main</code>. The computer always begins running there.</p><p>The opening line looks scary at first, but you'll type it so often it becomes second nature:</p><p><code class=\"inline\">public class Main { public static void main(String[] args) { ... } }</code></p>"
+    },
+    {
+      "type": "code",
+      "caption": "Your first Java program — read it, predict the output 👇",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, world!\");\n    }\n}",
+      "output": "Hello, world!",
+      "explain": "System.out.println(...) prints whatever is inside the parentheses and then moves to a new line. The text goes in double quotes \"...\" — we call text a 'String'. Notice every statement ends with a semicolon ;"
+    },
+    {
+      "type": "tip",
+      "html": "<strong>Semicolons matter!</strong> In Java, almost every statement ends with a <code class=\"inline\">;</code>. Forget one and Java refuses to run. Think of it like the period at the end of a sentence.",
+      "variant": "warn"
+    },
+    {
+      "type": "code",
+      "caption": "You can print as many lines as you like",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"I am learning Java.\");\n        System.out.println(\"This is line two!\");\n        System.out.println(\"Java is fun. ☕\");\n    }\n}",
+      "output": "I am learning Java.\nThis is line two!\nJava is fun. ☕",
+      "explain": "Each println makes its own new line, and Java runs your statements top to bottom, in order."
+    },
+    {
+      "type": "text",
+      "heading": "Comments: notes for humans 📝",
+      "html": "<p>A <strong>comment</strong> is a note the computer ignores. Use <code class=\"inline\">//</code> for a single line, or <code class=\"inline\">/* ... */</code> to span several lines. Comments help you (and others) remember <em>why</em> the code does what it does.</p><p>Also meet <code class=\"inline\">System.out.print</code> — just like <code class=\"inline\">println</code> but it does <strong>not</strong> add a new line afterward.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Comments are skipped; print vs println",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        // This is a note to myself. Java skips it.\n        System.out.println(\"Java ignores the comment lines\"); // you can comment here too\n        /* This is a\n           block comment that spans lines. */\n        System.out.print(\"No new line here. \");\n        System.out.println(\"Same line!\");\n    }\n}",
+      "output": "Java ignores the comment lines\nNo new line here. Same line!",
+      "explain": "The // and /* */ parts never print. And because the first one used print (not println), the next text stayed on the same line."
+    },
+    {
+      "type": "text",
+      "heading": "How a Java program actually runs",
+      "html": "<p>Behind the scenes there are two steps: <strong>compile</strong> (turn your <code class=\"inline\">.java</code> code into bytecode) and <strong>run</strong> (the JVM executes that bytecode). The classic tools are <code class=\"inline\">javac Main.java</code> then <code class=\"inline\">java Main</code>.</p><p>Modern Java (version 11+) lets you skip a step for single files: just run <code class=\"inline\">java Main.java</code> and it compiles and runs in one go — handy while learning.</p>"
+    },
+    {
+      "type": "quiz",
+      "question": "What does System.out.println(\"Hi\") do?",
+      "options": [
+        "Prints the word Hi and moves to a new line",
+        "Deletes a file named Hi",
+        "Prints the word println",
+        "Nothing at all"
+      ],
+      "answerIndex": 0,
+      "explain": "println prints whatever is inside the quotes — here, the text Hi — then starts a fresh line."
+    },
+    {
+      "type": "quiz",
+      "question": "What is the JVM?",
+      "options": [
+        "A website where Java code lives",
+        "The Java Virtual Machine that runs Java bytecode on any computer",
+        "A type of variable",
+        "A brand of coffee"
+      ],
+      "answerIndex": 1,
+      "explain": "The JVM (Java Virtual Machine) runs the bytecode, which is why the same Java program works on many kinds of computers — write once, run anywhere."
+    },
+    {
+      "type": "quiz",
+      "question": "Why does Java need a semicolon at the end of System.out.println(\"Hi\")?",
+      "options": [
+        "It makes the text bold",
+        "It tells Java that statement is finished",
+        "It's optional decoration",
+        "It prints a smiley"
+      ],
+      "answerIndex": 1,
+      "explain": "A semicolon ends a statement in Java, like a period ends a sentence. Leave it out and the program won't compile."
+    },
+    {
+      "type": "tryit",
+      "title": "Print your own name",
+      "instructions": "Inside main, change the text so the program prints YOUR name. Keep the full class and main structure. Then press Check.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"My name is ___\");\n    }\n}",
+      "check": { "code_includes": ["System.out.println", "My name is"] },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"My name is Thanvish\");\n    }\n}",
+      "solutionOutput": "My name is Thanvish",
+      "passMsg": "Awesome — you just wrote a real Java program!",
+      "failMsg": "Keep System.out.println(\"...\") and put your name inside the quotes after 'My name is'."
+    },
+    {
+      "type": "tryit",
+      "title": "Three facts about you",
+      "instructions": "Use three println statements inside main to print three fun facts about yourself — your age, favorite food, favorite color, anything! Each on its own line.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Fact 1: ...\");\n        // add two more println lines below\n    }\n}",
+      "check": { "regex": "System\\.out\\.println[\\s\\S]*System\\.out\\.println[\\s\\S]*System\\.out\\.println" },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"I am 12 years old.\");\n        System.out.println(\"I love pizza.\");\n        System.out.println(\"My favorite color is blue.\");\n    }\n}",
+      "solutionOutput": "I am 12 years old.\nI love pizza.\nMy favorite color is blue.",
+      "passMsg": "Three lines, three facts — nicely done!",
+      "failMsg": "Add at least three System.out.println lines, each printing one fact."
+    }
+  ],
+  "challenge": {
+    "title": "Make an ASCII greeting card",
+    "instructions": "Use println statements inside main to draw a little greeting on screen: a top border line, a message in the middle, and a matching bottom border. Make it say hello to someone you like!",
+    "starter": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"*****************\");\n        // print a greeting line in the middle\n        System.out.println(\"*****************\");\n    }\n}",
+    "check": { "regex": "System\\.out\\.println[\\s\\S]*System\\.out\\.println[\\s\\S]*System\\.out\\.println" },
+    "solution": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"*****************\");\n        System.out.println(\"*  Hi Grandma!  *\");\n        System.out.println(\"*****************\");\n    }\n}",
+    "solutionOutput": "*****************\n*  Hi Grandma!  *\n*****************",
+    "hint": "You need at least three println lines: a border, your message, and another border. Keep them the same width so it looks neat.",
+    "passMsg": "🏆 Beautiful card! You've finished Day 1 — you're officially a Java programmer now."
+  }
+}

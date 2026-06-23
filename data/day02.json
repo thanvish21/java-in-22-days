@@ -1,0 +1,139 @@
+{
+  "day": 2,
+  "emoji": "📦",
+  "title": "Variables & Types",
+  "subtitle": "Give the computer little labeled boxes to remember things for you.",
+  "goal": "Create variables in Java, pick the right type for the job (int, double, char, boolean, and friends), reassign and print them, and meet the handy var keyword.",
+  "estMinutes": 180,
+  "tags": ["basics", "beginner"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "What is a variable? 📦",
+      "html": "<p>A <strong>variable</strong> is like a labeled box where the computer keeps something for you. You write a name on the box (like <code class=\"inline\">age</code>), put a value inside (like <code class=\"inline\">11</code>), and later you can peek inside just by saying the name.</p><p>The cool part: you can change what's in the box whenever you want, and the computer always knows what's inside.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "Java likes to know the type 🏷️",
+      "html": "<p>Java is <strong>statically typed</strong>. That's a fancy way of saying: every box has to say what <em>kind</em> of thing it holds <strong>before</strong> you put anything in it. A box for whole numbers can't suddenly hold text.</p><p>You declare a variable like this: <code class=\"inline\">int age = 11;</code> — first the <strong>type</strong> (<code class=\"inline\">int</code>), then the <strong>name</strong> (<code class=\"inline\">age</code>), then <code class=\"inline\">=</code> and the value. Every line ends with a semicolon <code class=\"inline\">;</code>.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "The main types you'll use",
+      "html": "<p>These are Java's <strong>primitive types</strong> — the basic building blocks:</p><ul><li><code class=\"inline\">int</code> — a whole number, like <code class=\"inline\">7</code> or <code class=\"inline\">-3</code></li><li><code class=\"inline\">double</code> — a number with a decimal point, like <code class=\"inline\">1.45</code></li><li><code class=\"inline\">char</code> — a single character in single quotes, like <code class=\"inline\">'A'</code></li><li><code class=\"inline\">boolean</code> — either <code class=\"inline\">true</code> or <code class=\"inline\">false</code></li></ul><p>There are a few more for special cases: <code class=\"inline\">long</code> (really big whole numbers), <code class=\"inline\">float</code> (a smaller decimal number), and <code class=\"inline\">byte</code>/<code class=\"inline\">short</code> (tiny numbers). You'll mostly reach for <code class=\"inline\">int</code> and <code class=\"inline\">double</code> for now.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Four boxes, four types",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int age = 11;\n        double height = 1.45;\n        char grade = 'A';\n        boolean likesPizza = true;\n        System.out.println(\"Age: \" + age);\n        System.out.println(\"Height in meters: \" + height);\n        System.out.println(\"Grade: \" + grade);\n        System.out.println(\"Likes pizza? \" + likesPizza);\n    }\n}",
+      "output": "Age: 11\nHeight in meters: 1.45\nGrade: A\nLikes pizza? true\n",
+      "explain": "Each line makes a box, labels it, and fills it. The + glues the text to the value so it prints together. Notice 'A' uses single quotes because it's a char (one character), while text in System.out.println uses double quotes."
+    },
+    {
+      "type": "tip",
+      "html": "<strong>Numbers, not text!</strong> Write <code class=\"inline\">int age = 11;</code> with no quotes. If you wrote <code class=\"inline\">\"11\"</code> with quotes, Java would think it's text, not a number you can add or compare."
+    },
+    {
+      "type": "text",
+      "heading": "Naming your boxes (camelCase) 🐫",
+      "html": "<p>You pick the names, but Java programmers follow a habit called <strong>camelCase</strong>: start lowercase, and bump up each new word like a camel's hump — <code class=\"inline\">myPetAge</code>, <code class=\"inline\">favoriteColor</code>, <code class=\"inline\">topScore</code>.</p><p>Names should describe what's inside. <code class=\"inline\">int x = 11;</code> works, but <code class=\"inline\">int age = 11;</code> tells the next person what the box means. Names can't have spaces and can't start with a number.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "Reassigning: change what's in the box",
+      "html": "<p>Once a box exists, you can put a new value in it — <strong>without</strong> writing the type again. You only say the type the <em>first</em> time you create the box.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "The same box, changed twice",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int score = 10;\n        System.out.println(\"Score: \" + score);\n        score = 25;\n        System.out.println(\"New score: \" + score);\n        score = score + 5;\n        System.out.println(\"After bonus: \" + score);\n    }\n}",
+      "output": "Score: 10\nNew score: 25\nAfter bonus: 30\n",
+      "explain": "First line declares the box with int. After that we just say score = ... to refill it. The clever line score = score + 5 means 'take what's in score, add 5, and put it back' — that's how 25 becomes 30."
+    },
+    {
+      "type": "quiz",
+      "question": "Which line correctly creates an int box named age holding the value 12?",
+      "options": [
+        "int age = 12;",
+        "age int = 12;",
+        "int age = \"12\";",
+        "12 = int age;"
+      ],
+      "answerIndex": 0,
+      "explain": "The pattern is type, then name, then = value, then a semicolon: int age = 12;. The quotes in \"12\" would make it text, not a number."
+    },
+    {
+      "type": "quiz",
+      "question": "You already wrote int score = 10;. How do you change score to 25 on the next line?",
+      "options": [
+        "int score = 25;",
+        "score = 25;",
+        "score == 25;",
+        "change score to 25;"
+      ],
+      "answerIndex": 1,
+      "explain": "You only write the type (int) the first time. After that, just score = 25; refills the same box. Writing int again would try to make a brand new box with the same name, which confuses Java."
+    },
+    {
+      "type": "text",
+      "heading": "The var shortcut (Java 10+) ✨",
+      "html": "<p>Typing the type every time gets repetitive. Since Java 10 you can write <code class=\"inline\">var</code> for variables inside a method, and Java <strong>figures out the type for you</strong> from the value. This is called <em>type inference</em>.</p><p><code class=\"inline\">var age = 12;</code> becomes an <code class=\"inline\">int</code> automatically, because <code class=\"inline\">12</code> is a whole number. <code class=\"inline\">var name = \"Maya\";</code> becomes text. It's still strongly typed — Java just saved you some typing.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Letting Java guess the type with var",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        var name = \"Maya\";\n        var age = 12;\n        var price = 4.50;\n        System.out.println(name + \" is \" + age + \" years old.\");\n        System.out.println(\"A snack costs $\" + price);\n    }\n}",
+      "output": "Maya is 12 years old.\nA snack costs $4.5\n",
+      "explain": "Java sees \"Maya\" and makes name text, sees 12 and makes age an int, sees 4.50 and makes price a double. Notice 4.50 prints as 4.5 — a double drops the extra zero at the end because it means the same number."
+    },
+    {
+      "type": "tip",
+      "html": "<code class=\"inline\">var</code> only works <strong>inside methods</strong> (like inside <code class=\"inline\">main</code>) and only when you give it a value right away, so Java can tell the type. <code class=\"inline\">var x;</code> with no value won't work — Java has nothing to guess from.",
+      "variant": "warn"
+    },
+    {
+      "type": "quiz",
+      "question": "What type does Java give the variable in var lucky = 7;?",
+      "options": [
+        "double, because all numbers are decimals",
+        "String, because it's in a var",
+        "int, because 7 is a whole number",
+        "char, because it's a single digit"
+      ],
+      "answerIndex": 2,
+      "explain": "var looks at the value to decide the type. 7 is a whole number with no decimal point, so Java picks int."
+    },
+    {
+      "type": "tryit",
+      "title": "Make a pet box",
+      "instructions": "Create a String variable called petName with your pet's name (or a made-up one), and an int variable called petAge with its age. Then print a sentence using both. Press Check when it runs.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        // TODO: change these values to describe your own pet\n        String petName = \"___\";\n        int petAge = 0;\n        System.out.println(\"My pet is \" + petName + \" and is \" + petAge + \" years old.\");\n    }\n}",
+      "check": { "code_includes": ["String petName", "int petAge", "System.out.println"] },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        String petName = \"Rex\";\n        int petAge = 3;\n        System.out.println(\"My pet is \" + petName + \" and is \" + petAge + \" years old.\");\n    }\n}",
+      "solutionOutput": "My pet is Rex and is 3 years old.\n",
+      "passMsg": "Nice — two boxes, two types, one sentence!",
+      "failMsg": "Make sure you keep a String petName and an int petAge, and print them with System.out.println."
+    },
+    {
+      "type": "tryit",
+      "title": "Add up the fruit",
+      "instructions": "There are 4 apples and 5 oranges. Make an int variable called total that holds apples + oranges, then print it. The answer should be 9.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        int apples = 4;\n        int oranges = 5;\n        // TODO: make a variable called total that adds apples and oranges\n        int total = 0;\n        System.out.println(\"Total fruit: \" + total);\n    }\n}",
+      "check": { "regex": "int\\s+total\\s*=\\s*apples\\s*\\+\\s*oranges" },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        int apples = 4;\n        int oranges = 5;\n        int total = apples + oranges;\n        System.out.println(\"Total fruit: \" + total);\n    }\n}",
+      "solutionOutput": "Total fruit: 9\n",
+      "passMsg": "9 fruit — you can do math with variables now!",
+      "failMsg": "Set total to apples + oranges (not a fixed number), so Java does the adding for you."
+    }
+  ],
+  "challenge": {
+    "title": "Build your own ID card",
+    "instructions": "Make four variables that describe a person (real or made-up): a String for name, an int for age, a double for height in meters, and a boolean for whether they can code. Print each one on its own line, like a little ID card.",
+    "starter": "public class Main {\n    public static void main(String[] args) {\n        // TODO: fill in your own details using the right types\n        String name = \"___\";\n        System.out.println(\"Name: \" + name);\n    }\n}",
+    "check": { "code_includes": ["String name", "int age", "double height", "boolean canCode"] },
+    "solution": "public class Main {\n    public static void main(String[] args) {\n        String name = \"Sam\";\n        int age = 12;\n        double height = 1.5;\n        boolean canCode = true;\n        System.out.println(\"Name: \" + name);\n        System.out.println(\"Age: \" + age);\n        System.out.println(\"Height: \" + height);\n        System.out.println(\"Can code: \" + canCode);\n    }\n}",
+    "solutionOutput": "Name: Sam\nAge: 12\nHeight: 1.5\nCan code: true\n",
+    "hint": "Pick the right type for each fact: text goes in a String, whole numbers in an int, decimals in a double, and yes/no in a boolean. Use one System.out.println per line.",
+    "passMsg": "🏆 A full ID card with four different types — you've mastered variables! Day 2 complete."
+  }
+}

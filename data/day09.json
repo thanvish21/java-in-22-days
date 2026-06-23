@@ -1,0 +1,124 @@
+{
+    "day": 9,
+    "emoji": "📊",
+    "title": "Arrays",
+    "subtitle": "One box, many values — keep a whole list of things in a single variable.",
+    "goal": "Make arrays, read items by their position, find the length, loop over every value, and tidy them up with the Arrays helper.",
+    "estMinutes": 180,
+    "tags": ["data"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "What is an array? 📊",
+            "html": "<p>So far each variable held just one thing: one number, one name. But what if you have the scores of a whole class? You don't want 30 variables!</p><p>An <strong>array</strong> is one variable that holds <em>many</em> values of the <strong>same type</strong> — like an egg carton with a slot for each egg. All ints, or all Strings, lined up in a row.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Making an array",
+            "html": "<p>Two common ways. Fill it right away with values in curly braces:</p><p><code class=\"inline\">int[] nums = {1, 2, 3};</code></p><p>Or make an empty one of a fixed size (Java fills it with zeros for you):</p><p><code class=\"inline\">int[] five = new int[5];</code></p><p>The <code class=\"inline\">[]</code> means \"this is an array of that type.\"</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Reading items and counting them",
+            "code": "import java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        int[] scores = {90, 85, 100};\n        System.out.println(\"First score: \" + scores[0]);\n        System.out.println(\"How many scores? \" + scores.length);\n    }\n}",
+            "output": "First score: 90\nHow many scores? 3",
+            "explain": "Counting starts at ZERO. scores[0] is the first item (90), scores[1] is the second. The .length tells you how many items are inside — notice there are no parentheses after length."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Zero is the start!</strong> The first slot is <code class=\"inline\">[0]</code>, not <code class=\"inline\">[1]</code>. So an array with 3 items uses slots <code class=\"inline\">[0]</code>, <code class=\"inline\">[1]</code>, and <code class=\"inline\">[2]</code>."
+        },
+        {
+            "type": "code",
+            "caption": "Two ways to loop over an array",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        String[] names = {\"Mia\", \"Leo\", \"Zoe\"};\n        for (int i = 0; i < names.length; i++) {\n            System.out.println(\"Hello, \" + names[i] + \"!\");\n        }\n        for (String name : names) {\n            System.out.println(name + \" is here.\");\n        }\n    }\n}",
+            "output": "Hello, Mia!\nHello, Leo!\nHello, Zoe!\nMia is here.\nLeo is here.\nZoe is here.",
+            "explain": "The first loop uses a counter i to grab names[i]. The second is a 'for-each': read it as 'for each name in names'. The for-each is simpler when you just want every item in order."
+        },
+        {
+            "type": "tip",
+            "variant": "warn",
+            "html": "<strong>Watch the edge!</strong> If an array has 3 items, the last slot is <code class=\"inline\">[2]</code>. Asking for <code class=\"inline\">scores[3]</code> reaches past the end and Java throws an <code class=\"inline\">ArrayIndexOutOfBoundsException</code>. Always stop at <code class=\"inline\">length - 1</code>."
+        },
+        {
+            "type": "code",
+            "caption": "The Arrays toolbox: toString and sort",
+            "code": "import java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        int[] nums = {5, 2, 8, 1};\n        System.out.println(\"Before: \" + Arrays.toString(nums));\n        Arrays.sort(nums);\n        System.out.println(\"After:  \" + Arrays.toString(nums));\n    }\n}",
+            "output": "Before: [5, 2, 8, 1]\nAfter:  [1, 2, 5, 8]",
+            "explain": "You must write import java.util.Arrays; at the top to use these. Arrays.toString() makes an array print nicely. Arrays.sort() puts the numbers in order from smallest to biggest — for free!"
+        },
+        {
+            "type": "text",
+            "heading": "A peek at 2D arrays 🗂️",
+            "html": "<p>An array can even hold other arrays — like a grid, or a tic-tac-toe board. We call this a <strong>2D array</strong>.</p><p><code class=\"inline\">int[][] grid = {{1, 2, 3}, {4, 5, 6}};</code></p><p>Now <code class=\"inline\">grid[0]</code> is the first row, and <code class=\"inline\">grid[0][1]</code> is the second item of that row (which is 2). You'll meet these more later — for now, just know rows of rows are possible!</p>"
+        },
+        {
+            "type": "quiz",
+            "question": "In int[] a = {10, 20, 30}; what is a[1]?",
+            "options": [
+                "10",
+                "20",
+                "30",
+                "It's an error"
+            ],
+            "answerIndex": 1,
+            "explain": "Counting starts at 0, so a[0] is 10 and a[1] is 20."
+        },
+        {
+            "type": "quiz",
+            "question": "An array has 4 items. What happens if you ask for item [4]?",
+            "options": [
+                "You get the last item",
+                "You get a zero",
+                "Java throws an ArrayIndexOutOfBoundsException",
+                "It wraps around to the first item"
+            ],
+            "answerIndex": 2,
+            "explain": "With 4 items the slots are [0], [1], [2], [3]. Asking for [4] reaches past the end, so Java throws an ArrayIndexOutOfBoundsException."
+        },
+        {
+            "type": "quiz",
+            "question": "Which method puts an int array in order from smallest to biggest?",
+            "options": [
+                "Arrays.print()",
+                "Arrays.order()",
+                "Arrays.sort()",
+                "Arrays.length()"
+            ],
+            "answerIndex": 2,
+            "explain": "Arrays.sort() sorts the array in place. Remember to import java.util.Arrays; first."
+        },
+        {
+            "type": "tryit",
+            "title": "Grab the third score",
+            "instructions": "The array has four scores. Print the THIRD score. Remember: counting starts at 0, so the third item lives at index 2!",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {70, 88, 95, 60};\n        System.out.println(\"Third score: \" + scores[___]);\n    }\n}",
+            "check": { "code_includes": "scores[2]" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {70, 88, 95, 60};\n        System.out.println(\"Third score: \" + scores[2]);\n    }\n}",
+            "solutionOutput": "Third score: 95",
+            "passMsg": "Nice — you remembered that the third item is index 2!",
+            "failMsg": "The third score is at index 2 (because counting starts at 0). Use scores[2]."
+        },
+        {
+            "type": "tryit",
+            "title": "Find the average",
+            "instructions": "Loop over the array, add up every number into total, then divide by how many there are. Fill in the blanks so it prints the average.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40};\n        int total = 0;\n        for (int n : nums) {\n            total = total + n;\n        }\n        int average = total / nums.___;\n        System.out.println(\"Average: \" + average);\n    }\n}",
+            "check": { "code_includes": "nums.length" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40};\n        int total = 0;\n        for (int n : nums) {\n            total = total + n;\n        }\n        int average = total / nums.length;\n        System.out.println(\"Average: \" + average);\n    }\n}",
+            "solutionOutput": "Average: 25",
+            "passMsg": "You averaged a whole array — that's real data work!",
+            "failMsg": "To divide by the count of items, use nums.length."
+        }
+    ],
+    "challenge": {
+        "title": "Print a number grid",
+        "instructions": "Use a 2D array to make a little grid. Loop over each row, then each column inside that row, and print the numbers with a space after each. Print a new line after every row.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        int[][] grid = {\n            {1, 2, 3},\n            {4, 5, 6}\n        };\n        for (int row = 0; row < grid.length; row++) {\n            for (int col = 0; col < grid[row].length; col++) {\n                System.out.print(grid[row][col] + \" \");\n            }\n            // print a new line after each row\n        }\n    }\n}",
+        "check": { "code_includes": "grid[row][col]" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        int[][] grid = {\n            {1, 2, 3},\n            {4, 5, 6}\n        };\n        for (int row = 0; row < grid.length; row++) {\n            for (int col = 0; col < grid[row].length; col++) {\n                System.out.print(grid[row][col] + \" \");\n            }\n            System.out.println();\n        }\n    }\n}",
+        "solutionOutput": "1 2 3 \n4 5 6 ",
+        "hint": "Inside the row loop, after the column loop finishes, call System.out.println() with nothing inside to drop to the next line.",
+        "passMsg": "🏆 A whole grid from arrays inside arrays — Day 9 conquered. You're handling real data now!"
+    }
+}

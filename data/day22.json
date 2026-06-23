@@ -1,0 +1,128 @@
+{
+    "day": 22,
+    "emoji": "🏆",
+    "title": "Capstone & Roadmap",
+    "subtitle": "Twenty-one days of skills, one real app, and a map for everywhere you go next.",
+    "goal": "Look back at the whole 22-day journey, build a complete Library app that combines classes, an ArrayList, a HashMap, methods, loops and conditionals, then plan your real Java future.",
+    "estMinutes": 180,
+    "tags": ["capstone"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "You made it. 🏆",
+            "html": "<p>Twenty-two days ago you printed your very first line of Java. Today you are going to build a whole little app from scratch — and it will use almost everything you learned. Take a breath and feel proud: you stuck with it.</p><p>This last day has three parts: a quick <strong>look back</strong> at the journey, one <strong>capstone project</strong> we build together piece by piece, and a <strong>roadmap</strong> for what to learn next. Let's finish strong.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Everything you learned 📚",
+            "html": "<p>Here is the whole adventure in one list. Each of these is a real superpower you now have:</p><ul><li><strong>Days 1-4:</strong> printing, <code class=\"inline\">variables</code> and types, strings, and math operators.</li><li><strong>Days 5-8:</strong> input, <code class=\"inline\">if</code> conditionals, <code class=\"inline\">switch</code>, and loops.</li><li><strong>Days 9-10:</strong> arrays for holding many values, and <code class=\"inline\">methods</code> to package reusable steps.</li><li><strong>Days 11-15:</strong> the heart of Java — classes &amp; objects, encapsulation, inheritance, polymorphism, and interfaces.</li><li><strong>Day 16:</strong> exceptions, so your program stays calm when things go wrong.</li><li><strong>Days 17-19:</strong> the collections toolbox — <code class=\"inline\">ArrayList</code>, <code class=\"inline\">HashMap</code>, sets, and generics.</li><li><strong>Days 20-21:</strong> modern Java — enums, records, lambdas, and streams.</li></ul><p>That is a serious toolkit. Now we put it to work.</p>"
+        },
+        {
+            "type": "tip",
+            "html": "<strong>The same-file rule, one last time.</strong> Every runnable program has one <code class=\"inline\">public class Main</code> with <code class=\"inline\">main</code>, saved as <code class=\"inline\">Main.java</code>. Helper classes live in the same file <em>without</em> the word public. Run it all with <code class=\"inline\">java Main.java</code>.",
+            "variant": "info"
+        },
+        {
+            "type": "text",
+            "heading": "Our capstone: a Library app 🏛️",
+            "html": "<p>We are going to build a little <strong>Library</strong>. People can borrow books and return them, and the library can report how many are out. We will build it in three steps so nothing feels scary.</p><p><strong>Step 1:</strong> design a <code class=\"inline\">Book</code> blueprint. Every book remembers its title, its author, and whether it is currently checked out.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Step 1 - the Book blueprint (a class with fields)",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Matilda\", \"Roald Dahl\");\n        System.out.println(b.title + \" by \" + b.author);\n        System.out.println(\"Checked out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}",
+            "output": "Matilda by Roald Dahl\nChecked out? false",
+            "explain": "Book is our blueprint (Day 11). It has three fields and a constructor that fills in the title and author and starts isOut at false, because a brand new book has not been borrowed yet. One object, one book."
+        },
+        {
+            "type": "text",
+            "heading": "Step 2: a Library that holds many books",
+            "html": "<p>One book is not a library. We need a <strong>list</strong> of them. That is exactly what an <code class=\"inline\">ArrayList</code> is for (Day 17). Our <code class=\"inline\">Library</code> class will keep an <code class=\"inline\">ArrayList&lt;Book&gt;</code>, add books to it with a method, and loop over them to print a list.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Step 2 - a Library holding an ArrayList of books",
+            "code": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(\"Matilda\", \"Roald Dahl\");\n        lib.addBook(\"Holes\", \"Louis Sachar\");\n        lib.addBook(\"Wonder\", \"R.J. Palacio\");\n        lib.listBooks();\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}\n\nclass Library {\n    ArrayList<Book> books = new ArrayList<>();\n\n    void addBook(String title, String author) {\n        books.add(new Book(title, author));\n    }\n\n    void listBooks() {\n        System.out.println(\"The library has \" + books.size() + \" books:\");\n        for (Book b : books) {\n            String status = b.isOut ? \"out\" : \"available\";\n            System.out.println(\"- \" + b.title + \" by \" + b.author + \" (\" + status + \")\");\n        }\n    }\n}",
+            "output": "The library has 3 books:\n- Matilda by Roald Dahl (available)\n- Holes by Louis Sachar (available)\n- Wonder by R.J. Palacio (available)",
+            "explain": "The Library keeps an ArrayList<Book>. addBook builds a Book and adds it. listBooks uses a for-each loop (Day 8) to walk every book, and the ? : trick picks the word out or available. Three classes, one public Main."
+        },
+        {
+            "type": "text",
+            "heading": "Step 3: borrowing and returning",
+            "html": "<p>Now the real magic. We add a <code class=\"inline\">HashMap</code> (Day 18) that remembers <em>who</em> borrowed each book — the title is the key, the person is the value. The <code class=\"inline\">borrow</code> method uses <strong>conditionals</strong> (Day 6) to handle three cases: the book does not exist, it is already out, or it is free to take.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Step 3 - the full Library app (classes + ArrayList + HashMap + methods + loop + conditionals)",
+            "code": "import java.util.ArrayList;\nimport java.util.HashMap;\n\npublic class Main {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(\"Matilda\", \"Roald Dahl\");\n        lib.addBook(\"Holes\", \"Louis Sachar\");\n        lib.addBook(\"Wonder\", \"R.J. Palacio\");\n\n        lib.borrow(\"Matilda\", \"Sam\");\n        lib.borrow(\"Holes\", \"Ava\");\n        lib.borrow(\"Matilda\", \"Leo\");\n\n        lib.giveBack(\"Holes\");\n        lib.report();\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}\n\nclass Library {\n    ArrayList<Book> books = new ArrayList<>();\n    HashMap<String, String> borrowedBy = new HashMap<>();\n\n    void addBook(String title, String author) {\n        books.add(new Book(title, author));\n    }\n\n    Book find(String title) {\n        for (Book b : books) {\n            if (b.title.equals(title)) {\n                return b;\n            }\n        }\n        return null;\n    }\n\n    void borrow(String title, String person) {\n        Book b = find(title);\n        if (b == null) {\n            System.out.println(\"No book called \" + title);\n        } else if (b.isOut) {\n            System.out.println(title + \" is already borrowed by \" + borrowedBy.get(title));\n        } else {\n            b.isOut = true;\n            borrowedBy.put(title, person);\n            System.out.println(person + \" borrowed \" + title);\n        }\n    }\n\n    void giveBack(String title) {\n        Book b = find(title);\n        if (b != null && b.isOut) {\n            b.isOut = false;\n            borrowedBy.remove(title);\n            System.out.println(title + \" was returned\");\n        }\n    }\n\n    void report() {\n        int out = 0;\n        for (Book b : books) {\n            if (b.isOut) {\n                out++;\n            }\n        }\n        System.out.println(\"Books out: \" + out + \" of \" + books.size());\n    }\n}",
+            "output": "Sam borrowed Matilda\nAva borrowed Holes\nMatilda is already borrowed by Sam\nHoles was returned\nBooks out: 1 of 3",
+            "explain": "This one program uses almost everything: classes and objects, an ArrayList of books, a HashMap of who-has-what, methods like find and borrow, a for-each loop, and if / else if / else conditionals. Sam takes Matilda, Ava takes Holes, Leo is told Matilda is taken, Holes comes back, and the report counts one book still out. You just built a real app."
+        },
+        {
+            "type": "quiz",
+            "question": "In the Library app, why did we use a HashMap<String, String> for borrowedBy?",
+            "options": [
+                "To sort the books alphabetically",
+                "To remember which person (value) borrowed each book title (key)",
+                "Because ArrayList cannot hold text",
+                "To make the program run faster than a loop"
+            ],
+            "answerIndex": 1,
+            "explain": "A HashMap maps a key to a value. Here the book title is the key and the borrower's name is the value, so we can instantly look up who has a given book."
+        },
+        {
+            "type": "quiz",
+            "question": "When borrow is called for a book that is already out, which branch runs?",
+            "options": [
+                "The if (b == null) branch",
+                "The else if (b.isOut) branch",
+                "The final else branch",
+                "None of them, it crashes"
+            ],
+            "answerIndex": 1,
+            "explain": "The book exists, so b is not null. It is already checked out, so b.isOut is true and the else if branch prints that it is already borrowed."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Big programs are just small steps stacked up.</strong> We did not write the whole Library at once — we built a Book, then a list of books, then borrowing. Break every big idea into tiny steps and you can build anything.",
+            "variant": "success"
+        },
+        {
+            "type": "tryit",
+            "title": "Give Book a checkOut method",
+            "instructions": "The Book class has a field isOut that starts false. Add a method checkOut() that sets this.isOut to true. The Main code already builds a book and calls b.checkOut(), then prints whether it is out.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Holes\", \"Louis Sachar\");\n        b.checkOut();\n        System.out.println(b.title + \" is out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n\n    // add a method: void checkOut() that sets this.isOut = true;\n}",
+            "check": { "code_includes": "this.isOut = true" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Holes\", \"Louis Sachar\");\n        b.checkOut();\n        System.out.println(b.title + \" is out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n\n    void checkOut() {\n        this.isOut = true;\n    }\n}",
+            "solutionOutput": "Holes is out? true",
+            "passMsg": "Nice — a method that changes the object's own state. That is OOP in action!",
+            "failMsg": "Add void checkOut() inside Book and have it run this.isOut = true;."
+        },
+        {
+            "type": "tryit",
+            "title": "List books on a shelf",
+            "instructions": "Make an ArrayList<String> called shelf, add the three titles \"Matilda\", \"Holes\", and \"Wonder\", print how many books are on the shelf, then loop over the shelf printing each title with a \"- \" in front.",
+            "starter": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<String> shelf = new ArrayList<>();\n        // add \"Matilda\", \"Holes\", \"Wonder\"\n        // print: Shelf has <size> books\n        // loop and print each title with \"- \" in front\n    }\n}",
+            "check": { "code_includes": "shelf.add" },
+            "solution": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<String> shelf = new ArrayList<>();\n        shelf.add(\"Matilda\");\n        shelf.add(\"Holes\");\n        shelf.add(\"Wonder\");\n        System.out.println(\"Shelf has \" + shelf.size() + \" books\");\n        for (String title : shelf) {\n            System.out.println(\"- \" + title);\n        }\n    }\n}",
+            "solutionOutput": "Shelf has 3 books\n- Matilda\n- Holes\n- Wonder",
+            "passMsg": "An ArrayList plus a loop — two tools working together. You've got this.",
+            "failMsg": "Use shelf.add(...) three times, print shelf.size(), then a for-each loop over shelf."
+        },
+        {
+            "type": "text",
+            "heading": "Where to go next 🗺️",
+            "html": "<p>You have outgrown the browser. Here is your roadmap to becoming a real-world Java developer:</p><ol><li><strong>Install a real JDK.</strong> Download a free, long-term JDK from <strong>Adoptium / Temurin</strong> (adoptium.net). That gives you the <code class=\"inline\">java</code> and <code class=\"inline\">javac</code> commands on your own computer.</li><li><strong>Pick an IDE.</strong> An IDE is a smart code editor. Try <strong>IntelliJ IDEA</strong> (the Community edition is free) or <strong>VS Code</strong> with the Java extension pack. They autocomplete, catch mistakes, and run your code with one click.</li><li><strong>Learn a build tool.</strong> Real projects use many files and libraries. <strong>Maven</strong> or <strong>Gradle</strong> handle that for you, downloading libraries and building your app automatically.</li><li><strong>Then pick a path by what excites you:</strong><ul><li><strong>Android apps</strong> - build phone apps (learn a little <strong>Kotlin</strong> too; it pairs perfectly with Java).</li><li><strong>Backend &amp; websites</strong> - learn <strong>Spring Boot</strong> to build the servers that power apps and sites.</li><li><strong>Desktop apps</strong> - use <strong>JavaFX</strong> to make windowed programs with buttons and graphics.</li><li><strong>Data</strong> - process and analyze big piles of information with Java's data libraries.</li></ul></li></ol><p><strong>You are a Java programmer now.</strong> You understand variables, loops, classes, objects, collections, and streams. Everything from here is just more of the same building blocks, stacked higher. Keep building small projects, stay curious, and don't be afraid to break things — that is how everyone learns. Go make something awesome. 🚀</p>"
+        }
+    ],
+    "challenge": {
+        "title": "Build a Quiz app from scratch",
+        "instructions": "Combine everything you learned into one app. Build a Question class with two fields, prompt and correct, plus a constructor. Build a Quiz class that holds an ArrayList<Question> and an int score starting at 0. Give Quiz these methods: addQuestion(prompt, correct) which adds a new Question; find(prompt) which loops to return the matching Question or null; answer(prompt, given) which finds the question and uses if / else if / else to print 'No such question', 'Correct: ' + prompt and add 1 to score, or 'Wrong: ' + prompt; and report() which prints 'Score: ' + score + ' of ' + questions.size(). In main, add the three questions shown, answer them as shown, then call report().",
+        "starter": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Quiz quiz = new Quiz();\n        quiz.addQuestion(\"Capital of Japan?\", \"Tokyo\");\n        quiz.addQuestion(\"2 + 2 equals?\", \"4\");\n        quiz.addQuestion(\"Color of the sky?\", \"Blue\");\n\n        quiz.answer(\"Capital of Japan?\", \"Tokyo\");\n        quiz.answer(\"2 + 2 equals?\", \"5\");\n        quiz.answer(\"Color of the sky?\", \"Blue\");\n\n        quiz.report();\n    }\n}\n\nclass Question {\n    // fields: String prompt; String correct;\n    // constructor Question(String prompt, String correct)\n}\n\nclass Quiz {\n    // ArrayList<Question> questions = new ArrayList<>();\n    // int score = 0;\n    // void addQuestion(String prompt, String correct)\n    // Question find(String prompt)  -> loop, return match or null\n    // void answer(String prompt, String given) -> if/else if/else\n    // void report() -> print Score: <score> of <size>\n}",
+        "check": { "code_includes": "class Quiz" },
+        "solution": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Quiz quiz = new Quiz();\n        quiz.addQuestion(\"Capital of Japan?\", \"Tokyo\");\n        quiz.addQuestion(\"2 + 2 equals?\", \"4\");\n        quiz.addQuestion(\"Color of the sky?\", \"Blue\");\n\n        quiz.answer(\"Capital of Japan?\", \"Tokyo\");\n        quiz.answer(\"2 + 2 equals?\", \"5\");\n        quiz.answer(\"Color of the sky?\", \"Blue\");\n\n        quiz.report();\n    }\n}\n\nclass Question {\n    String prompt;\n    String correct;\n\n    Question(String prompt, String correct) {\n        this.prompt = prompt;\n        this.correct = correct;\n    }\n}\n\nclass Quiz {\n    ArrayList<Question> questions = new ArrayList<>();\n    int score = 0;\n\n    void addQuestion(String prompt, String correct) {\n        questions.add(new Question(prompt, correct));\n    }\n\n    Question find(String prompt) {\n        for (Question q : questions) {\n            if (q.prompt.equals(prompt)) {\n                return q;\n            }\n        }\n        return null;\n    }\n\n    void answer(String prompt, String given) {\n        Question q = find(prompt);\n        if (q == null) {\n            System.out.println(\"No such question\");\n        } else if (q.correct.equals(given)) {\n            this.score = this.score + 1;\n            System.out.println(\"Correct: \" + prompt);\n        } else {\n            System.out.println(\"Wrong: \" + prompt);\n        }\n    }\n\n    void report() {\n        System.out.println(\"Score: \" + score + \" of \" + questions.size());\n    }\n}",
+        "solutionOutput": "Correct: Capital of Japan?\nWrong: 2 + 2 equals?\nCorrect: Color of the sky?\nScore: 2 of 3",
+        "hint": "Question is just a tiny blueprint with two fields. Quiz holds an ArrayList of them plus a score. In answer, first call find(prompt); if it is null print 'No such question', else if q.correct.equals(given) add to score and print Correct, otherwise print Wrong. To extend it: add a method that prints all the questions, or one that resets the score to 0!",
+        "passMsg": "🏆 You built a complete app using classes, an ArrayList, methods, a loop, and conditionals — all on your own. That is 22 days of Java, finished. You are a Java programmer now. Go build something amazing! 🚀"
+    }
+}
