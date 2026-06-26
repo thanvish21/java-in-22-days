@@ -214,6 +214,28 @@
     else viewHome();
   }
 
+  // ---- theme (light / dark) ----
+  const THEME_KEY = "java22_theme";
+  function loadTheme() {
+    try {
+      const t = localStorage.getItem(THEME_KEY);
+      if (t === "dark" || t === "light") return t;
+    } catch (e) { /* ignore */ }
+    return "light";
+  }
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn = document.getElementById("themeToggle");
+    if (btn) btn.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+  let theme = loadTheme();
+  applyTheme(theme);
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+    applyTheme(theme);
+  });
+
   // ---- reset ----
   document.getElementById("resetBtn").addEventListener("click", () => {
     if (confirm("Reset all your progress and badges? This can't be undone.")) {

@@ -5,7 +5,9 @@
   "subtitle": "Let your programs listen — ask a question and read what the user types back.",
   "goal": "Use java.util.Scanner to read text and numbers typed by the user, then build small interactive programs like a greeter and a calculator.",
   "estMinutes": 180,
-  "tags": ["io"],
+  "tags": [
+    "io"
+  ],
   "blocks": [
     {
       "type": "text",
@@ -101,7 +103,13 @@
       "title": "Build a greeter",
       "instructions": "Finish the program so it reads the user's name with sc.nextLine() and then prints a greeting using that name. Your code must use Scanner and nextLine.",
       "starter": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"What is your name? \");\n    // read the name into a String called name\n    // then print: Hello, <name>!\n  }\n}",
-      "check": { "code_includes": ["Scanner", "nextLine", "Hello"] },
+      "check": {
+        "code_includes": [
+          "Scanner",
+          "nextLine",
+          "Hello"
+        ]
+      },
       "solution": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"What is your name? \");\n    String name = sc.nextLine();\n    System.out.println(\"Hello, \" + name + \"!\");\n  }\n}",
       "passMsg": "Nice — your program can greet anyone who types their name!",
       "failMsg": "Make sure you use Scanner, call sc.nextLine(), and print a line containing Hello."
@@ -111,17 +119,92 @@
       "title": "Add two numbers",
       "instructions": "Read two whole numbers with nextInt(), add them, and print the result. Your code must use Scanner and nextInt.",
       "starter": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"First number: \");\n    // read first number\n    System.out.print(\"Second number: \");\n    // read second number\n    // print the sum\n  }\n}",
-      "check": { "code_includes": ["Scanner", "nextInt", "+"] },
+      "check": {
+        "code_includes": [
+          "Scanner",
+          "nextInt",
+          "+"
+        ]
+      },
       "solution": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"First number: \");\n    int a = sc.nextInt();\n    System.out.print(\"Second number: \");\n    int b = sc.nextInt();\n    System.out.println(\"The sum is \" + (a + b));\n  }\n}",
       "passMsg": "You built a calculator! It adds whatever two numbers the user types.",
       "failMsg": "Use Scanner, read both numbers with nextInt(), and add them with the + sign."
+    },
+    {
+      "type": "surprise",
+      "title": "Surprise Quiz! Days 1–5",
+      "intro": "Pop quiz! Let's see what stuck from the last 5 days. No grades, just fun 🎉",
+      "questions": [
+        {
+          "question": "What does System.out.println(\"Hi\") do?",
+          "options": [
+            "Prints Hi and moves to a new line",
+            "Deletes a file called Hi",
+            "Prints the word println",
+            "Nothing at all"
+          ],
+          "answerIndex": 0,
+          "explain": "println prints whatever is in the quotes and then starts a fresh line. (Day 1!)"
+        },
+        {
+          "question": "Which type would you use to store a whole number like 42?",
+          "options": [
+            "double",
+            "String",
+            "int",
+            "boolean"
+          ],
+          "answerIndex": 2,
+          "explain": "int holds whole numbers. double is for decimals, String is for text, and boolean is true/false. (Day 2!)"
+        },
+        {
+          "question": "What is the RIGHT way to check if two Strings have the same text?",
+          "options": [
+            "a == b",
+            "a.equals(b)",
+            "a + b",
+            "a.length()"
+          ],
+          "answerIndex": 1,
+          "explain": "Use .equals() to compare the actual text. == only checks if they are the exact same object. (Day 3!)"
+        },
+        {
+          "question": "In Java, what does 7 / 2 give you?",
+          "options": [
+            "3.5",
+            "3",
+            "4",
+            "An error"
+          ],
+          "answerIndex": 1,
+          "explain": "Two whole numbers (ints) do integer division, so the decimal part is dropped: 7 / 2 is 3. Use 7.0 / 2 to get 3.5. (Day 4!)"
+        },
+        {
+          "question": "Which tool reads what the user types on the keyboard?",
+          "options": [
+            "Math",
+            "println",
+            "Scanner",
+            "var"
+          ],
+          "answerIndex": 2,
+          "explain": "Scanner (from java.util.Scanner) reads text and numbers the user types in. (Day 5!)"
+        }
+      ]
     }
   ],
   "challenge": {
     "title": "Make an interactive mini profile",
     "instructions": "Write a program that asks the user for their name (use nextLine) and their age (use nextInt), then prints a friendly sentence using String.format that includes BOTH. Your code must use Scanner, nextLine, nextInt, and String.format.",
     "starter": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"Name: \");\n    // read the name\n    System.out.print(\"Age: \");\n    // read the age\n    // use String.format to print: Hi <name>, you are <age> years old!\n  }\n}",
-    "check": { "code_includes": ["Scanner", "nextLine", "nextInt", "String.format"] },
+    "check": {
+      "code_includes": [
+        "Scanner",
+        "nextLine",
+        "nextInt",
+        "String.format"
+      ]
+    },
     "solution": "import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.print(\"Name: \");\n    String name = sc.nextLine();\n    System.out.print(\"Age: \");\n    int age = sc.nextInt();\n    String msg = String.format(\"Hi %s, you are %d years old!\", name, age);\n    System.out.println(msg);\n  }\n}",
     "hint": "Read the name with sc.nextLine() into a String, read the age with sc.nextInt() into an int, then build the sentence with String.format(\"Hi %s, you are %d years old!\", name, age).",
     "passMsg": "🏆 Day 5 complete! Your programs can now listen, do math, and reply — that's real interactivity."

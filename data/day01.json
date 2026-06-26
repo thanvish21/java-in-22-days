@@ -99,6 +99,18 @@
       "explain": "A semicolon ends a statement in Java, like a period ends a sentence. Leave it out and the program won't compile."
     },
     {
+      "type": "quiz",
+      "question": "Where does a Java program start running?",
+      "options": [
+        "At the very first line of the file",
+        "Inside the special method called main",
+        "Wherever you write a comment",
+        "It starts at the bottom and goes up"
+      ],
+      "answerIndex": 1,
+      "explain": "Java always begins at the main method inside your class. That's the front door — the computer steps inside there first and runs your code from top to bottom."
+    },
+    {
       "type": "tryit",
       "title": "Print your own name",
       "instructions": "Inside main, change the text so the program prints YOUR name. Keep the full class and main structure. Then press Check.",
