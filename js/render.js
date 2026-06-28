@@ -67,14 +67,19 @@
       toolbar.appendChild(showBtn);
 
       let runBtn = null;
+      let profBtn = null;
       const status = el("span", "py-status", "");
       if (window.JAVA_RUN_ENDPOINT) {
         runBtn = el("button", "btn btn-run", "▶ Run");
         toolbar.appendChild(runBtn);
+        profBtn = el("button", "btn btn-soft", "⏱ Profile");
+        toolbar.appendChild(profBtn);
       }
       toolbar.appendChild(status);
       card.appendChild(toolbar);
       card.appendChild(out);
+      const perfBadge = el("div", "perf-badge");
+      card.appendChild(perfBadge);
 
       showBtn.addEventListener("click", () => {
         out.classList.add("show");
@@ -101,6 +106,27 @@
           }
           status.textContent = "";
           runBtn.disabled = false;
+        });
+      }
+
+      if (profBtn) {
+        // Native Java profiling via hft-runner: honest wall time + peak heap (-Xlog:gc).
+        profBtn.addEventListener("click", async () => {
+          profBtn.disabled = true;
+          status.innerHTML = '<span class="spinner"></span>';
+          out.classList.add("show");
+          const r = await window.OnePct.profile({
+            language: "java",
+            code: code,
+            runtimeFlags: (opts.runtimeFlags || []).concat(["-Xlog:gc"]),
+            onStatus: (m) => { status.textContent = m; },
+          });
+          out.innerHTML = r.ok
+            ? (r.stdout && r.stdout.trim() ? escapeHtml(r.stdout) : '<span class="ok-tag">✓ Ran with no output</span>')
+            : '<span class="err">' + escapeHtml(r.error || "Run failed") + "</span>";
+          perfBadge.textContent = r.timeMs != null ? window.OnePct.badge(r) : "";
+          status.textContent = "";
+          profBtn.disabled = false;
         });
       }
     }
@@ -288,14 +314,238 @@
     return wrap;
   }
 
-  // ---- full lesson ----
-  function renderLesson(data) {
-    const root = el("div", "lesson");
+  // ---- backend availability ----
+  function backendConfigured() {
+    return !!(window.HFTRunner && window.HFTRunner.configured());
+  }
+  function backendNotice() {
+    const n = el("div", "tip warn backend-notice");
+    n.appendChild(el("span", "tip-emoji", "⚠️"));
+    n.appendChild(el("div", null,
+      "<strong>Needs an execution backend.</strong> Java can't run in the browser — " +
+      "set <code class=\"inline\">HFT_RUNNER_URL</code> in <code class=\"inline\">js/runner-config.js</code> " +
+      "or deploy <code class=\"inline\">/api</code> to enable Run · Profile · Grade · Complexity. " +
+      "Starters and solutions stay viewable below."));
+    return n;
+  }
 
-    const head = el("div", "lesson-head");
-    head.appendChild(el("div", "crumbs", '<a href="#/">🏠 Home</a> &nbsp;›&nbsp; Day ' + data.day + " of 22"));
-    head.appendChild(el("div", "day-emoji", '<span style="font-size:40px">' + (data.emoji || "☕") + "</span>"));
-    head.appendChild(el("h1", null, "Day " + data.day + ": " + escapeInline(data.title)));
+  // ---- graded problem card (all engines backend) ----
+  function renderProblem(p, idx) {
+    const card = el("div", "problem-card");
+
+    const head = el("div", "problem-head");
+    head.appendChild(el("span", "problem-num", "P" + (idx + 1)));
+    head.appendChild(el("span", "problem-title", escapeInline(p.title || "Problem")));
+    if (p.difficulty) head.appendChild(el("span", "diff-pill diff-" + p.difficulty, p.difficulty));
+    card.appendChild(head);
+
+    if (p.instructions) card.appendChild(el("div", "instructions", p.instructions));
+
+    const flags = Array.isArray(p.runtimeFlags) ? p.runtimeFlags : [];
+    if (flags.length) {
+      card.appendChild(el("div", "runtime-flags", "flags: " + escapeInline(flags.join(" "))));
+    }
+
+    // editable code area, seeded with the starter
+    const input = el("textarea", "code-area");
+    input.value = p.starter || "";
+    input.rows = Math.min(28, Math.max(6, (p.starter || "").split("\n").length + 1));
+    input.spellcheck = false;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const s = input.selectionStart, en = input.selectionEnd;
+        input.value = input.value.slice(0, s) + "    " + input.value.slice(en);
+        input.selectionStart = input.selectionEnd = s + 4;
+      }
+    });
+    card.appendChild(input);
+
+    const toolbar = el("div", "code-toolbar");
+    const runBtn = el("button", "btn btn-run", "▶ Run");
+    const profBtn = el("button", "btn btn-soft", "⏱ Profile");
+    const gradeBtn = el("button", "btn btn-check", "✓ Grade");
+    const solBtn = el("button", "btn btn-soft", "💡 Solution");
+    const cmplxBtn = p.complexity ? el("button", "btn btn-soft", "📈 Complexity") : null;
+    toolbar.appendChild(runBtn);
+    toolbar.appendChild(profBtn);
+    toolbar.appendChild(gradeBtn);
+    toolbar.appendChild(solBtn);
+    if (cmplxBtn) toolbar.appendChild(cmplxBtn);
+    const status = el("span", "py-status", "");
+    toolbar.appendChild(status);
+    card.appendChild(toolbar);
+
+    const out = el("div", "run-out");
+    out.setAttribute("role", "status");
+    out.setAttribute("aria-live", "polite");
+    card.appendChild(out);
+    const perfBadge = el("div", "perf-badge");
+    card.appendChild(perfBadge);
+    const grades = el("div", "grade-results");
+    card.appendChild(grades);
+    const cmplxBox = el("div", "complexity-box");
+    card.appendChild(cmplxBox);
+
+    // Solution is always viewable, even without a backend.
+    if (p.solution) {
+      solBtn.addEventListener("click", () => {
+        input.value = p.solution;
+        input.rows = Math.min(28, p.solution.split("\n").length + 1);
+        solBtn.textContent = "✓ Solution loaded";
+        solBtn.disabled = true;
+      });
+    } else {
+      solBtn.disabled = true;
+    }
+
+    const busy = (on) => {
+      [runBtn, profBtn, gradeBtn, cmplxBtn].forEach((b) => { if (b) b.disabled = on; });
+      status.innerHTML = on ? '<span class="spinner"></span>' : "";
+    };
+
+    if (!backendConfigured()) {
+      // Execution actions are disabled; show a single clear notice.
+      [runBtn, profBtn, gradeBtn].forEach((b) => { b.disabled = true; });
+      if (cmplxBtn) cmplxBtn.disabled = true;
+      card.appendChild(backendNotice());
+      return card;
+    }
+
+    // ▶ Run
+    runBtn.addEventListener("click", async () => {
+      busy(true);
+      out.classList.add("show");
+      grades.innerHTML = "";
+      try {
+        const res = await window.HFTRunner.run({
+          language: "java", code: input.value, runtimeFlags: flags, stdin: p.stdin,
+        });
+        const so = (res.stdout || "").trim();
+        out.innerHTML = so ? escapeHtml(res.stdout) : '<span class="ok-tag">✓ Ran with no output</span>';
+        if (res.stderr && res.stderr.trim()) {
+          out.innerHTML += '<span class="err">' + escapeHtml(res.stderr) + "</span>";
+        }
+      } catch (e) {
+        out.innerHTML = '<span class="err">' + escapeHtml(e.message || String(e)) + "</span>";
+      }
+      busy(false);
+    });
+
+    // ⏱ Profile
+    profBtn.addEventListener("click", async () => {
+      busy(true);
+      out.classList.add("show");
+      const r = await window.OnePct.profile({
+        language: "java", code: input.value, preferBackend: true, runtimeFlags: flags,
+        onStatus: (m) => { status.textContent = m; },
+      });
+      out.innerHTML = r.ok
+        ? (r.stdout && r.stdout.trim() ? escapeHtml(r.stdout) : '<span class="ok-tag">✓ Ran with no output</span>')
+        : '<span class="err">' + escapeHtml(r.error || "Run failed") + "</span>";
+      perfBadge.textContent = r.timeMs != null ? window.OnePct.badge(r) : "";
+      busy(false);
+    });
+
+    // ✓ Grade
+    gradeBtn.addEventListener("click", async () => {
+      busy(true);
+      grades.innerHTML = "";
+      out.classList.remove("show");
+      try {
+        const res = await window.HFTRunner.grade({
+          language: "java", code: input.value, runtimeFlags: flags, tests: p.tests || [],
+        });
+        grades.appendChild(renderGrades(res));
+        if (res.allPassed && p.id && window.HFTMatrix) {
+          window.HFTMatrix.markMastered(p.id);
+          card.classList.add("mastered");
+        }
+      } catch (e) {
+        grades.appendChild(el("div", "grade-error err", escapeHtml(e.message || String(e))));
+      }
+      busy(false);
+    });
+
+    // 📈 Complexity
+    if (cmplxBtn) {
+      cmplxBtn.addEventListener("click", async () => {
+        busy(true);
+        cmplxBox.innerHTML = '<div class="py-status">measuring growth…</div>';
+        try {
+          const r = await window.OnePct.estimateComplexity({
+            language: "java",
+            codeTemplate: p.complexity.codeTemplate,
+            sizes: p.complexity.sizes,
+            preferBackend: true,
+            runtimeFlags: flags,
+            onStatus: (m) => { status.textContent = m; },
+          });
+          cmplxBox.innerHTML = "";
+          cmplxBox.appendChild(renderComplexity(r, p.complexity.expected));
+        } catch (e) {
+          cmplxBox.innerHTML = '<div class="err">' + escapeHtml(e.message || String(e)) + "</div>";
+        }
+        busy(false);
+      });
+    }
+
+    return card;
+  }
+
+  // Render { passed, total, allPassed, results:[{name, ok, hidden, timeMs, memKb}] }.
+  function renderGrades(res) {
+    const wrap = el("div", "grade-summary " + (res.allPassed ? "pass" : "fail"));
+    wrap.appendChild(el("div", "grade-head",
+      (res.allPassed ? "✅ " : "❌ ") + (res.passed || 0) + " / " + (res.total || 0) + " tests passed"));
+    const list = el("div", "grade-list");
+    (res.results || []).forEach((t) => {
+      const row = el("div", "grade-row " + (t.ok ? "pass" : "fail"));
+      const label = t.hidden ? "🔒 " + escapeInline(t.name || "hidden test") : escapeInline(t.name || "test");
+      row.appendChild(el("span", "grade-name", (t.ok ? "✓ " : "✗ ") + label));
+      const metrics = [];
+      if (t.timeMs != null) metrics.push(t.timeMs.toFixed(t.timeMs < 10 ? 2 : 1) + " ms");
+      if (t.memKb != null) metrics.push(window.OnePct.fmtKb(t.memKb));
+      row.appendChild(el("span", "grade-metric", metrics.join("  ·  ")));
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  // Render the complexity result: a per-size table + fitted Big-O vs expected.
+  function renderComplexity(r, expected) {
+    const wrap = el("div", "complexity-result");
+    const table = el("table", "perf-table");
+    const thead = el("tr", null,
+      "<th>n</th><th>time</th><th>mem</th>");
+    table.appendChild(thead);
+    (r.points || []).forEach((p) => {
+      const t = p.timeMs == null ? "—" : (p.timeMs < 10 ? p.timeMs.toFixed(2) : p.timeMs.toFixed(1)) + " ms";
+      const m = p.memKb == null ? "—" : window.OnePct.fmtKb(p.memKb);
+      const tr = el("tr", null,
+        "<td>" + Number(p.n).toLocaleString() + "</td><td>" + t + "</td><td>" + m + "</td>");
+      table.appendChild(tr);
+    });
+    wrap.appendChild(table);
+    const fit = (r.fit && r.fit.label) ? r.fit.label : "indeterminate";
+    const slope = (r.fit && r.fit.slope != null) ? " (slope " + r.fit.slope + ")" : "";
+    const line = el("div", "complexity-verdict");
+    line.appendChild(el("span", "perf-bigo", "measured: " + escapeInline(fit) + slope));
+    if (expected) line.appendChild(el("span", "complexity-expected", "  ·  expected: " + escapeInline(expected)));
+    wrap.appendChild(line);
+    return wrap;
+  }
+
+  // ---- full tier ----
+  function renderTier(data) {
+    const root = el("div", "tier");
+
+    const head = el("div", "lesson-head tier-head");
+    head.appendChild(el("div", "crumbs",
+      '<a href="#/">🏠 Home</a> &nbsp;›&nbsp; Tier ' + data.tier + " of 4"));
+    head.appendChild(el("div", "day-emoji", '<span style="font-size:40px">' + (data.emoji || "⚡") + "</span>"));
+    head.appendChild(el("h1", null, "Tier " + data.tier + ": " + escapeInline(data.title)));
     if (data.subtitle) head.appendChild(el("div", "subtitle", escapeInline(data.subtitle)));
     const meta = el("div", "lesson-meta");
     meta.appendChild(el("span", "pill", "⏱️ ~" + (data.estMinutes || 180) + " min"));
@@ -306,32 +556,23 @@
     if (data.goal) {
       const goal = el("div", "goal-box");
       goal.appendChild(el("span", "goal-emoji", "🎯"));
-      goal.appendChild(el("div", null, "<strong>Today's goal:</strong> " + escapeInline(data.goal)));
+      goal.appendChild(el("div", null, "<strong>Tier goal:</strong> " + escapeInline(data.goal)));
       root.appendChild(goal);
     }
 
+    if (!backendConfigured()) root.appendChild(backendNotice());
+
+    // teaching blocks reuse the existing renderers
     (data.blocks || []).forEach((b) => root.appendChild(renderBlock(b)));
 
-    if (data.challenge) {
-      const c = data.challenge;
-      const box = el("div", "block challenge");
-      box.appendChild(el("h3", null, "🏆 " + (c.title || "Day Challenge")));
-      box.appendChild(el("div", "instructions", c.instructions || ""));
-      box.appendChild(makeExercise(c.starter || "", {
-        check: c.check, solution: c.solution, solutionOutput: c.solutionOutput,
-        caption: "Build it here", passMsg: c.passMsg || "🏆 Challenge complete — you crushed it!",
-        failMsg: c.failMsg || "Almost! Re-read the steps and try again.",
-      }));
-      if (c.hint) {
-        const tip = el("div", "tip");
-        tip.appendChild(el("span", "tip-emoji", "💡"));
-        tip.appendChild(el("div", null, "<strong>Hint:</strong> " + c.hint));
-        box.appendChild(tip);
-      }
-      root.appendChild(box);
+    const problems = data.problems || [];
+    if (problems.length) {
+      root.appendChild(el("h2", "section-title", "🧪 Graded Problems"));
+      problems.forEach((p, i) => root.appendChild(renderProblem(p, i)));
     }
+
     return root;
   }
 
-  window.Render = { renderLesson };
+  window.Render = { renderTier };
 })();

@@ -1,0 +1,292 @@
+{
+  "tier": 1,
+  "language": "java",
+  "emoji": "⚡",
+  "title": "High-Speed Lambda Comparators & PriorityQueues",
+  "subtitle": "Multi-key ordering, bounded heaps, and the boxing tax on the hot path",
+  "goal": "Build multi-dimensional comparators that sort millions of records under tight time and memory budgets, exploit stable-sort guarantees instead of fighting them, drive PriorityQueue with custom orderings for streaming top-K, and recognize the contract violations and autoboxing costs that quietly destroy latency in an HFT order book.",
+  "estMinutes": 240,
+  "tags": ["comparators", "priorityqueue", "sorting", "top-k", "boxing"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "A comparator is a total order, not a predicate",
+      "html": "<p>A <code class=\"inline\">Comparator&lt;T&gt;</code> answers one question: given <code class=\"inline\">a</code> and <code class=\"inline\">b</code>, is <code class=\"inline\">a</code> before, equal to, or after <code class=\"inline\">b</code>? It returns a <em>negative</em> int, <code class=\"inline\">0</code>, or a <em>positive</em> int — the magnitude is meaningless, only the sign matters. <code class=\"inline\">Arrays.sort</code>, <code class=\"inline\">Collections.sort</code>, <code class=\"inline\">PriorityQueue</code>, <code class=\"inline\">TreeMap</code> and the <code class=\"inline\">Stream.sorted</code> pipeline all consume this one contract.</p><p>In an HFT context you almost never sort on a single field. You sort an order book by <strong>price, then time priority, then sequence id</strong> — a lexicographic chain across dimensions. The whole tier is about expressing that chain cheaply and correctly.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "comparing / thenComparing — the lexicographic chain",
+      "code": "record Order(double price, long ts, long seq) {}\n\nComparator<Order> book =\n    Comparator.comparingDouble(Order::price)          // primary key\n              .thenComparingLong(Order::ts)           // tie-break 1\n              .thenComparingLong(Order::seq);         // tie-break 2\n\n// book.compare(a, b): compare prices; only if equal compare ts;\n// only if THOSE are equal compare seq. First non-zero wins.",
+      "explain": "thenComparing only consults the next key when the previous key reports a tie (returns 0). This short-circuit is the entire point: most pairs differ on price, so ts and seq are rarely evaluated. Build the chain from most-selective key to least-selective for the cheapest average comparison."
+    },
+    {
+      "type": "text",
+      "heading": "comparingInt / comparingLong / comparingDouble — kill the boxing",
+      "html": "<p><code class=\"inline\">Comparator.comparing(Order::seq)</code> where <code class=\"inline\">seq</code> is a <code class=\"inline\">long</code> forces the extractor's return value to be <strong>boxed</strong> into a <code class=\"inline\">Long</code> object on <em>every</em> comparison, then unboxed by <code class=\"inline\">Long.compareTo</code>. On a sort of n elements that is O(n log n) comparisons, each allocating throwaway wrapper objects — a firehose of garbage that hammers the young-gen collector.</p><p>The specialized factories <code class=\"inline\">comparingInt</code>, <code class=\"inline\">comparingLong</code>, <code class=\"inline\">comparingDouble</code> (and their <code class=\"inline\">thenComparingInt/Long/Double</code> siblings) take a primitive-returning functional interface (<code class=\"inline\">ToIntFunction</code>, etc.) and compare with <code class=\"inline\">Integer.compare</code>/<code class=\"inline\">Long.compare</code>/<code class=\"inline\">Double.compare</code> — <strong>zero boxing</strong>. On a hot path this is not a micro-optimization; it is the difference between a clean sort and a GC storm.</p>"
+    },
+    {
+      "type": "tip",
+      "variant": "warn",
+      "html": "<strong>Do not</strong> write <code class=\"inline\">comparingInt(o -&gt; (int) o.price())</code> just to dodge boxing — truncating a double to an int destroys ordering. Use <code class=\"inline\">comparingDouble</code> for doubles and reserve <code class=\"inline\">comparingInt/Long</code> for genuinely integral keys. And never implement an int comparator as <code class=\"inline\">a - b</code>: that overflows for large/negative values (e.g. <code class=\"inline\">Integer.MIN_VALUE - 1</code> wraps positive) and silently corrupts the order. Always <code class=\"inline\">Integer.compare(a, b)</code>."
+    },
+    {
+      "type": "text",
+      "heading": "reversed() and mixed ascending/descending keys",
+      "html": "<p><code class=\"inline\">comparator.reversed()</code> flips the entire order. But the common HFT need is <em>mixed</em>: sort price <strong>descending</strong> (best bid first) but, within equal price, time priority <strong>ascending</strong> (oldest first). Reversing the whole chain would also reverse the tie-break, which is wrong.</p><p>The fix is to reverse only the offending key. Two idioms: pass a reversed key comparator into <code class=\"inline\">thenComparing</code>, or for primitives, negate inside a custom lambda. The cleanest is per-key:</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Mixed-direction multi-key sort done right",
+      "code": "record Order(double price, long ts) {}\n\n// price DESC, then ts ASC (oldest first within a price level)\nComparator<Order> bids =\n    Comparator.comparingDouble(Order::price).reversed()   // price descending\n              .thenComparingLong(Order::ts);              // ts ascending\n\n// Equivalent for an integral primary key, hand-rolled, no boxing:\n// (a, b) -> {\n//     int c = Long.compare(b.price(), a.price()); // swapped args = descending\n//     return c != 0 ? c : Long.compare(a.ts(), b.ts());\n// }",
+      "explain": "comparingDouble(...).reversed() reverses ONLY the price key; the subsequent thenComparingLong still sorts ts ascending. Reversing args (b vs a) inside Long.compare is the boxing-free hand-rolled equivalent of a descending primitive key — useful when you want one allocation-free lambda for the whole chain."
+    },
+    {
+      "type": "text",
+      "heading": "Stable sort: a guarantee you can build on",
+      "html": "<p>Java's object sorts (<code class=\"inline\">Arrays.sort(Object[])</code>, <code class=\"inline\">Collections.sort</code>, <code class=\"inline\">List.sort</code>, <code class=\"inline\">Stream.sorted</code>) use <strong>TimSort</strong>, which is <strong>stable</strong>: elements the comparator calls equal keep their original relative order. The primitive sorts (<code class=\"inline\">Arrays.sort(int[])</code>) use a dual-pivot quicksort and are <strong>not</strong> stable — but stability is meaningless for bare primitives anyway.</p><p>Stability lets you sort in passes: sort by the weakest key first, then re-sort by a stronger key; equal-on-the-strong-key elements retain the weak-key order for free. In practice you should still build one combined comparator (one pass, fewer cache misses), but the guarantee is what makes a <code class=\"inline\">thenComparing</code> chain behave predictably and what lets a streaming pipeline preserve arrival order among ties.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "PriorityQueue: a binary heap, not a sorted list",
+      "html": "<p><code class=\"inline\">PriorityQueue&lt;T&gt;</code> is a binary min-heap over an array. <code class=\"inline\">peek()</code> is O(1) and returns the smallest element <em>per the comparator</em>; <code class=\"inline\">offer()</code> and <code class=\"inline\">poll()</code> are O(log n) sift operations. Pass a comparator to control \"smallest\": <code class=\"inline\">new PriorityQueue&lt;&gt;(cmp)</code>. With no comparator it uses natural ordering and requires elements to be <code class=\"inline\">Comparable</code>.</p><p>Crucial gotchas: <strong>iteration order is NOT sorted</strong> — only <code class=\"inline\">poll</code> emits elements in priority order; iterating the queue gives heap-array order. And the head is the <em>minimum</em>. For a max-priority queue (best bid on top), invert the comparator: <code class=\"inline\">cmp.reversed()</code> or <code class=\"inline\">Comparator.reverseOrder()</code>.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Top-K with a bounded min-heap: O(n log k), not O(n log n)",
+      "code": "// Keep the K LARGEST of a stream without sorting everything.\n// Trick: a MIN-heap of size K. The smallest of the current best-K\n// sits at the head; if a new value beats it, evict the head.\nstatic int[] topK(int[] stream, int k) {\n    PriorityQueue<Integer> heap = new PriorityQueue<>(k); // min-heap\n    for (int x : stream) {\n        if (heap.size() < k) {\n            heap.offer(x);\n        } else if (x > heap.peek()) {   // beats the weakest survivor\n            heap.poll();                 // drop current minimum\n            heap.offer(x);\n        }\n    }\n    // heap now holds the K largest (unordered); drain for sorted output\n    int[] out = new int[heap.size()];\n    for (int i = out.length - 1; i >= 0; i--) out[i] = heap.poll();\n    return out; // ascending; reverse for descending\n}",
+      "explain": "Memory is O(k), not O(n): you never hold the whole stream. Each element costs at most one O(log k) offer/poll, so total work is O(n log k). For k far smaller than n this crushes the naive 'sort all then take k' (O(n log n) time and O(n) space) — the canonical pattern for 'top 100 orders out of a 1e6 feed'."
+    },
+    {
+      "type": "tip",
+      "html": "Bounded-heap top-K is the streaming workhorse, but watch the heap element type. A <code class=\"inline\">PriorityQueue&lt;Integer&gt;</code> boxes every int. On a 1e6 feed with a large k that is real garbage; for the absolute hot path people drop to a hand-rolled <code class=\"inline\">long[]</code> heap or pack (price, id) into a single <code class=\"inline\">long</code> key to stay primitive. Know the trade-off before you reach for it."
+    },
+    {
+      "type": "text",
+      "heading": "The contract: transitivity, or IllegalArgumentException",
+      "html": "<p>A comparator must define a <strong>total order</strong>: it must be (1) antisymmetric — <code class=\"inline\">sgn(compare(a,b)) == -sgn(compare(b,a))</code>; (2) transitive — if <code class=\"inline\">a &lt; b</code> and <code class=\"inline\">b &lt; c</code> then <code class=\"inline\">a &lt; c</code>; and (3) consistent with equality on ties. If your comparator violates this — the classic bug is subtraction overflow, or a hand-rolled comparator with inconsistent branches — TimSort may detect the inconsistency and throw:</p><p><code class=\"inline\">java.lang.IllegalArgumentException: Comparison method violates its general contract!</code></p><p>This is not always thrown — TimSort only catches it on certain merge patterns, so a broken comparator can pass small inputs and blow up in production on a large one. Treat the exception as proof your ordering logic is wrong, never as a flaky sort.</p>"
+    },
+    {
+      "type": "quiz",
+      "question": "You sort 5,000,000 orders by a long `seq` field. Which extractor avoids autoboxing on every comparison?",
+      "options": [
+        "Comparator.comparing(Order::seq)",
+        "Comparator.comparingLong(Order::seq)",
+        "Comparator.comparing(o -> Long.valueOf(o.seq()))",
+        "Comparator.<Order>naturalOrder() on seq"
+      ],
+      "answerIndex": 1,
+      "explain": "comparingLong takes a ToLongFunction (primitive long) and compares with Long.compare — no Long objects are created. comparing(Order::seq) boxes the long to a Long on every one of the ~n log n comparisons, generating massive young-gen garbage."
+    },
+    {
+      "type": "quiz",
+      "question": "What is the error in `Comparator<Integer> c = (a, b) -> a - b;` used to sort arbitrary ints?",
+      "options": [
+        "Nothing — subtraction is the idiomatic int comparator.",
+        "It boxes, which is slow but correct.",
+        "a - b can overflow int (e.g. large positive minus large negative), flipping the sign and violating transitivity — use Integer.compare(a, b).",
+        "It sorts descending instead of ascending."
+      ],
+      "answerIndex": 2,
+      "explain": "For a = Integer.MAX_VALUE, b = -1, a - b overflows to a negative number, so the comparator claims MAX_VALUE < -1. This breaks the total-order contract and can trigger 'Comparison method violates its general contract!'. Always use Integer.compare."
+    },
+    {
+      "type": "quiz",
+      "question": "You need a max-priority queue (largest element at the head) of Orders by price. Which construction is correct?",
+      "options": [
+        "new PriorityQueue<>(Comparator.comparingDouble(Order::price))",
+        "new PriorityQueue<>(Comparator.comparingDouble(Order::price).reversed())",
+        "new PriorityQueue<>() then call sort()",
+        "A PriorityQueue is always max-heap by default"
+      ],
+      "answerIndex": 1,
+      "explain": "PriorityQueue is a MIN-heap relative to its comparator: the head is the comparator's smallest. Reversing the price comparator makes the largest price compare as 'smallest', so it sits at the head. PriorityQueue has no sort() and is min-oriented by default."
+    },
+    {
+      "type": "tryit",
+      "title": "Stable two-key sort by hand",
+      "instructions": "Sort the records {(\"b\",2),(\"a\",2),(\"c\",1)} by the int key ascending, then — because the sort is stable — verify ties keep input order. Print the names in sorted order, space-separated, on one line. Use comparingInt to avoid boxing.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    record Rec(String name, int key) {}\n    public static void main(String[] args) {\n        List<Rec> rs = new ArrayList<>(List.of(\n            new Rec(\"b\", 2), new Rec(\"a\", 2), new Rec(\"c\", 1)));\n        // TODO: sort by key ascending with comparingInt (stable)\n        // TODO: print names space-separated\n    }\n}",
+      "check": { "stdout_equals": "c b a" },
+      "solution": "import java.util.*;\n\npublic class Main {\n    record Rec(String name, int key) {}\n    public static void main(String[] args) {\n        List<Rec> rs = new ArrayList<>(List.of(\n            new Rec(\"b\", 2), new Rec(\"a\", 2), new Rec(\"c\", 1)));\n        rs.sort(Comparator.comparingInt(Rec::key));\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < rs.size(); i++) {\n            if (i > 0) sb.append(' ');\n            sb.append(rs.get(i).name());\n        }\n        System.out.println(sb);\n    }\n}",
+      "passMsg": "Correct — c (key 1) first; among the two key-2 records, b stays before a because TimSort is stable and b came first in the input.",
+      "failMsg": "Expected 'c b a'. key 1 sorts first; the two key-2 records keep their INPUT order (b before a) because the object sort is stable."
+    }
+  ],
+  "problems": [
+    {
+      "id": "java-t1-p1",
+      "title": "Three-key order-book comparator hot path",
+      "difficulty": "hard",
+      "instructions": "<p>Sort an order book by a three-level lexicographic rule under a tight budget. Line 1: an integer <code class=\"inline\">n</code> (1 ≤ n ≤ 1,000,000). Then <code class=\"inline\">n</code> lines, each an order: <code class=\"inline\">price ts seq</code> where <code class=\"inline\">price</code> is a long (integer ticks), <code class=\"inline\">ts</code> is a long (nanos), <code class=\"inline\">seq</code> is a long unique id.</p><p>Order the book by: <strong>price descending</strong> (best bid first); ties broken by <strong>ts ascending</strong> (oldest first); remaining ties broken by <strong>seq ascending</strong>.</p><p><strong>Output</strong> the <code class=\"inline\">seq</code> of every order, one per line, in sorted order. Use a boxing-free primitive comparator and fast IO — the hidden stress test is 1,000,000 orders inside a 2.5s budget.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        long[][] orders = new long[n][3]; // price, ts, seq\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            orders[i][0] = Long.parseLong(st.nextToken());\n            orders[i][1] = Long.parseLong(st.nextToken());\n            orders[i][2] = Long.parseLong(st.nextToken());\n        }\n        // TODO: sort by price DESC, ts ASC, seq ASC with a primitive comparator\n        // TODO: print each seq on its own line using a StringBuilder\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        long[][] orders = new long[n][3]; // price, ts, seq\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            orders[i][0] = Long.parseLong(st.nextToken());\n            orders[i][1] = Long.parseLong(st.nextToken());\n            orders[i][2] = Long.parseLong(st.nextToken());\n        }\n        Arrays.sort(orders, (a, b) -> {\n            int c = Long.compare(b[0], a[0]); // price descending\n            if (c != 0) return c;\n            c = Long.compare(a[1], b[1]);     // ts ascending\n            if (c != 0) return c;\n            return Long.compare(a[2], b[2]);  // seq ascending\n        });\n        StringBuilder sb = new StringBuilder();\n        for (long[] o : orders) sb.append(o[2]).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-Xlog:gc"],
+      "stdin": "5\n100 5 1\n100 3 2\n101 9 3\n100 3 4\n99 1 5\n",
+      "tests": [
+        {
+          "name": "visible: price desc, ts asc, seq asc",
+          "stdin": "5\n100 5 1\n100 3 2\n101 9 3\n100 3 4\n99 1 5\n",
+          "expectStdout": "3\n2\n4\n1\n5",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: full three-way tie resolves on seq",
+          "stdin": "3\n50 7 30\n50 7 10\n50 7 20\n",
+          "expectStdout": "10\n20\n30",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: dense ties across all three keys",
+          "stdin": "12\n100 50 1\n100 50 2\n105 10 3\n100 40 4\n105 10 5\n99 99 6\n105 9 7\n100 40 8\n101 70 9\n105 10 10\n99 98 11\n101 70 12\n",
+          "expectStdout": "7\n3\n5\n10\n9\n12\n4\n8\n1\n2\n11\n6",
+          "matchMode": "trim",
+          "timeBudgetMs": 2500,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "complexity": {
+        "codeTemplate": "import java.util.*;\npublic class Main {\n    public static void main(String[] a){\n        int N = {N};\n        long[][] o = new long[N][3];\n        java.util.Random r = new java.util.Random(7);\n        for (int i=0;i<N;i++){ o[i][0]=r.nextInt(1000); o[i][1]=r.nextLong(); o[i][2]=i; }\n        Arrays.sort(o, (x,y)->{ int c=Long.compare(y[0],x[0]); if(c!=0)return c; c=Long.compare(x[1],y[1]); if(c!=0)return c; return Long.compare(x[2],y[2]); });\n        long s=0; for(long[] e:o) s+=e[2];\n        System.out.println(s);\n    }\n}",
+        "sizes": [10000, 50000, 100000, 500000, 1000000],
+        "expected": "O(n log n)"
+      },
+      "hint": "Swap the argument order inside Long.compare(b[0], a[0]) for the descending key — no .reversed() needed and no boxing. Keep ts and seq ascending with the natural argument order. Build all output in one StringBuilder; per-line System.out.println will blow the 1e6 budget."
+    },
+    {
+      "id": "java-t1-p2",
+      "title": "Streaming top-K with a bounded min-heap",
+      "difficulty": "hard",
+      "instructions": "<p>From a stream of trade sizes, report the <strong>K largest</strong> using O(K) memory — you may not hold the whole stream sorted. Line 1: <code class=\"inline\">n k</code> (1 ≤ k ≤ n ≤ 1,000,000). Line 2: <code class=\"inline\">n</code> space-separated ints (each fits in an int, may be negative).</p><p>Maintain a bounded <strong>min-heap of size k</strong>: the head is the smallest of the current best-K; when a new value exceeds the head, evict the head and insert the new value. Ties (equal values) are fine — duplicates are allowed.</p><p><strong>Output</strong> the K largest values in <strong>descending</strong> order, space-separated, on one line. The hidden stress test feeds 1,000,000 values; the bounded heap keeps you at O(n log k).</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        StringTokenizer first = new StringTokenizer(br.readLine());\n        int n = Integer.parseInt(first.nextToken());\n        int k = Integer.parseInt(first.nextToken());\n        // TODO: read n ints (use a StreamTokenizer for speed on 1e6)\n        // TODO: maintain a size-k min-heap of the largest values\n        // TODO: print the k largest in DESCENDING order, space-separated\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        StreamTokenizer in = new StreamTokenizer(new BufferedReader(new InputStreamReader(System.in)));\n        in.nextToken(); int n = (int) in.nval;\n        in.nextToken(); int k = (int) in.nval;\n        PriorityQueue<Integer> heap = new PriorityQueue<>(k); // min-heap\n        for (int i = 0; i < n; i++) {\n            in.nextToken();\n            int x = (int) in.nval;\n            if (heap.size() < k) {\n                heap.offer(x);\n            } else if (x > heap.peek()) {\n                heap.poll();\n                heap.offer(x);\n            }\n        }\n        int sz = heap.size();\n        int[] out = new int[sz];\n        for (int i = sz - 1; i >= 0; i--) out[i] = heap.poll(); // ascending\n        StringBuilder sb = new StringBuilder();\n        for (int i = sz - 1; i >= 0; i--) {              // print descending\n            if (i < sz - 1) sb.append(' ');\n            sb.append(out[i]);\n        }\n        System.out.println(sb);\n    }\n}",
+      "stdin": "8 3\n4 9 1 9 2 7 3 8\n",
+      "tests": [
+        {
+          "name": "visible: top 3 with a duplicate",
+          "stdin": "8 3\n4 9 1 9 2 7 3 8\n",
+          "expectStdout": "9 9 8",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: k equals n returns all sorted desc",
+          "stdin": "5 5\n-3 10 -3 0 7\n",
+          "expectStdout": "10 7 0 -3 -3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: negatives only, k=2",
+          "stdin": "4 2\n-5 -1 -9 -2\n",
+          "expectStdout": "-1 -2",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "complexity": {
+        "codeTemplate": "import java.util.*;\npublic class Main {\n    public static void main(String[] a){\n        int N = {N};\n        int K = 100;\n        java.util.Random r = new java.util.Random(11);\n        PriorityQueue<Integer> h = new PriorityQueue<>(K);\n        for (int i=0;i<N;i++){\n            int x = r.nextInt();\n            if (h.size() < K) h.offer(x);\n            else if (x > h.peek()) { h.poll(); h.offer(x); }\n        }\n        long s=0; while(!h.isEmpty()) s+=h.poll();\n        System.out.println(s);\n    }\n}",
+        "sizes": [10000, 50000, 100000, 500000, 1000000],
+        "expected": "O(n log k)"
+      },
+      "hint": "A MIN-heap of size k holds the k largest seen: its head is the weakest survivor, so compare new values against heap.peek(). Drain the heap into an array (that gives ascending) and print in reverse for descending. Use StreamTokenizer, not split(), to parse 1e6 ints in time."
+    },
+    {
+      "id": "java-t1-p3",
+      "title": "Mixed-direction sort: best bid, oldest first",
+      "difficulty": "medium",
+      "instructions": "<p>Sort resting orders the way a matching engine ranks bids. Line 1: <code class=\"inline\">n</code> (1 ≤ n ≤ 500,000). Then <code class=\"inline\">n</code> lines: <code class=\"inline\">name price ts</code> where <code class=\"inline\">name</code> is a token with no spaces, <code class=\"inline\">price</code> is a long, <code class=\"inline\">ts</code> is a long.</p><p>Rank by <strong>price descending</strong>; within equal price by <strong>ts ascending</strong> (older orders have priority); within equal price <em>and</em> ts, preserve <strong>input order</strong> (rely on the stable object sort — do not add a tertiary key).</p><p><strong>Output</strong> each <code class=\"inline\">name</code> on its own line in ranked order. The point is mixing one descending and one ascending key on a single comparator while leaning on TimSort's stability for the final tie.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    record Order(String name, long price, long ts) {}\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        List<Order> os = new ArrayList<>(n);\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            os.add(new Order(st.nextToken(),\n                Long.parseLong(st.nextToken()), Long.parseLong(st.nextToken())));\n        }\n        // TODO: sort price DESC then ts ASC (stable sort handles the final tie)\n        // TODO: print names one per line\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    record Order(String name, long price, long ts) {}\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        List<Order> os = new ArrayList<>(n);\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            os.add(new Order(st.nextToken(),\n                Long.parseLong(st.nextToken()), Long.parseLong(st.nextToken())));\n        }\n        os.sort(Comparator.comparingLong(Order::price).reversed()\n                          .thenComparingLong(Order::ts));\n        StringBuilder sb = new StringBuilder();\n        for (Order o : os) sb.append(o.name()).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "5\nA 100 5\nB 101 9\nC 100 3\nD 100 3\nE 99 1\n",
+      "tests": [
+        {
+          "name": "visible: price desc, ts asc, stable tie A/C/D",
+          "stdin": "5\nA 100 5\nB 101 9\nC 100 3\nD 100 3\nE 99 1\n",
+          "expectStdout": "B\nC\nD\nA\nE",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: equal price and ts keep input order",
+          "stdin": "4\nW 10 1\nX 10 1\nY 10 1\nZ 20 9\n",
+          "expectStdout": "Z\nW\nX\nY",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: strictly descending prices",
+          "stdin": "3\nLo 1 5\nHi 9 5\nMid 5 5\n",
+          "expectStdout": "Hi\nMid\nLo",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "comparingLong(Order::price).reversed() reverses ONLY the price key; the chained thenComparingLong(Order::ts) still sorts ts ascending. Add no third key — TimSort is stable, so equal (price, ts) orders keep their input order automatically."
+    },
+    {
+      "id": "java-t1-p4",
+      "title": "Detect a comparator that violates the contract",
+      "difficulty": "medium",
+      "instructions": "<p>Before trusting a custom comparator on a 1e6 sort, validate it defines a total order. You are given <code class=\"inline\">n</code> distinct integers and a comparator defined by the rule below; check it for the <strong>antisymmetry</strong> and <strong>transitivity</strong> failures that trigger <em>\"Comparison method violates its general contract!\"</em>.</p><p>The comparator under test is the buggy subtraction comparator <code class=\"inline\">(a, b) -&gt; a - b</code>. Line 1: <code class=\"inline\">n</code> (1 ≤ n ≤ 1000). Line 2: <code class=\"inline\">n</code> space-separated ints (may be near <code class=\"inline\">Integer.MIN_VALUE/MAX_VALUE</code>).</p><p>Check every ordered pair (a, b): compute <code class=\"inline\">cmp = a - b</code> (as an int, allowing overflow) and the correct sign from <code class=\"inline\">Integer.compare(a, b)</code>. If for any pair <code class=\"inline\">signum(cmp)</code> disagrees with the correct sign, the comparator is broken.</p><p><strong>Output</strong> exactly one line: <code class=\"inline\">BROKEN &lt;count&gt;</code> where count is the number of ordered pairs (a, b), a≠b, whose subtraction sign is wrong; or <code class=\"inline\">OK</code> if none disagree.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        int[] v = new int[n];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) v[i] = Integer.parseInt(st.nextToken());\n        // TODO: for each ordered pair (i != j) compare signum(v[i]-v[j])\n        //       against Integer.compare(v[i], v[j]); count disagreements\n        // TODO: print \"BROKEN <count>\" or \"OK\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        int[] v = new int[n];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) v[i] = Integer.parseInt(st.nextToken());\n        long broken = 0;\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < n; j++) {\n                if (i == j) continue;\n                int sub = v[i] - v[j];                 // may overflow\n                int subSign = Integer.signum(sub);\n                int correct = Integer.compare(v[i], v[j]);\n                if (subSign != correct) broken++;\n            }\n        }\n        if (broken == 0) System.out.println(\"OK\");\n        else System.out.println(\"BROKEN \" + broken);\n    }\n}",
+      "stdin": "3\n2147483647 -2 -1\n",
+      "tests": [
+        {
+          "name": "visible: MAX_VALUE vs negatives overflows",
+          "stdin": "3\n2147483647 -2 -1\n",
+          "expectStdout": "BROKEN 3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: small values never overflow -> OK",
+          "stdin": "4\n3 1 4 2\n",
+          "expectStdout": "OK",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: min and max both directions",
+          "stdin": "2\n-2147483648 2147483647\n",
+          "expectStdout": "BROKEN 2",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "v[i]-v[j] in int arithmetic overflows when the true difference exceeds 2^31-1; Integer.signum of that wrapped result then disagrees with Integer.compare. Count every ordered pair (both directions) where the signs differ. Distinct values mean Integer.compare is never 0."
+    }
+  ]
+}

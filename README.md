@@ -89,3 +89,28 @@ verify-java.py        runs + asserts every snippet; schema-checks every lesson
 ```
 
 **Hard rules for authoring:** every runnable `code`/`solution` is a complete program with a `public class Main` and `public static void main(String[] args)`. `output`/`solutionOutput` must be the exact stdout — always confirm with `python3 verify-java.py`. No `Scanner`/`System.in` in verified snippets (mark those `noRun`). Standard library only, single file, Java 21.
+
+## Execution backend (Vercel)
+
+Java cannot run in the browser, so **all** Run / Profile / Grade actions execute on the
+backend: same-origin Vercel serverless functions in `api/` (`api/run.js`, `api/grade.js`)
+that proxy to a [Judge0](https://judge0.com/) instance. The frontend posts to
+`window.HFT_RUNNER_URL` (default `/api`, set in `js/runner-config.js`), so the site runs
+Java "through Vercel" with no separate server URL.
+
+### Required Vercel environment variables
+Set these in **Project → Settings → Environment Variables**:
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `JUDGE0_URL` | **yes** | — | Base URL of your Judge0 instance, e.g. `https://judge0-ce.p.rapidapi.com` or `https://your-judge0.fly.dev`. Without it, `/api/run` and `/api/grade` return a clear 503 "backend not configured". |
+| `JUDGE0_KEY` | only for RapidAPI | — | `X-RapidAPI-Key`. |
+| `JUDGE0_HOST` | optional | host of `JUDGE0_URL` | `X-RapidAPI-Host` (RapidAPI only). |
+| `JUDGE0_LANG_JAVA` | optional | `62` | Judge0 language id for Java (62 = OpenJDK 13). |
+
+GC/JIT `runtimeFlags` (e.g. `-Xlog:gc`, `-XX:+UseZGC`) are passed to Judge0 as launcher
+options; peak heap (`memKb`) is parsed from the `-Xlog:gc` output. There is **no in-browser
+Java** — if `JUDGE0_URL` is unset the cards show a "needs execution backend" notice.
+
+Override the default backend (skip Vercel functions) by setting `window.HFT_RUNNER_URL` to
+an external hft-runner deployment in `js/runner-config.js`.

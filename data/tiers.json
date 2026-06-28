@@ -1,0 +1,33 @@
+{
+  "track": "Java Systems Engineering — 1% HFT Matrix",
+  "tiers": [
+    {
+      "tier": 1,
+      "emoji": "⚡",
+      "title": "High-Speed Lambda Comparators & PriorityQueues",
+      "tag": "comparators",
+      "summary": "Multi-layer custom comparators and multi-dimensional sort on 1e6-element streams under tight time/memory budgets."
+    },
+    {
+      "tier": 2,
+      "emoji": "🗃️",
+      "title": "Collections Framework Internals",
+      "tag": "collections",
+      "summary": "HashMap bucket collisions, treeification (linked nodes → red-black trees), and load-factor resize cost tracking."
+    },
+    {
+      "tier": 3,
+      "emoji": "🧵",
+      "title": "Concurrency & Project Loom",
+      "tag": "concurrency",
+      "summary": "Virtual threads, ExecutorService, CountDownLatch, Semaphore, thread-safe pools, and deadlock / race / safety stress tests."
+    },
+    {
+      "tier": 4,
+      "emoji": "🔥",
+      "title": "JVM Low-Level Execution & GC Tuning",
+      "tag": "jvm",
+      "summary": "G1 vs ZGC behavior via runtime flags, heap vs stack allocation trackers, and JIT warm-up profiling."
+    }
+  ]
+}
