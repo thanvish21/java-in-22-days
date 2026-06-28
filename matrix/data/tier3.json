@@ -1,0 +1,350 @@
+{
+  "tier": 3,
+  "language": "java",
+  "emoji": "🧵",
+  "title": "Concurrency & Project Loom",
+  "subtitle": "Virtual threads, lock discipline, and making non-determinism produce a deterministic answer",
+  "goal": "Run a million blocking tasks on virtual threads without a thread pool nightmare, coordinate them with ExecutorService / CountDownLatch / Semaphore, reason about visibility and races down to the happens-before edge, and avoid deadlock by lock ordering — so concurrency becomes the mechanism while the printed result stays bit-for-bit stable.",
+  "estMinutes": 260,
+  "tags": ["concurrency", "virtual-threads", "loom", "executor", "semaphore", "countdownlatch", "locks", "atomics", "deadlock"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "Platform threads are an OS resource; virtual threads are not",
+      "html": "<p>A classic <code class=\"inline\">Thread</code> (a <strong>platform thread</strong>) is a thin wrapper over an OS kernel thread. It costs ~1&nbsp;MB of stack reservation and a context switch goes through the scheduler in the kernel. That is why the old advice was \"pool your threads\" — you could afford a few hundred, not a few hundred thousand. The pool exists to <em>ration a scarce OS resource</em>.</p><p><strong>Virtual threads</strong> (JEP 444, GA in Java 21) flip the economics. A virtual thread is a tiny Java object scheduled by the JVM onto a small pool of <em>carrier</em> platform threads. When a virtual thread hits a blocking call (socket read, <code class=\"inline\">sleep</code>, <code class=\"inline\">BlockingQueue.take</code>), the JVM <strong>unmounts</strong> it from its carrier and parks it cheaply, freeing the carrier to run another virtual thread. You can have <strong>millions</strong> of them. The mental model becomes: <em>one virtual thread per task</em>, write plain blocking code, let the runtime multiplex.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Three ways to spawn — and the one you actually want at scale",
+      "code": "// 1) Direct, unstarted then start (rare for app code)\nThread vt = Thread.ofVirtual().unstarted(() -> doWork());\nvt.start();\n\n// 2) Fire-and-name, started immediately\nThread.ofVirtual().name(\"order-handler\").start(() -> handle());\n\n// 3) The workhorse: one virtual thread PER submitted task.\n//    The executor is AutoCloseable; close() = shutdown() + block until all tasks finish.\ntry (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n    for (Order o : orders) {\n        exec.submit(() -> process(o)); // each task gets its own fresh virtual thread\n    }\n} // <-- structured exit: returns only after every task has completed",
+      "explain": "newVirtualThreadPerTaskExecutor() does NOT pool virtual threads — there is nothing to pool, they are cheap. It creates a brand-new virtual thread for every submitted task. The try-with-resources block is the key idiom: ExecutorService is AutoCloseable in Java 19+, and close() calls shutdown() then awaitTermination indefinitely. Falling out of the try block is a hard join on every task — no orphaned work, no leaked threads."
+    },
+    {
+      "type": "tip",
+      "variant": "warn",
+      "html": "Do <strong>not</strong> pool virtual threads (<code class=\"inline\">Executors.newFixedThreadPool</code> of virtual threads is an anti-pattern) and do <strong>not</strong> reuse one for many tasks — they are designed to be created and discarded. The two real pitfalls: <strong>pinning</strong> (a virtual thread inside a <code class=\"inline\">synchronized</code> block that blocks cannot unmount from its carrier — prefer <code class=\"inline\">ReentrantLock</code> on hot blocking paths), and <strong>thread-locals</strong> (millions of threads × per-thread state = a memory blowup; reach for scoped values instead)."
+    },
+    {
+      "type": "text",
+      "heading": "ExecutorService lifecycle: submit, drain, shut down",
+      "html": "<p>An <code class=\"inline\">ExecutorService</code> has a strict lifecycle: <em>running</em> → <em>shutting down</em> → <em>terminated</em>. <code class=\"inline\">submit</code> returns a <code class=\"inline\">Future</code> you can <code class=\"inline\">get()</code> (blocking until the result is ready, re-throwing task exceptions wrapped in <code class=\"inline\">ExecutionException</code>). Two ways to stop it:</p><ul><li><code class=\"inline\">shutdown()</code> — orderly: refuse new tasks, let queued/running ones finish.</li><li><code class=\"inline\">shutdownNow()</code> — best-effort: interrupt running tasks, return the un-started queue.</li></ul><p>Neither blocks. To actually wait you call <code class=\"inline\">awaitTermination(timeout, unit)</code>, or — far simpler in Java 21 — use try-with-resources, whose <code class=\"inline\">close()</code> does <code class=\"inline\">shutdown()</code> + wait-forever for you. Collecting <code class=\"inline\">Future</code>s in <strong>submission order</strong> and calling <code class=\"inline\">get()</code> on each in that order gives you deterministic, ordered output even though the tasks ran concurrently and finished in arbitrary order.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "CountDownLatch: a one-shot finish line",
+      "html": "<p><code class=\"inline\">CountDownLatch(n)</code> is a single-use gate initialized to a count of <code class=\"inline\">n</code>. Worker threads call <code class=\"inline\">countDown()</code> as they finish; a coordinator calls <code class=\"inline\">await()</code> and blocks until the count hits zero. It is the canonical \"wait for all N tasks, then aggregate\" primitive. Once it reaches zero it stays there — it does <strong>not</strong> reset (use <code class=\"inline\">CyclicBarrier</code> or <code class=\"inline\">Phaser</code> if you need reuse).</p><p>It can also work the other way: initialize a latch to <code class=\"inline\">1</code>, have every worker <code class=\"inline\">await()</code> on it, and fire a single <code class=\"inline\">countDown()</code> as a <em>start gun</em> so all workers begin in lockstep — handy for race-condition stress tests where you want maximum contention at t=0.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "CountDownLatch — fan out, then join at the barrier",
+      "code": "int n = tasks.size();\nCountDownLatch done = new CountDownLatch(n);\nLongAdder sum = new LongAdder();\ntry (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n    for (var t : tasks) {\n        exec.submit(() -> {\n            try { sum.add(t.compute()); }\n            finally { done.countDown(); } // ALWAYS count down, even on exception\n        });\n    }\n    done.await(); // coordinator blocks until all n have reported in\n}\nSystem.out.println(sum.sum()); // safe: all writes happen-before await() returns",
+      "explain": "countDown() lives in a finally so a thrown task can never strand the latch above zero (which would hang await() forever). The happens-before guarantee matters: everything a worker did before its countDown() is visible to the thread that returns from await(). That is why reading sum after await() needs no extra synchronization — the latch publishes the workers' writes."
+    },
+    {
+      "type": "text",
+      "heading": "Semaphore: bound the concurrency, not the count",
+      "html": "<p>A <code class=\"inline\">Semaphore(permits)</code> hands out a fixed number of permits. <code class=\"inline\">acquire()</code> takes one (blocking if none are free); <code class=\"inline\">release()</code> returns one. It is how you cap concurrency to a resource limit — e.g. \"at most 8 in-flight calls to the exchange gateway\" — <strong>independent</strong> of how many tasks or threads exist. With virtual threads you might launch 1,000,000 tasks but gate them through a <code class=\"inline\">Semaphore(8)</code> so only 8 ever touch the constrained resource at once.</p><p>The invariant a correct semaphore enforces is: <em>the number of threads simultaneously between <code class=\"inline\">acquire()</code> and <code class=\"inline\">release()</code> never exceeds the permit count</em>. That invariant is deterministic and testable even though the schedule is not — instrument an <code class=\"inline\">AtomicInteger</code> in-flight counter, track its observed max, and assert it stays ≤ permits.</p>"
+    },
+    {
+      "type": "tip",
+      "html": "Always <code class=\"inline\">release()</code> in a <code class=\"inline\">finally</code>. A permit leaked by an exception between acquire and release permanently shrinks the pool; leak all of them and every future <code class=\"inline\">acquire()</code> deadlocks. Same discipline as unlocking a lock. Use <code class=\"inline\">new Semaphore(permits, true)</code> for a <strong>fair</strong> (FIFO) semaphore when starvation matters — at the cost of throughput."
+    },
+    {
+      "type": "text",
+      "heading": "synchronized vs ReentrantLock",
+      "html": "<p><code class=\"inline\">synchronized</code> is the built-in monitor lock: simple, reentrant, auto-released when the block exits (even on exception). Its limits: you cannot try-to-lock, cannot time out, cannot interrupt a waiter, and — critically for Loom — a virtual thread that blocks inside <code class=\"inline\">synchronized</code> may <strong>pin</strong> its carrier.</p><p><code class=\"inline\">ReentrantLock</code> is the explicit, more powerful cousin: <code class=\"inline\">tryLock()</code> / <code class=\"inline\">tryLock(timeout)</code> let you back off instead of blocking forever (a deadlock-avoidance tool), <code class=\"inline\">lockInterruptibly()</code> respects interruption, and you can pair it with multiple <code class=\"inline\">Condition</code>s. The cost is discipline: you <strong>must</strong> unlock in a <code class=\"inline\">finally</code>, every time.</p><table><thead><tr><th></th><th><code class=\"inline\">synchronized</code></th><th><code class=\"inline\">ReentrantLock</code></th></tr></thead><tbody><tr><td>Release</td><td>automatic on block exit</td><td>manual <code class=\"inline\">unlock()</code> in finally</td></tr><tr><td>Try / timeout</td><td>no</td><td><code class=\"inline\">tryLock()</code>, <code class=\"inline\">tryLock(t,u)</code></td></tr><tr><td>Interruptible wait</td><td>no</td><td><code class=\"inline\">lockInterruptibly()</code></td></tr><tr><td>Fairness</td><td>no</td><td>optional (<code class=\"inline\">new ReentrantLock(true)</code>)</td></tr><tr><td>Loom pinning</td><td>can pin carrier</td><td>does not pin</td></tr></tbody></table>"
+    },
+    {
+      "type": "text",
+      "heading": "Race conditions & the visibility problem (volatile / atomics)",
+      "html": "<p>Two distinct hazards travel together. A <strong>race condition</strong> is a lost update: <code class=\"inline\">count++</code> is read-modify-write, three steps, and two threads can interleave so one increment vanishes. A <strong>visibility</strong> bug is subtler: without a happens-before edge, one thread may <em>never</em> observe another's write — the JIT and CPU are free to cache a field in a register or reorder stores.</p><p><code class=\"inline\">volatile</code> fixes <em>visibility</em> only: a write is published to all threads and reads always see the latest value, but <code class=\"inline\">volatile count++</code> is still racy because the increment is not atomic. For atomic read-modify-write use <code class=\"inline\">AtomicInteger</code> / <code class=\"inline\">AtomicLong</code> (CAS-based <code class=\"inline\">incrementAndGet</code>) or, under heavy contention, <code class=\"inline\">LongAdder</code> (striped counters summed on read — faster when many threads write, slightly slower to read). The reliable recipe for a deterministic concurrent total: make every per-thread contribution <strong>order-independent</strong> (sum, count, max) and aggregate through an atomic or a latch-published variable.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Three counters, three correctness levels",
+      "code": "long plain = 0;            // WRONG: race + visibility. Result < n, nondeterministic.\nvolatile long vol = 0;     // WRONG: visible, but vol++ is still read-modify-write.\nAtomicLong atom = new AtomicLong();   // RIGHT: incrementAndGet() is atomic (CAS).\nLongAdder adder = new LongAdder();    // RIGHT + fast under contention; read with sum().\n\n// Under N threads each doing K increments, only atom and adder reliably yield N*K.\n// plain and vol will silently lose updates — that lost count is the race.",
+      "explain": "The trap is that 'plain' often looks correct on a lightly loaded laptop and then loses updates in production under real contention. The deterministic-output rule for these problems: never print a value that depends on interleaving. Print an aggregate (sum/count/max) computed through AtomicLong/LongAdder, or a boolean invariant (max-in-flight <= permits) that holds for EVERY legal schedule."
+    },
+    {
+      "type": "quiz",
+      "question": "You launch 1,000,000 tasks, each of which sleeps 100&nbsp;ms on I/O, using Executors.newVirtualThreadPerTaskExecutor(). Roughly how many OS (platform) threads does the JVM need?",
+      "options": [
+        "About 1,000,000 — one OS thread per task.",
+        "Zero — virtual threads never touch the OS.",
+        "A small number (≈ the number of CPU cores) of carrier threads; the parked virtual threads consume almost none while they block.",
+        "Exactly 256, the hard cap on virtual threads."
+      ],
+      "answerIndex": 2,
+      "explain": "Virtual threads multiplex onto a small ForkJoinPool of carrier platform threads (default ≈ available processors). While a virtual thread blocks on I/O it is unmounted and parked cheaply, so a million sleeping tasks need only a handful of carriers — the entire point of Loom."
+    },
+    {
+      "type": "quiz",
+      "question": "Why does `volatile long count; count++;` still lose updates under concurrency?",
+      "options": [
+        "volatile only applies to references, not primitives.",
+        "volatile guarantees visibility of reads/writes but count++ is a non-atomic read-modify-write, so two threads can read the same value and both write back +1.",
+        "volatile disables the CPU cache entirely, which is too slow to keep up.",
+        "It doesn't — volatile makes count++ atomic."
+      ],
+      "answerIndex": 1,
+      "explain": "volatile fixes visibility (every thread sees the latest value) but not atomicity. count++ is three operations (read, add, store); two threads can both read N, both compute N+1, both store N+1 — one increment is lost. Use AtomicLong.incrementAndGet() or LongAdder for an atomic increment."
+    },
+    {
+      "type": "text",
+      "heading": "Deadlock anatomy and the lock-ordering cure",
+      "html": "<p>Deadlock needs all four Coffman conditions at once: <strong>mutual exclusion</strong>, <strong>hold-and-wait</strong>, <strong>no preemption</strong>, and a <strong>circular wait</strong>. The textbook case: thread A locks account 1 then waits for account 2; thread B locks account 2 then waits for account 1. Each holds what the other needs — frozen forever.</p><p>Break any one condition and deadlock is impossible. The cheapest, most reliable break is the <strong>circular wait</strong>: impose a <em>global total order</em> on locks and always acquire in that order. For account transfers, always lock <code class=\"inline\">min(from,to)</code> before <code class=\"inline\">max(from,to)</code>. Now no cycle can form because every thread climbs the same ladder. The alternative break is <strong>hold-and-wait</strong> via <code class=\"inline\">tryLock</code> with backoff: grab lock A, try lock B, and if B fails, release A and retry — trading guaranteed progress for liveness with retries.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Deadlock vs. the ordered fix",
+      "code": "// DEADLOCK-PRONE: lock order depends on argument order\nvoid transfer(Acct a, Acct b, long amt) {\n    a.lock.lock();            // thread1: transfer(1,2) locks 1\n    b.lock.lock();            // thread2: transfer(2,1) locks 2 -> circular wait\n    try { a.bal -= amt; b.bal += amt; }\n    finally { b.lock.unlock(); a.lock.unlock(); }\n}\n\n// DEADLOCK-FREE: global order by id, always low id first\nvoid transfer(Acct a, Acct b, long amt) {\n    Acct lo = a.id < b.id ? a : b, hi = a.id < b.id ? b : a;\n    lo.lock.lock();\n    if (lo != hi) hi.lock.lock();\n    try { a.bal -= amt; b.bal += amt; }\n    finally { if (lo != hi) hi.lock.unlock(); lo.lock.unlock(); }\n}",
+      "explain": "The ordered version can never form a cycle: every thread acquires the lower-id lock first, so the wait-for graph is a DAG. Note the self-transfer guard (lo != hi) so we don't double-lock the same ReentrantLock for a same-account transfer — it is reentrant so it wouldn't deadlock, but you'd then need a matching second unlock. Net effect of the fix: total balance is conserved and the final state is deterministic regardless of schedule."
+    },
+    {
+      "type": "text",
+      "heading": "Thread-safe pools and collections",
+      "html": "<p>When state is genuinely shared, reach for a structure that is concurrent by construction instead of wrapping a plain one in <code class=\"inline\">synchronized</code>:</p><ul><li><code class=\"inline\">ConcurrentHashMap</code> — lock-striped, scales with readers; use <code class=\"inline\">merge</code>/<code class=\"inline\">compute</code> for atomic per-key updates and <code class=\"inline\">computeIfAbsent</code> to build a thread-safe object pool / cache keyed by id.</li><li><code class=\"inline\">BlockingQueue</code> (<code class=\"inline\">ArrayBlockingQueue</code>, <code class=\"inline\">LinkedBlockingQueue</code>) — the backbone of producer/consumer: <code class=\"inline\">put</code> blocks when full, <code class=\"inline\">take</code> blocks when empty, no manual wait/notify.</li><li><code class=\"inline\">ConcurrentLinkedQueue</code> — lock-free MPMC queue for non-blocking hand-off.</li><li><code class=\"inline\">LongAdder</code> / <code class=\"inline\">AtomicLong</code> — contended counters.</li></ul><p>A simple <strong>thread-safe object pool</strong> is a <code class=\"inline\">BlockingQueue</code> of pre-built objects: <code class=\"inline\">take()</code> to borrow (blocks when exhausted, naturally bounding concurrency like a semaphore), <code class=\"inline\">put()</code> in a finally to return. Combine with virtual threads and you get a clean, back-pressured worker model.</p>"
+    },
+    {
+      "type": "tryit",
+      "title": "Make a racy counter correct",
+      "instructions": "Sum 1..1000 across many virtual threads. The starter uses a plain long and will lose updates. Switch to an AtomicLong (or LongAdder) so the program deterministically prints 500500. Use a try-with-resources virtual-thread executor so all tasks finish before you read the total.",
+      "starter": "import java.util.concurrent.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        long[] count = {0}; // racy: read-modify-write across threads\n        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 1; i <= 1000; i++) {\n                final int v = i;\n                exec.submit(() -> count[0] += v); // TODO: make this atomic\n            }\n        }\n        // TODO: print the (now correct) total — must be 500500\n        System.out.println(count[0]);\n    }\n}",
+      "check": { "stdout_equals": "500500" },
+      "solution": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        AtomicLong count = new AtomicLong(0);\n        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 1; i <= 1000; i++) {\n                final int v = i;\n                exec.submit(() -> count.addAndGet(v));\n            }\n        }\n        System.out.println(count.get());\n    }\n}",
+      "passMsg": "Correct — addAndGet is an atomic CAS, and the executor's close() joins all tasks before you read, so 1+2+...+1000 = 500500 every run.",
+      "failMsg": "A plain long += loses updates under contention. Use AtomicLong.addAndGet(v) (or LongAdder.add(v) + sum()), and let try-with-resources join all tasks before printing."
+    },
+    {
+      "type": "tryit",
+      "title": "Cap in-flight work with a Semaphore",
+      "instructions": "Fix the bound: only 3 of the 50 tasks may be 'inside the critical section' at once. Wrap the work between sem.acquire() and sem.release() (release in a finally). The program prints true only if the observed maximum concurrency never exceeded 3.",
+      "starter": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Semaphore sem = new Semaphore(3);\n        AtomicInteger inFlight = new AtomicInteger();\n        AtomicInteger max = new AtomicInteger();\n        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < 50; i++) {\n                exec.submit(() -> {\n                    // TODO: acquire a permit, track in-flight max, release in finally\n                    int cur = inFlight.incrementAndGet();\n                    max.accumulateAndGet(cur, Math::max);\n                    inFlight.decrementAndGet();\n                });\n            }\n        }\n        System.out.println(max.get() <= 3);\n    }\n}",
+      "check": { "stdout_equals": "true" },
+      "solution": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Semaphore sem = new Semaphore(3);\n        AtomicInteger inFlight = new AtomicInteger();\n        AtomicInteger max = new AtomicInteger();\n        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < 50; i++) {\n                exec.submit(() -> {\n                    try {\n                        sem.acquire();\n                        int cur = inFlight.incrementAndGet();\n                        max.accumulateAndGet(cur, Math::max);\n                        inFlight.decrementAndGet();\n                    } catch (InterruptedException e) {\n                        Thread.currentThread().interrupt();\n                    } finally {\n                        sem.release();\n                    }\n                });\n            }\n        }\n        System.out.println(max.get() <= 3);\n    }\n}",
+      "passMsg": "Correct — the semaphore guarantees at most 3 threads sit between acquire and release, so the observed max in-flight is bounded by the permit count under every schedule.",
+      "failMsg": "Without acquire/release around the counted region, more than 3 threads run concurrently and max exceeds 3. Acquire before incrementing in-flight and release in a finally."
+    }
+  ],
+  "problems": [
+    {
+      "id": "java-t3-p1",
+      "title": "Virtual-thread fan-out: deterministic sum of squares",
+      "difficulty": "medium",
+      "instructions": "<p>Warm up the Loom model. Read an integer <code class=\"inline\">n</code> (1 ≤ n ≤ 1,000,000) on line 1, then <code class=\"inline\">n</code> integers (each fits in an <code class=\"inline\">int</code>, possibly negative) on line 2, space-separated.</p><p>Submit <strong>one virtual thread per element</strong> via <code class=\"inline\">Executors.newVirtualThreadPerTaskExecutor()</code>; each task adds the element's <strong>square</strong> to a shared accumulator. The tasks run concurrently and finish in arbitrary order, so the accumulator MUST be thread-safe (<code class=\"inline\">AtomicLong</code> or <code class=\"inline\">LongAdder</code>) and you must join all tasks (let the try-with-resources <code class=\"inline\">close()</code> do it) before reading it.</p><p><strong>Output</strong>: a single line — the sum of squares as a <code class=\"inline\">long</code>. Because addition is commutative the result is identical for every schedule.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        long[] vals = new long[n];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) vals[i] = Long.parseLong(st.nextToken());\n        // TODO: AtomicLong accumulator\n        // TODO: one virtual thread per element adds v*v\n        // TODO: join all tasks, then print the total\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        long[] vals = new long[n];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) vals[i] = Long.parseLong(st.nextToken());\n\n        AtomicLong sum = new AtomicLong(0);\n        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < n; i++) {\n                final long v = vals[i];\n                ex.submit(() -> sum.addAndGet(v * v));\n            }\n        } // close() = shutdown + awaitTermination: blocks until every task finishes\n        System.out.println(sum.get());\n    }\n}",
+      "stdin": "5\n1 2 3 4 5\n",
+      "tests": [
+        {
+          "name": "visible: 1..5 squared",
+          "stdin": "5\n1 2 3 4 5\n",
+          "expectStdout": "55",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": false
+        },
+        {
+          "name": "hidden: single element",
+          "stdin": "1\n7\n",
+          "expectStdout": "49",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "hidden: negatives square to positive",
+          "stdin": "3\n-2 -3 4\n",
+          "expectStdout": "29",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "hint": "AtomicLong sum; try (var ex = Executors.newVirtualThreadPerTaskExecutor()) { ... ex.submit(() -> sum.addAndGet((long)v*v)); }. Leaving the try block joins all tasks. Square as long to avoid int overflow before printing sum.get()."
+    },
+    {
+      "id": "java-t3-p2",
+      "title": "Semaphore-bounded concurrency with invariant proof",
+      "difficulty": "hard",
+      "instructions": "<p>You have a constrained resource (an exchange gateway) that tolerates at most <code class=\"inline\">P</code> simultaneous callers. Launch <strong>one virtual thread per job</strong> but gate the critical section with a <code class=\"inline\">Semaphore(P)</code>.</p><p>Line 1: permit count <code class=\"inline\">P</code> (1 ≤ P ≤ 64). Line 2: number of jobs <code class=\"inline\">n</code> (0 ≤ n ≤ 1,000,000). Line 3: <code class=\"inline\">n</code> integers, the per-job work units (omit / blank line when n=0).</p><p>Each job: <code class=\"inline\">acquire()</code> a permit, increment a shared in-flight counter and record the running maximum, add its work units to a total, decrement in-flight, then <code class=\"inline\">release()</code> in a <code class=\"inline\">finally</code>. Coordinate completion with a <code class=\"inline\">CountDownLatch</code> (or the executor's close()).</p><p><strong>Output two lines</strong>:<br>Line 1: <code class=\"inline\">&lt;totalWork&gt;</code> — the summed work units (deterministic).<br>Line 2: <code class=\"inline\">maxConcurrent&lt;=&lt;P&gt; &lt;bool&gt;</code> where <code class=\"inline\">&lt;bool&gt;</code> is <code class=\"inline\">true</code> iff the observed maximum in-flight count never exceeded <code class=\"inline\">P</code> — which a correct semaphore guarantees for every schedule, so it is always <code class=\"inline\">true</code>.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int permits = Integer.parseInt(br.readLine().trim());\n        int n = Integer.parseInt(br.readLine().trim());\n        int[] w = new int[n];\n        if (n > 0) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            for (int i = 0; i < n; i++) w[i] = Integer.parseInt(st.nextToken());\n        }\n        // TODO: Semaphore(permits); AtomicInteger inFlight + max; AtomicLong totalWork\n        // TODO: one virtual thread per job: acquire -> track -> add work -> release (finally)\n        // TODO: print total work, then \"maxConcurrent<=<P> <bool>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int permits = Integer.parseInt(br.readLine().trim());\n        int n = Integer.parseInt(br.readLine().trim());\n        int[] w = new int[n];\n        if (n > 0) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            for (int i = 0; i < n; i++) w[i] = Integer.parseInt(st.nextToken());\n        }\n        Semaphore sem = new Semaphore(permits);\n        AtomicInteger inFlight = new AtomicInteger(0);\n        AtomicInteger maxObserved = new AtomicInteger(0);\n        AtomicLong totalWork = new AtomicLong(0);\n        CountDownLatch done = new CountDownLatch(n);\n        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < n; i++) {\n                final int task = w[i];\n                ex.submit(() -> {\n                    try {\n                        sem.acquire();\n                        int cur = inFlight.incrementAndGet();\n                        maxObserved.accumulateAndGet(cur, Math::max);\n                        totalWork.addAndGet(task);\n                        inFlight.decrementAndGet();\n                    } catch (InterruptedException e) {\n                        Thread.currentThread().interrupt();\n                    } finally {\n                        sem.release();\n                        done.countDown();\n                    }\n                });\n            }\n            done.await();\n        }\n        System.out.println(totalWork.get());\n        System.out.println(\"maxConcurrent<=\" + permits + \" \" + (maxObserved.get() <= permits));\n    }\n}",
+      "stdin": "3\n5\n10 20 30 40 50\n",
+      "tests": [
+        {
+          "name": "visible: 5 jobs, 3 permits",
+          "stdin": "3\n5\n10 20 30 40 50\n",
+          "expectStdout": "150\nmaxConcurrent<=3 true",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": false
+        },
+        {
+          "name": "hidden: single permit serializes everything",
+          "stdin": "1\n4\n1 2 3 4\n",
+          "expectStdout": "10\nmaxConcurrent<=1 true",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "hidden: zero jobs",
+          "stdin": "2\n0\n\n",
+          "expectStdout": "0\nmaxConcurrent<=2 true",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "hint": "Semaphore(P), acquire() before entering the counted region and release() in finally. Track in-flight with AtomicInteger.incrementAndGet and the running max with accumulateAndGet(cur, Math::max). totalWork via AtomicLong is schedule-independent; the invariant max<=P holds for any correct semaphore."
+    },
+    {
+      "id": "java-t3-p3",
+      "title": "Deadlock-free bank transfers via lock ordering",
+      "difficulty": "hard",
+      "instructions": "<p>Apply concurrent money transfers across accounts without deadlocking and with a deterministic final ledger. Line 1: account count <code class=\"inline\">A</code> (2 ≤ A ≤ 100,000). Line 2: transfer count <code class=\"inline\">T</code> (0 ≤ T ≤ 1,000,000). Line 3: <code class=\"inline\">A</code> starting balances (longs). Then <code class=\"inline\">T</code> lines, each <code class=\"inline\">from to amount</code> (0-based account indices, amount a long; <code class=\"inline\">from</code> may equal <code class=\"inline\">to</code>).</p><p>Give each account a <code class=\"inline\">ReentrantLock</code>. Run each transfer on its own virtual thread. To avoid the circular-wait deadlock, always lock <code class=\"inline\">min(from,to)</code> before <code class=\"inline\">max(from,to)</code> (skip the second lock when <code class=\"inline\">from == to</code>). Inside the locks, subtract from <code class=\"inline\">from</code> and add to <code class=\"inline\">to</code>; unlock in reverse order in a <code class=\"inline\">finally</code>.</p><p><strong>Output</strong>: one line with the final balances of accounts 0..A-1, space-separated. Total money is conserved and — thanks to per-account locking — the final ledger is identical for every legal schedule.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.locks.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int a = Integer.parseInt(br.readLine().trim());\n        int t = Integer.parseInt(br.readLine().trim());\n        long[] bal = new long[a];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < a; i++) bal[i] = Long.parseLong(st.nextToken());\n        // TODO: one ReentrantLock per account\n        // TODO: per transfer, lock min(from,to) then max(from,to); apply; unlock in finally\n        // TODO: print final balances space-separated\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.locks.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int a = Integer.parseInt(br.readLine().trim());\n        int t = Integer.parseInt(br.readLine().trim());\n        long[] bal = new long[a];\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < a; i++) bal[i] = Long.parseLong(st.nextToken());\n        int[] from = new int[t], to = new int[t];\n        long[] amt = new long[t];\n        for (int i = 0; i < t; i++) {\n            StringTokenizer ts = new StringTokenizer(br.readLine());\n            from[i] = Integer.parseInt(ts.nextToken());\n            to[i] = Integer.parseInt(ts.nextToken());\n            amt[i] = Long.parseLong(ts.nextToken());\n        }\n        ReentrantLock[] locks = new ReentrantLock[a];\n        for (int i = 0; i < a; i++) locks[i] = new ReentrantLock();\n        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < t; i++) {\n                final int f = from[i], d = to[i];\n                final long m = amt[i];\n                ex.submit(() -> {\n                    int lo = Math.min(f, d), hi = Math.max(f, d);\n                    locks[lo].lock();\n                    if (lo != hi) locks[hi].lock();\n                    try {\n                        bal[f] -= m;\n                        bal[d] += m;\n                    } finally {\n                        if (lo != hi) locks[hi].unlock();\n                        locks[lo].unlock();\n                    }\n                });\n            }\n        }\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < a; i++) sb.append(bal[i]).append(i + 1 < a ? ' ' : '\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "3\n4\n100 100 100\n0 1 10\n1 2 20\n2 0 5\n0 2 50\n",
+      "tests": [
+        {
+          "name": "visible: cycle of transfers, money conserved",
+          "stdin": "3\n4\n100 100 100\n0 1 10\n1 2 20\n2 0 5\n0 2 50\n",
+          "expectStdout": "45 90 165",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": false
+        },
+        {
+          "name": "hidden: two-account ping-pong",
+          "stdin": "2\n3\n50 50\n0 1 5\n1 0 3\n0 1 2\n",
+          "expectStdout": "46 54",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "hidden: self-transfer is a no-op, no double lock",
+          "stdin": "2\n2\n10 20\n0 0 5\n0 1 4\n",
+          "expectStdout": "6 24",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "hint": "Always acquire locks[min(from,to)] before locks[max(from,to)] so no wait cycle can form. Guard the second lock/unlock with (lo != hi) for self-transfers. Unlock in reverse order in a finally. Final balances are schedule-independent because each account is fully serialized by its own lock."
+    },
+    {
+      "id": "java-t3-p4",
+      "title": "Sharded parallel aggregation (Collatz census)",
+      "difficulty": "hard",
+      "instructions": "<p>Split a CPU-bound range across worker threads and reduce the partials into a deterministic total — the parallel map-reduce shape. Line 1: shard count <code class=\"inline\">S</code> (1 ≤ S ≤ 1024). Line 2: range start <code class=\"inline\">lo</code>. Line 3: range end <code class=\"inline\">hi</code> (1 ≤ lo ≤ hi ≤ 1,000,000).</p><p>Partition <code class=\"inline\">[lo, hi]</code> into <code class=\"inline\">S</code> contiguous chunks; run each chunk on its own virtual thread. For every integer <code class=\"inline\">v</code> in the range compute its <strong>Collatz step count</strong> (the number of steps to reach 1 under <code class=\"inline\">v → v/2</code> if even, <code class=\"inline\">v → 3v+1</code> if odd). Each worker accumulates two partials, then merges them into shared <code class=\"inline\">LongAdder</code>s (or atomics): the <strong>sum of all step counts</strong>, and the <strong>count of values whose step count is even</strong>. Both reductions are order-independent.</p><p><strong>Output two lines</strong>:<br><code class=\"inline\">steps &lt;sumOfAllStepCounts&gt;</code><br><code class=\"inline\">evenLen &lt;countOfEvenStepCounts&gt;</code><br>Identical for any shard count and any schedule.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int shards = Integer.parseInt(br.readLine().trim());\n        long lo = Long.parseLong(br.readLine().trim());\n        long hi = Long.parseLong(br.readLine().trim());\n        // TODO: shared LongAdder totalSteps + evenLen\n        // TODO: partition [lo,hi] into shards contiguous chunks, one virtual thread each\n        // TODO: per value, count Collatz steps; accumulate locally then merge\n        // TODO: print \"steps <sum>\" then \"evenLen <count>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\nimport java.util.concurrent.atomic.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int shards = Integer.parseInt(br.readLine().trim());\n        long lo = Long.parseLong(br.readLine().trim());\n        long hi = Long.parseLong(br.readLine().trim());\n        LongAdder totalSteps = new LongAdder();\n        LongAdder evenLen = new LongAdder();\n        long total = hi - lo + 1;\n        long chunk = (total + shards - 1) / shards;\n        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int s = 0; s < shards; s++) {\n                final long start = lo + (long) s * chunk;\n                if (start > hi) break;\n                final long end = Math.min(hi, start + chunk - 1);\n                ex.submit(() -> {\n                    long localSteps = 0, localEven = 0;\n                    for (long v = start; v <= end; v++) {\n                        long x = v, steps = 0;\n                        while (x != 1) {\n                            x = (x % 2 == 0) ? x / 2 : 3 * x + 1;\n                            steps++;\n                        }\n                        localSteps += steps;\n                        if (steps % 2 == 0) localEven++;\n                    }\n                    totalSteps.add(localSteps);\n                    evenLen.add(localEven);\n                });\n            }\n        }\n        System.out.println(\"steps \" + totalSteps.sum());\n        System.out.println(\"evenLen \" + evenLen.sum());\n    }\n}",
+      "stdin": "4\n1\n10\n",
+      "tests": [
+        {
+          "name": "visible: [1,10] across 4 shards",
+          "stdin": "4\n1\n10\n",
+          "expectStdout": "steps 67\nevenLen 5",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": false
+        },
+        {
+          "name": "hidden: single shard equals many shards",
+          "stdin": "1\n1\n10\n",
+          "expectStdout": "steps 67\nevenLen 5",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "hidden: [1,20]",
+          "stdin": "8\n1\n20\n",
+          "expectStdout": "steps 196\nevenLen 10",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "stress: [1,1000000] reduced deterministically",
+          "stdin": "16\n1\n1000000\n",
+          "expectStdout": "steps 131434424\nevenLen 498896",
+          "matchMode": "trim",
+          "timeBudgetMs": 8000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "complexity": {
+        "codeTemplate": "public class Main {\n    public static void main(String[] a){\n        int N = {N};\n        long steps = 0;\n        for (long v = 1; v <= N; v++){\n            long x = v;\n            while (x != 1){ x = (x % 2 == 0) ? x / 2 : 3 * x + 1; steps++; }\n        }\n        System.out.println(steps);\n    }\n}",
+        "sizes": [10000, 50000, 100000, 500000, 1000000],
+        "expected": "O(n log n)"
+      },
+      "hint": "Each worker keeps localSteps/localEven in plain locals (no contention), then does ONE totalSteps.add(localSteps) and evenLen.add(localEven) at the end. Because sum and count are commutative, any chunking and any schedule yield the same two numbers. Collatz step count for 1 is 0 (already at 1)."
+    },
+    {
+      "id": "java-t3-p5",
+      "title": "ExecutorService + Futures: ordered concurrent results",
+      "difficulty": "medium",
+      "instructions": "<p>Run independent computations concurrently but emit results in <strong>submission order</strong> — the standard trick is to keep the <code class=\"inline\">Future</code>s in a list and call <code class=\"inline\">get()</code> on them in order. Line 1: query count <code class=\"inline\">Q</code> (1 ≤ Q ≤ 100,000). Then <code class=\"inline\">Q</code> lines, each a non-negative integer <code class=\"inline\">n</code> (0 ≤ n ≤ 1,000,000,000).</p><p>For each <code class=\"inline\">n</code>, submit a task computing the <strong>n-th Fibonacci number modulo 1,000,000,007</strong> (use fast-doubling so large <code class=\"inline\">n</code> is cheap). Collect the <code class=\"inline\">Future&lt;Long&gt;</code>s in a list in submission order; after submitting all, iterate the list and print each <code class=\"inline\">get()</code> on its own line. The tasks run concurrently and finish out of order, but output order is fixed by the iteration, so the result is deterministic.</p><p><strong>Output</strong>: <code class=\"inline\">Q</code> lines, the i-th being <code class=\"inline\">fib(n_i) mod 1e9+7</code> in input order.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\n\npublic class Main {\n    static final long MOD = 1_000_000_007L;\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        long[] ns = new long[q];\n        for (int i = 0; i < q; i++) ns[i] = Long.parseLong(br.readLine().trim());\n        // TODO: submit one task per query to a virtual-thread executor\n        // TODO: keep Futures in submission order; print get() of each in order\n    }\n    // TODO: fast-doubling Fibonacci mod MOD\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\nimport java.util.concurrent.*;\n\npublic class Main {\n    static final long MOD = 1_000_000_007L;\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        long[] ns = new long[q];\n        for (int i = 0; i < q; i++) ns[i] = Long.parseLong(br.readLine().trim());\n        List<Future<Long>> futures = new ArrayList<>(q);\n        try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int i = 0; i < q; i++) {\n                final long n = ns[i];\n                futures.add(ex.submit(() -> fibMod(n)));\n            }\n            StringBuilder sb = new StringBuilder();\n            for (Future<Long> f : futures) sb.append(f.get()).append('\\n');\n            System.out.print(sb);\n        }\n    }\n\n    static long fibMod(long n) {\n        return fd(n)[0];\n    }\n\n    // fast doubling: returns {F(n), F(n+1)} mod MOD\n    static long[] fd(long n) {\n        if (n == 0) return new long[]{0, 1};\n        long[] h = fd(n >> 1);\n        long a = h[0], b = h[1];\n        long c = (a * ((2 * b % MOD - a + MOD) % MOD)) % MOD;\n        long d = (a * a % MOD + b * b % MOD) % MOD;\n        if ((n & 1) == 0) return new long[]{c, d};\n        else return new long[]{d, (c + d) % MOD};\n    }\n}",
+      "stdin": "5\n0\n1\n10\n50\n100\n",
+      "tests": [
+        {
+          "name": "visible: small + large indices",
+          "stdin": "5\n0\n1\n10\n50\n100\n",
+          "expectStdout": "0\n1\n55\n586268941\n687995182",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": false
+        },
+        {
+          "name": "hidden: mixed indices stay in input order",
+          "stdin": "3\n7\n20\n90\n",
+          "expectStdout": "13\n6765\n210345902",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        },
+        {
+          "name": "hidden: huge n via fast doubling",
+          "stdin": "1\n1000000000\n",
+          "expectStdout": "21",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "hint": "Submit returns a Future immediately; store them in an ArrayList in submission order, then loop and print future.get() — that re-imposes input order on concurrently-computed results. Fast-doubling fib runs in O(log n) so n up to 1e9 is instant; keep every multiply under MOD with (2*b - a + MOD) % MOD to avoid going negative."
+    }
+  ]
+}

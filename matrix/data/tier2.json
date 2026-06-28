@@ -1,0 +1,272 @@
+{
+  "tier": 2,
+  "language": "java",
+  "emoji": "🗃️",
+  "title": "Collections Framework Internals",
+  "subtitle": "Buckets, collisions, treeification, and the real cost of resize",
+  "goal": "Reason about java.util.HashMap the way the JDK source does — predict bucket placement, collision chains, treeification, and rehash cost — and pick HashMap vs TreeMap vs LinkedHashMap by their internal invariants instead of vibes.",
+  "estMinutes": 240,
+  "tags": ["collections", "hashmap", "treemap", "linkedhashmap", "internals"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "The bucket array is the whole game",
+      "html": "<p>A <code class=\"inline\">HashMap</code> is a <code class=\"inline\">Node&lt;K,V&gt;[] table</code> — an array of <strong>buckets</strong>. Every <code class=\"inline\">put</code> computes which slot a key lands in. With a table of length <code class=\"inline\">n</code> (always a power of two), the index is <code class=\"inline\">(n - 1) &amp; hash</code>. That bitwise AND is a cheap modulo: because <code class=\"inline\">n</code> is a power of two, <code class=\"inline\">(n-1)</code> is a mask of the low bits, so the index is just the bottom <code class=\"inline\">log2(n)</code> bits of <code class=\"inline\">hash</code>.</p><p>That is also the trap. If you only used the raw <code class=\"inline\">hashCode()</code>, two keys whose <em>low</em> bits collide would always share a bucket even if their high bits differ wildly. The JDK fixes this with a <strong>spread</strong> step.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "HashMap.hash — the spread function (verbatim from the JDK)",
+      "code": "static final int spread(int h) {\n    // h = key.hashCode(); fold the high 16 bits down into the low 16\n    return h ^ (h >>> 16);\n}\n\n// bucket index for a table of length n (power of two):\n// int idx = (n - 1) & spread(key.hashCode());",
+      "explain": "XOR-ing the high half into the low half means a key whose entropy lives in its top bits still influences the bucket choice. null keys hash to 0 and always live in bucket 0. This single line is why HashMap tolerates mediocre hashCode() implementations gracefully — it is the difference between O(1) and a degenerate chain."
+    },
+    {
+      "type": "text",
+      "heading": "Collisions: linked list first, red-black tree later",
+      "html": "<p>When two keys map to the same bucket, the bucket becomes a chain of <code class=\"inline\">Node</code>s (a singly-linked list). Lookup walks the chain, comparing with <code class=\"inline\">hash</code> first (cheap int compare) and only then <code class=\"inline\">equals()</code>. A short chain is fine. A long chain is O(k).</p><p>To bound worst case, once a single bucket holds <strong>TREEIFY_THRESHOLD = 8</strong> nodes <em>and</em> the table is at least <strong>MIN_TREEIFY_CAPACITY = 64</strong>, that bucket converts from a linked list into a <strong>red-black tree</strong>, turning per-bucket lookup from O(k) into O(log k). If the table is smaller than 64, HashMap <em>resizes instead of treeifying</em> — more buckets usually scatters the colliding keys. When a tree shrinks back to <strong>UNTREEIFY_THRESHOLD = 6</strong> nodes it reverts to a list.</p>"
+    },
+    {
+      "type": "tip",
+      "variant": "warn",
+      "html": "Treeification needs <strong>both</strong> conditions: chain length ≥ 8 <em>and</em> table capacity ≥ 64. People memorize \"8\" and forget the 64 — a tiny map with 8 colliding keys will <strong>resize</strong>, not treeify. Also: treeification falls back to insertion-order if your keys are not <code class=\"inline\">Comparable</code>, so a custom key with a broken or absent <code class=\"inline\">compareTo</code> still works, just slower."
+    },
+    {
+      "type": "text",
+      "heading": "The hashCode / equals contract",
+      "html": "<p>Three rules, and breaking any one corrupts a HashMap silently:</p><ol><li><strong>Consistency</strong>: equal objects (<code class=\"inline\">a.equals(b)</code>) MUST return equal hash codes. Violate this and you can <code class=\"inline\">put(key)</code> then fail to <code class=\"inline\">get(key)</code> with an equal key — they land in different buckets.</li><li><strong>Stability</strong>: an object's hashCode must not change while it is a key (don't mutate fields used by <code class=\"inline\">equals</code>/<code class=\"inline\">hashCode</code> after insertion).</li><li><strong>equals symmetry/transitivity/reflexivity</strong> must hold, or membership tests become nondeterministic.</li></ol><p>Unequal objects <em>may</em> share a hashCode (that is just a collision, and is legal) — but equal objects sharing a hashCode is mandatory.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "Load factor 0.75 and the cost of resize",
+      "html": "<p>HashMap grows when <code class=\"inline\">size &gt; threshold</code>, where <code class=\"inline\">threshold = capacity × loadFactor</code> and the default load factor is <strong>0.75</strong>. So a default-capacity-16 map resizes once it would hold its 13th entry (16 × 0.75 = 12, exceed it → grow). Resize <strong>doubles</strong> capacity and <strong>rehashes every existing entry</strong> into the new, larger table — an O(n) burst.</p><p>0.75 is the time/space compromise: lower load factor = fewer collisions but more wasted slots; higher = denser but longer chains. Because each resize doubles, the <em>amortized</em> cost of n inserts stays O(n), but any single insert can trigger a full O(n) rehash. In a latency-sensitive hot path you pre-size: <code class=\"inline\">new HashMap&lt;&gt;(expectedSize / 0.75 + 1)</code> so you never pay an unplanned rehash mid-flight.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Capacity is rounded UP to the next power of two",
+      "code": "// tableSizeFor: smallest power of two >= cap (JDK internal)\nstatic final int tableSizeFor(int cap) {\n    int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);\n    return (n < 0) ? 1 : (n + 1);\n}\n\n// new HashMap<>(30)  -> initial table length 32, threshold 32*0.75 = 24\n// new HashMap<>(33)  -> initial table length 64, threshold 48",
+      "explain": "Whatever initial capacity you request, HashMap rounds it up to a power of two so the (n-1)&hash trick stays valid. Requesting 1000 actually allocates 1024 buckets. This is why pre-sizing with expected/0.75 matters: it controls which power-of-two band you land in and how soon the first resize fires."
+    },
+    {
+      "type": "text",
+      "heading": "HashMap vs TreeMap vs LinkedHashMap",
+      "html": "<table><thead><tr><th>Map</th><th>Backing structure</th><th>Iteration order</th><th>get/put</th><th>Ordering / nulls</th></tr></thead><tbody><tr><td><code class=\"inline\">HashMap</code></td><td>bucket array + chains/trees</td><td><strong>unspecified</strong> (depends on hash &amp; capacity, can change on resize)</td><td>O(1) average</td><td>no order; one null key allowed</td></tr><tr><td><code class=\"inline\">LinkedHashMap</code></td><td>HashMap + doubly-linked node list</td><td><strong>insertion order</strong>, or <strong>access order</strong> if <code class=\"inline\">accessOrder=true</code></td><td>O(1) average</td><td>null key allowed; tiny per-node memory overhead</td></tr><tr><td><code class=\"inline\">TreeMap</code></td><td>red-black tree</td><td><strong>sorted</strong> by key (natural or Comparator)</td><td>O(log n)</td><td>keys must be Comparable / have Comparator; <strong>no null key</strong> (NPE)</td></tr></tbody></table><p>Reach for <code class=\"inline\">TreeMap</code> when you need range queries (<code class=\"inline\">floorKey</code>, <code class=\"inline\">ceilingKey</code>, <code class=\"inline\">subMap</code>). Reach for <code class=\"inline\">LinkedHashMap</code> with <code class=\"inline\">accessOrder=true</code> + an overridden <code class=\"inline\">removeEldestEntry</code> to build an <strong>LRU cache</strong> in ~5 lines. Reach for <code class=\"inline\">HashMap</code> by default for raw throughput when order is irrelevant.</p>"
+    },
+    {
+      "type": "tip",
+      "html": "<code class=\"inline\">LinkedHashMap</code> with <code class=\"inline\">accessOrder=true</code> moves an entry to the tail on every <code class=\"inline\">get</code> <em>and</em> <code class=\"inline\">put</code>. Override <code class=\"inline\">protected boolean removeEldestEntry(Map.Entry)</code> to return <code class=\"inline\">size() &gt; capacity</code> and you have a self-evicting LRU. The head is the least-recently-used; the tail is the most-recently-used."
+    },
+    {
+      "type": "quiz",
+      "question": "You insert 8 keys that all collide in the same bucket of a brand-new default HashMap (capacity 16). What happens to that bucket?",
+      "options": [
+        "It immediately converts to a red-black tree (8 ≥ TREEIFY_THRESHOLD).",
+        "Nothing special — it stays a linked list because capacity (16) < MIN_TREEIFY_CAPACITY (64), so HashMap resizes instead.",
+        "The map throws because chains cannot exceed 8.",
+        "It converts to a tree only if the keys are not Comparable."
+      ],
+      "answerIndex": 1,
+      "explain": "Treeification requires chain length ≥ 8 AND table capacity ≥ 64. At capacity 16 the map resizes (grows the table) rather than treeify, on the bet that more buckets will scatter the colliding keys."
+    },
+    {
+      "type": "quiz",
+      "question": "Which call sequence makes a LinkedHashMap behave as an LRU cache that evicts the least-recently-used entry past a size cap?",
+      "options": [
+        "new LinkedHashMap<>(cap) and call sort() before eviction",
+        "new LinkedHashMap<>(cap, 0.75f, true) and override removeEldestEntry to return size() > cap",
+        "new TreeMap<>() with a timestamp Comparator",
+        "new HashMap<>(cap, 0.75f) and manually track order in a separate list"
+      ],
+      "answerIndex": 1,
+      "explain": "The third constructor arg accessOrder=true makes get/put reorder to most-recently-used at the tail; removeEldestEntry lets the map drop the head (LRU) automatically once size exceeds the cap."
+    },
+    {
+      "type": "tryit",
+      "title": "Compute a bucket index by hand",
+      "instructions": "Print the HashMap bucket index for key 17 in a table of length 16, using spread(h)=h^(h>>>16) then (n-1)&spread. For an Integer, hashCode() == the int value.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        int h = Integer.valueOf(17).hashCode();\n        // spread, then mask with n-1 where n = 16\n        // TODO print the bucket index\n    }\n}",
+      "check": { "stdout_equals": "1" },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        int h = Integer.valueOf(17).hashCode();\n        int spread = h ^ (h >>> 16);\n        int idx = (16 - 1) & spread;\n        System.out.println(idx);\n    }\n}",
+      "passMsg": "Correct — 17 lands in bucket 1 (17 & 15 = 1; spread leaves small ints unchanged).",
+      "failMsg": "Bucket index is (n-1) & (h ^ (h>>>16)). For h=17, n=16 that is 15 & 17 = 1."
+    }
+  ],
+  "problems": [
+    {
+      "id": "java-t2-p1",
+      "title": "Bucket collision tracker with treeify prediction",
+      "difficulty": "hard",
+      "instructions": "<p>Model exactly how <code class=\"inline\">HashMap</code> places keys into buckets. Read an integer table capacity <code class=\"inline\">n</code> (always a power of two, 1 ≤ n ≤ 2^20) on the first line, then an integer <code class=\"inline\">k</code> (number of keys) on the second line, then <code class=\"inline\">k</code> integer keys (one per line).</p><p>For each key compute its bucket as <code class=\"inline\">(n - 1) &amp; (h ^ (h &gt;&gt;&gt; 16))</code> where <code class=\"inline\">h</code> is the key's <code class=\"inline\">Integer.hashCode()</code> (i.e. the int value itself). Count how many keys fall in each bucket.</p><p><strong>Output</strong>, in ascending bucket-index order, one line per <em>non-empty</em> bucket:<br><code class=\"inline\">&lt;bucketIndex&gt; &lt;count&gt; &lt;TREEIFY|list&gt;</code><br>Print <code class=\"inline\">TREEIFY</code> when that bucket would convert to a red-black tree, i.e. <code class=\"inline\">count &gt;= 8</code> AND <code class=\"inline\">n &gt;= 64</code>; otherwise print <code class=\"inline\">list</code>. After the per-bucket lines, print a final summary line <code class=\"inline\">max &lt;maxCount&gt;</code> giving the largest single-bucket count.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        int k = Integer.parseInt(br.readLine().trim());\n        // TODO: count keys per bucket using (n-1) & (h ^ (h>>>16))\n        // TODO: print non-empty buckets ascending: \"idx count TREEIFY|list\"\n        // TODO: print \"max <largest count>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static final int TREEIFY_THRESHOLD = 8;\n    static final int MIN_TREEIFY_CAPACITY = 64;\n\n    static int spread(int h) {\n        return h ^ (h >>> 16);\n    }\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        int k = Integer.parseInt(br.readLine().trim());\n        TreeMap<Integer, Integer> counts = new TreeMap<>();\n        int mask = n - 1;\n        for (int i = 0; i < k; i++) {\n            int key = Integer.parseInt(br.readLine().trim());\n            int idx = mask & spread(Integer.valueOf(key).hashCode());\n            counts.merge(idx, 1, Integer::sum);\n        }\n        StringBuilder sb = new StringBuilder();\n        int max = 0;\n        for (Map.Entry<Integer, Integer> e : counts.entrySet()) {\n            int c = e.getValue();\n            if (c > max) max = c;\n            boolean treeify = c >= TREEIFY_THRESHOLD && n >= MIN_TREEIFY_CAPACITY;\n            sb.append(e.getKey()).append(' ').append(c).append(' ')\n              .append(treeify ? \"TREEIFY\" : \"list\").append('\\n');\n        }\n        sb.append(\"max \").append(max).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "16\n5\n1\n17\n33\n2\n18\n",
+      "tests": [
+        {
+          "name": "visible: small capacity never treeifies",
+          "stdin": "16\n5\n1\n17\n33\n2\n18\n",
+          "expectStdout": "1 3\n2 2\nmax 3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: capacity 64, one bucket reaches 8 -> TREEIFY",
+          "stdin": "64\n8\n0\n64\n128\n192\n256\n320\n384\n448\n",
+          "expectStdout": "0 8 TREEIFY\nmax 8",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: capacity 64, only 7 in a bucket -> still list",
+          "stdin": "64\n7\n0\n64\n128\n192\n256\n320\n384\n",
+          "expectStdout": "0 7\nmax 7",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "Integer.hashCode() is the value itself; spread(h)=h^(h>>>16); index=(n-1)&spread. TREEIFY needs count>=8 AND n>=64. Use a TreeMap<Integer,Integer> so buckets print in ascending order automatically."
+    },
+    {
+      "id": "java-t2-p2",
+      "title": "LRU cache via LinkedHashMap accessOrder",
+      "difficulty": "hard",
+      "instructions": "<p>Build an LRU cache backed by <code class=\"inline\">LinkedHashMap</code> in access-order mode. First line: capacity <code class=\"inline\">C</code> (1 ≤ C ≤ 100000). Second line: number of operations <code class=\"inline\">Q</code>. Then <code class=\"inline\">Q</code> operations, one per line:</p><ul><li><code class=\"inline\">PUT key value</code> — insert/update; both ints.</li><li><code class=\"inline\">GET key</code> — print the value, or <code class=\"inline\">-1</code> if absent. A hit counts as a use (moves the key to most-recently-used).</li></ul><p>When inserting past capacity, evict the least-recently-used entry. After all operations, print a final line <code class=\"inline\">keys &lt;list&gt;</code> = the keys currently in the cache from <strong>least</strong>- to <strong>most</strong>-recently-used, space-separated (print <code class=\"inline\">keys</code> with nothing after it if empty). Only <code class=\"inline\">GET</code> operations produce output before that line.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int cap = Integer.parseInt(br.readLine().trim());\n        int q = Integer.parseInt(br.readLine().trim());\n        // TODO: LinkedHashMap in accessOrder=true, override removeEldestEntry\n        // TODO: handle PUT/GET, print GET results, then \"keys <LRU..MRU>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static class LRU extends LinkedHashMap<Integer, Integer> {\n        private final int cap;\n        LRU(int cap) {\n            super(Math.max(1, (int) (cap / 0.75f) + 1), 0.75f, true);\n            this.cap = cap;\n        }\n        @Override\n        protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {\n            return size() > cap;\n        }\n    }\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int cap = Integer.parseInt(br.readLine().trim());\n        int q = Integer.parseInt(br.readLine().trim());\n        LRU cache = new LRU(cap);\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < q; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine().trim());\n            String op = st.nextToken();\n            if (op.equals(\"PUT\")) {\n                int key = Integer.parseInt(st.nextToken());\n                int val = Integer.parseInt(st.nextToken());\n                cache.put(key, val);\n            } else { // GET\n                int key = Integer.parseInt(st.nextToken());\n                Integer v = cache.get(key);\n                sb.append(v == null ? -1 : v).append('\\n');\n            }\n        }\n        sb.append(\"keys\");\n        for (Integer key : cache.keySet()) {\n            sb.append(' ').append(key);\n        }\n        sb.append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "2\n6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3\n",
+      "tests": [
+        {
+          "name": "visible: classic LRU eviction",
+          "stdin": "2\n6\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2\nGET 3\n",
+          "expectStdout": "10\n-1\n30\nkeys 1 3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: update refreshes recency, no eviction",
+          "stdin": "2\n5\nPUT 1 1\nPUT 2 2\nPUT 1 11\nPUT 3 3\nGET 2\n",
+          "expectStdout": "-1\nkeys 1 3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: capacity 1 keeps only newest",
+          "stdin": "1\n4\nPUT 5 50\nPUT 6 60\nGET 5\nGET 6\n",
+          "expectStdout": "-1\n60\nkeys 6",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "new LinkedHashMap<>(initialCap, 0.75f, true) gives access order; override removeEldestEntry to return size()>cap. keySet() iterates LRU-first to MRU-last, exactly the order you must print."
+    },
+    {
+      "id": "java-t2-p3",
+      "title": "Open-addressing hash map: linear-probe counter",
+      "difficulty": "hard",
+      "instructions": "<p>Implement an <strong>open-addressing</strong> hash table with <strong>linear probing</strong> (no chaining) and report probe costs — the technique behind cache-friendly HFT maps. Fixed table length <code class=\"inline\">m</code> on line 1 (power of two, 2 ≤ m ≤ 2^20). Line 2: number of inserts <code class=\"inline\">k</code> (guaranteed k &lt; m, so the table never fills). Then <code class=\"inline\">k</code> integer keys.</p><p>Slot for a key = <code class=\"inline\">(m - 1) &amp; (h ^ (h &gt;&gt;&gt; 16))</code> with <code class=\"inline\">h = Integer.hashCode(key)</code>. On collision, probe linearly forward with wraparound: try slot, slot+1, slot+2, … mod m until an empty slot is found. <strong>Probe count for one insert = number of slots examined, counting the final empty slot</strong> (so a key that lands in its home slot directly costs 1). Duplicate keys do not occur.</p><p><strong>Output</strong> one line per insert in input order: the probe count for that key. Then a final line <code class=\"inline\">total &lt;sum&gt;</code> with the sum of all probe counts.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int m = Integer.parseInt(br.readLine().trim());\n        int k = Integer.parseInt(br.readLine().trim());\n        // TODO: linear-probe insert; count probes (incl. the empty slot landed in)\n        // TODO: print probe count per key, then \"total <sum>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static int spread(int h) {\n        return h ^ (h >>> 16);\n    }\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int m = Integer.parseInt(br.readLine().trim());\n        int k = Integer.parseInt(br.readLine().trim());\n        boolean[] occupied = new boolean[m];\n        int[] keys = new int[m];\n        int mask = m - 1;\n        StringBuilder sb = new StringBuilder();\n        long total = 0;\n        for (int i = 0; i < k; i++) {\n            int key = Integer.parseInt(br.readLine().trim());\n            int idx = mask & spread(Integer.valueOf(key).hashCode());\n            int probes = 1;\n            while (occupied[idx]) {\n                idx = (idx + 1) & mask;\n                probes++;\n            }\n            occupied[idx] = true;\n            keys[idx] = key;\n            total += probes;\n            sb.append(probes).append('\\n');\n        }\n        sb.append(\"total \").append(total).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "8\n4\n0\n8\n16\n1\n",
+      "tests": [
+        {
+          "name": "visible: three keys collide at slot 0, then linear probe",
+          "stdin": "8\n4\n0\n8\n16\n1\n",
+          "expectStdout": "1\n2\n3\n2\ntotal 8",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: no collisions, all home slots",
+          "stdin": "8\n3\n0\n1\n2\n",
+          "expectStdout": "1\n1\n1\ntotal 3",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: wraparound probe at end of table",
+          "stdin": "4\n3\n3\n7\n11\n",
+          "expectStdout": "1\n2\n3\ntotal 6",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "Home slot = (m-1) & spread(h). Walk idx=(idx+1)&mask while occupied, counting every slot you look at including the empty one you settle into. A direct hit costs exactly 1."
+    },
+    {
+      "id": "java-t2-p4",
+      "title": "Resize cost counter: rehash threshold crossings",
+      "difficulty": "hard",
+      "instructions": "<p>Track HashMap growth. Inputs: line 1 = initial requested capacity <code class=\"inline\">reqCap</code> (1 ≤ reqCap ≤ 2^20); line 2 = number of distinct keys inserted <code class=\"inline\">k</code> (1 ≤ k ≤ 5,000,000). Assume the default load factor <strong>0.75</strong> and that all <code class=\"inline\">k</code> inserts are distinct keys (so size grows by 1 each insert).</p><p>HashMap rounds the initial capacity up to the next power of two (<code class=\"inline\">tableSizeFor</code>); the first <code class=\"inline\">threshold = capacity × 0.75</code> (floored). A resize fires when, after an insert, <code class=\"inline\">size &gt; threshold</code>; each resize <strong>doubles</strong> capacity and recomputes the threshold. Simulate inserting keys 1..k.</p><p><strong>Output</strong> one line per resize, in order:<br><code class=\"inline\">resize &lt;oldCap&gt; -&gt; &lt;newCap&gt; at size &lt;size&gt;</code><br>(<code class=\"inline\">size</code> = the live entry count that triggered the resize). Then a final line <code class=\"inline\">final cap &lt;capacity&gt; rehashes &lt;count&gt;</code> giving the ending table capacity and total number of resizes.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int reqCap = Integer.parseInt(br.readLine().trim());\n        long k = Long.parseLong(br.readLine().trim());\n        // TODO: round reqCap up to power of two; loadFactor 0.75\n        // TODO: insert 1..k, log each resize, then final summary\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static final float LOAD_FACTOR = 0.75f;\n\n    static int tableSizeFor(int cap) {\n        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);\n        return (n < 0) ? 1 : (n + 1);\n    }\n\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int reqCap = Integer.parseInt(br.readLine().trim());\n        long k = Long.parseLong(br.readLine().trim());\n        long cap = tableSizeFor(Math.max(1, reqCap));\n        long threshold = (long) Math.floor(cap * LOAD_FACTOR);\n        StringBuilder sb = new StringBuilder();\n        int rehashes = 0;\n        for (long size = 1; size <= k; size++) {\n            if (size > threshold) {\n                long oldCap = cap;\n                cap = cap << 1;\n                threshold = (long) Math.floor(cap * LOAD_FACTOR);\n                rehashes++;\n                sb.append(\"resize \").append(oldCap).append(\" -> \").append(cap)\n                  .append(\" at size \").append(size).append('\\n');\n            }\n        }\n        sb.append(\"final cap \").append(cap).append(\" rehashes \").append(rehashes).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "stdin": "16\n13\n",
+      "tests": [
+        {
+          "name": "visible: default 16, 13th insert triggers first resize",
+          "stdin": "16\n13\n",
+          "expectStdout": "resize 16 -> 32 at size 13\nfinal cap 32 rehashes 1",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: no resize when under threshold",
+          "stdin": "16\n12\n",
+          "expectStdout": "final cap 16 rehashes 0",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: requested 33 rounds to 64, two resizes by 100",
+          "stdin": "33\n100\n",
+          "expectStdout": "resize 64 -> 128 at size 49\nresize 128 -> 256 at size 97\nfinal cap 256 rehashes 2",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "stress: 5,000,000 inserts amortized O(n)",
+          "stdin": "16\n5000000\n",
+          "expectStdout": "resize 16 -> 32 at size 13\nresize 32 -> 64 at size 25\nresize 64 -> 128 at size 49\nresize 128 -> 256 at size 97\nresize 256 -> 512 at size 193\nresize 512 -> 1024 at size 385\nresize 1024 -> 2048 at size 769\nresize 2048 -> 4096 at size 1537\nresize 4096 -> 8192 at size 3073\nresize 8192 -> 16384 at size 6145\nresize 16384 -> 32768 at size 12289\nresize 32768 -> 65536 at size 24577\nresize 65536 -> 131072 at size 49153\nresize 131072 -> 262144 at size 98305\nresize 262144 -> 524288 at size 196609\nresize 524288 -> 1048576 at size 393217\nresize 1048576 -> 2097152 at size 786433\nresize 2097152 -> 4194304 at size 1572865\nresize 4194304 -> 8388608 at size 3145729\nfinal cap 8388608 rehashes 19",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "complexity": {
+        "codeTemplate": "import java.util.*;\npublic class Main {\n    static final float LOAD_FACTOR = 0.75f;\n    static int tableSizeFor(int cap){int n=-1>>>Integer.numberOfLeadingZeros(cap-1);return (n<0)?1:(n+1);} \n    public static void main(String[] a){\n        int N = {N};\n        long cap = tableSizeFor(16);\n        long threshold = (long)Math.floor(cap*LOAD_FACTOR);\n        long work = 0;\n        for (long size = 1; size <= N; size++){\n            work++; // one insert\n            if (size > threshold){ cap <<= 1; threshold = (long)Math.floor(cap*LOAD_FACTOR); work += size; }\n        }\n        System.out.println(work);\n    }\n}",
+        "sizes": [10000, 50000, 100000, 500000, 1000000],
+        "expected": "O(n)"
+      },
+      "hint": "tableSizeFor rounds reqCap up to a power of two. threshold = floor(cap*0.75). Resize when size>threshold AFTER the insert, then double cap. The classic 16-map first grows on the 13th insert."
+    }
+  ]
+}

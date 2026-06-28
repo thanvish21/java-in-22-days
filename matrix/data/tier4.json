@@ -1,0 +1,343 @@
+{
+  "tier": 4,
+  "language": "java",
+  "emoji": "🔥",
+  "title": "JVM Low-Level Execution & GC Tuning",
+  "subtitle": "Where your bytes really live, when the JIT wakes up, and what G1 vs ZGC costs you in microseconds",
+  "goal": "Reason about a running JVM the way a latency engineer does: predict heap-vs-stack placement under escape analysis, compute exact object footprints, model G1 region and humongous allocation, estimate allocation rate and minor-GC frequency, and know when C1/C2 take over from the interpreter — then drive the same code under -XX:+UseG1GC, -XX:+UseZGC, -Xint, and -Xlog:gc to watch the prediction hold.",
+  "estMinutes": 260,
+  "tags": ["jvm", "gc", "g1", "zgc", "jit", "escape-analysis", "tlab", "heap", "tuning"],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "Heap, stack, and the lie that 'objects always live on the heap'",
+      "html": "<p>The textbook rule — <em>primitives and references on the stack, objects on the heap</em> — is the first thing a serious JVM engineer unlearns. The <strong>stack</strong> is per-thread: each method frame holds local primitives and object <em>references</em>, is allocated and freed in strict LIFO order, and never sees the garbage collector. The <strong>heap</strong> is shared across threads, is where <code class=\"inline\">new</code> objects nominally land, and is the only region the GC scans.</p><p>But the JIT is allowed to break the rule when it can prove an object <strong>does not escape</strong> its creating method. If an object's reference never leaves the frame — never returned, never stored in a field, never handed to another thread — the compiler can <strong>scalar-replace</strong> it: shred the object into its individual fields and keep them in registers or on the stack. No heap allocation, no header, no GC pressure, zero deallocation cost. In a hot path that allocates millions of short-lived temporaries, this is the single biggest free win the JVM gives you.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "TLAB: why allocation is usually a pointer bump",
+      "html": "<p>When an object <em>does</em> go on the heap, it almost never touches a global lock. Each thread owns a <strong>Thread-Local Allocation Buffer (TLAB)</strong> — a private slab carved out of Eden. Allocating is then just <code class=\"inline\">ptr += size; if (ptr &gt; end) slowpath()</code>: a <strong>bump-the-pointer</strong> with no synchronization. This is why Java allocation is often faster than a hand-rolled C <code class=\"inline\">malloc</code> for small short-lived objects.</p><p>The slow path fires when the TLAB is exhausted: the thread either grabs a fresh TLAB or, for a large object, allocates directly in the shared heap (with a lock). The takeaway for HFT code: keep objects small and short-lived so they die in Eden, fit your TLAB, and never trigger the slow path on the hot path.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Escape analysis in action — this allocation can vanish",
+      "code": "// 'p' never escapes hotPath: not returned, not stored, not shared.\n// With C2 + escape analysis, Point is scalar-replaced: x and y live in\n// registers, no heap object, no GC. Run with -XX:-DoEscapeAnalysis to\n// force the allocation and watch -Xlog:gc light up under load.\nstatic long hotPath(int a, int b) {\n    Point p = new Point(a, b);   // candidate for scalar replacement\n    return (long) p.x * p.y;     // only the fields are ever read\n}\n\nstatic final class Point {\n    final int x, y;\n    Point(int x, int y) { this.x = x; this.y = y; }\n}",
+      "explain": "Three escape states matter: NoEscape (stack/scalar-replaceable), ArgEscape (passed to a callee but stays thread-local — lock elision possible), and GlobalEscape (stored to a static/field or published to another thread — must live on the heap). Only NoEscape objects get scalar-replaced. Toggle -XX:+PrintEscapeAnalysis (fastdebug builds) or just compare throughput with -XX:+DoEscapeAnalysis vs -XX:-DoEscapeAnalysis."
+    },
+    {
+      "type": "text",
+      "heading": "Object footprint: header + fields + alignment padding",
+      "html": "<p>Every heap object carries an <strong>object header</strong>. On a 64-bit HotSpot with <strong>compressed oops</strong> (the default below 32 GB heaps), the header is <strong>12 bytes</strong>: an 8-byte <em>mark word</em> (identity hash, lock state, GC age bits) plus a 4-byte <em>compressed klass pointer</em>. Arrays add a 4-byte length, making their header 16 bytes.</p><p>Field widths: <code class=\"inline\">boolean</code>/<code class=\"inline\">byte</code> = 1, <code class=\"inline\">char</code>/<code class=\"inline\">short</code> = 2, <code class=\"inline\">int</code>/<code class=\"inline\">float</code> = 4, <code class=\"inline\">long</code>/<code class=\"inline\">double</code> = 8, and a <strong>reference = 4 bytes</strong> under compressed oops. The total instance size is then <strong>padded up to a multiple of 8 bytes</strong> (the object alignment). That padding is real wasted memory: a class with a single <code class=\"inline\">boolean</code> still costs 16 bytes (12 header + 1 field + 3 padding).</p>"
+    },
+    {
+      "type": "tip",
+      "html": "Compressed oops are why you keep your max heap under the ~32 GB boundary if you can: cross it and references widen to 8 bytes, every object grows, and your effective cache footprint shrinks — a heap that was comfortable at 31 GB can thrash at 33 GB. The JVM logs <code class=\"inline\">Compressed Oops mode</code> at startup; check it with <code class=\"inline\">-Xlog:gc+heap+coops=info</code>."
+    },
+    {
+      "type": "text",
+      "heading": "G1: the heap is a grid of regions, and big objects are 'humongous'",
+      "html": "<p><strong>G1 (Garbage First)</strong>, the default collector since JDK 9, abandons the old contiguous young/old split. It carves the heap into <strong>~2048 equal-size regions</strong> (region size is a power of two from 1 MB to 32 MB, auto-chosen from heap size). A region is dynamically tagged Eden, Survivor, or Old. G1 collects the regions with the most garbage first — hence the name — to hit a soft <strong>pause-time target</strong> (<code class=\"inline\">-XX:MaxGCPauseMillis</code>, default 200 ms).</p><p>The trap is the <strong>humongous object</strong>: any single allocation <strong>≥ 50% of one region</strong> is allocated directly in <em>Old</em> across <code class=\"inline\">ceil(size / regionSize)</code> <strong>contiguous</strong> regions, bypassing Eden entirely. Humongous objects fragment the heap, are expensive to collect, and can force full GCs if contiguous regions can't be found. A 9 MB array in a JVM with 8 MB regions burns two whole regions and wastes 7 MB. Size your regions (or your objects) so hot allocations stay normal.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Selecting and observing G1",
+      "code": "// Explicit G1 with a 16 MB region and tight pause target:\n//   java -XX:+UseG1GC -XX:G1HeapRegionSize=16m \\\n//        -XX:MaxGCPauseMillis=50 -Xlog:gc,gc+heap=info Main\n//\n// A sample -Xlog:gc line:\n//   [1.234s][info][gc] GC(7) Pause Young (Normal)\n//        (G1 Evacuation Pause) 512M->48M(1024M) 6.3ms\n//   ^ before->after(total committed)   ^ pause duration\n//\n// 'Pause Young (Normal)'      = minor GC, Eden+Survivor evacuated\n// 'Pause Young (Mixed)'       = young + some old regions\n// 'Pause Full'                = whole-heap stop-the-world (bad: investigate)",
+      "explain": "Read GC logs as before->after(committed): the drop is how much you reclaimed, the parenthesized number is total committed heap, the trailing ms is the stop-the-world pause. Frequent 'Pause Young' with small drops means a high allocation rate of short-lived garbage; any 'Pause Full' under G1 usually means humongous fragmentation or an undersized heap."
+    },
+    {
+      "type": "text",
+      "heading": "ZGC: when you trade throughput for sub-millisecond pauses",
+      "html": "<p><strong>ZGC</strong> (<code class=\"inline\">-XX:+UseZGC</code>) is a concurrent, region-based collector built for <strong>pause times under 1 ms regardless of heap size</strong> — it scales from a few hundred MB to multiple terabytes with pauses that stay flat. It does almost all its work (marking <em>and relocation</em>) concurrently with your application, using <strong>colored pointers</strong> and <strong>load barriers</strong>: a few extra instructions on every reference load that let the collector move objects out from under running threads.</p><p>The trade-off is real. ZGC's load barriers and concurrent relocation cost <strong>throughput</strong> — typically a few percent versus G1 — and its memory overhead is higher. Choose <strong>G1</strong> when you want balanced throughput and acceptable (tens of ms) pauses; choose <strong>ZGC</strong> when a single multi-ms stop-the-world pause would blow your latency SLA — a market-data handler that cannot afford a 30 ms G1 pause during a volatility spike. Run the <em>same</em> workload under <code class=\"inline\">-XX:+UseG1GC -Xlog:gc</code> and <code class=\"inline\">-XX:+UseZGC -Xlog:gc</code> and compare the pause column; the correctness output is identical, the pause profile is not.</p>"
+    },
+    {
+      "type": "tip",
+      "variant": "warn",
+      "html": "ZGC pauses being tiny does <strong>not</strong> mean GC is free. The concurrent work still burns CPU and the load barriers tax every reference read, so a throughput-bound batch job can run measurably <em>slower</em> under ZGC than G1 even though its pauses are shorter. 'Low pause' and 'high throughput' are different objectives — pick the one your workload is actually graded on."
+    },
+    {
+      "type": "text",
+      "heading": "Allocation rate and GC pressure: the real driver of pause frequency",
+      "html": "<p>Pause <em>frequency</em> is governed by one number: <strong>allocation rate</strong> (bytes/sec of new objects). Every byte you allocate fills Eden; when Eden fills, a <strong>minor GC</strong> fires to evacuate the survivors and reset Eden. So minor-GC frequency ≈ <code class=\"inline\">allocationRate / edenSize</code>. Double your allocation rate and you double your minor GCs; double Eden and you halve them (at the cost of longer individual pauses and more memory).</p><p>This is why <strong>allocation reduction beats GC tuning</strong> in the hot path. Object pooling, primitive arrays instead of boxed <code class=\"inline\">Integer</code>, reusing buffers, and letting escape analysis kill temporaries all cut the allocation rate at the source. The cheapest GC is the one that never has to run because Eden never filled. Most short-lived objects (the <em>weak generational hypothesis</em>) die in Eden and cost almost nothing to collect — the danger is the few that survive long enough to get promoted to Old, where collection is expensive."
+    },
+    {
+      "type": "text",
+      "heading": "JIT: the interpreter, C1, and C2",
+      "html": "<p>Java starts <strong>interpreted</strong> — the JVM walks bytecode directly, slow but instantly available. As a method runs, HotSpot increments per-method <strong>invocation and back-edge counters</strong>. Cross a threshold and <strong>tiered compilation</strong> kicks in: the <strong>C1</strong> (client) compiler produces fast-to-emit, lightly optimized, <em>profiled</em> machine code; once a method is proven genuinely hot, <strong>C2</strong> (server) recompiles it with aggressive optimizations — inlining, escape analysis, loop unrolling, vectorization — using the profile C1 gathered.</p><p>The practical consequences: (1) <strong>warm-up</strong> is real — the first thousands of calls run interpreted or under C1, so a freshly started process is slow until C2 catches up; HFT systems <em>warm the JIT</em> with synthetic traffic before going live. (2) <code class=\"inline\">-Xint</code> forces pure interpretation (no JIT) — useful to measure the JIT's contribution, brutally slow in production. (3) C2 can <strong>deoptimize</strong>: if a speculative assumption (e.g., a class was never subclassed) is violated, it bails back to the interpreter and recompiles. Benchmark only <em>after</em> warm-up, or your numbers measure the interpreter, not your code."
+    },
+    {
+      "type": "code",
+      "caption": "Observing the tiers",
+      "code": "// Watch every compilation decision:\n//   java -XX:+PrintCompilation Main\n//   ...\n//   1234   3       hotMethod (28 bytes)     <- '3' = C1 (tier 3, profiled)\n//   5678   4       hotMethod (28 bytes)     <- '4' = C2 (tier 4, optimized)\n//   ...    %  made not entrant              <- deoptimized\n//\n// Force pure interpretation (no JIT) to isolate warm-up cost:\n//   java -Xint Main\n//\n// Disable tiering, go straight to C2 (longer warm-up, peak throughput):\n//   java -XX:-TieredCompilation Main",
+      "explain": "The number column in -XX:+PrintCompilation is the tier: 0 interpreter, 1-3 are C1 variants (3 = profiled C1), 4 = C2. 'made not entrant' / 'made zombie' are deoptimizations. If a method you expect to be hot never reaches tier 4, it may be too big to inline or its profile is unstable — both kill peak performance."
+    },
+    {
+      "type": "quiz",
+      "question": "A method creates a temporary object that it only reads from and never returns, stores, or shares with another thread. Under C2 with escape analysis enabled, what most likely happens to that object?",
+      "options": [
+        "It is always allocated on the heap and collected by the next minor GC.",
+        "It is scalar-replaced — its fields live in registers/stack and no heap object is allocated at all.",
+        "It is moved to the Old generation immediately to avoid GC.",
+        "It forces a humongous allocation because temporaries are large."
+      ],
+      "answerIndex": 1,
+      "explain": "An object that does not escape its method (NoEscape) is a scalar-replacement candidate: C2 shreds it into its individual fields, keeps them in registers or on the stack, and skips heap allocation entirely — no header, no GC, no deallocation. This is the biggest free win in allocation-heavy hot paths."
+    },
+    {
+      "type": "quiz",
+      "question": "You have a market-data handler where a single 30 ms stop-the-world GC pause during a volatility burst would violate your latency SLA, even though total throughput matters less. Which collector fits best, and why?",
+      "options": [
+        "G1, because it has the highest raw throughput.",
+        "-Xint, because no JIT means predictable timing.",
+        "ZGC, because its concurrent relocation and load barriers keep pauses under ~1 ms regardless of heap size, trading some throughput for pause predictability.",
+        "The Serial collector, because single-threaded GC is the most predictable."
+      ],
+      "answerIndex": 2,
+      "explain": "ZGC does marking and relocation concurrently using colored pointers and load barriers, holding pauses below ~1 ms even on large heaps. You pay a few percent throughput and higher memory overhead, but you eliminate the multi-ms stop-the-world pause that would breach the SLA — exactly the trade an HFT latency engineer wants."
+    },
+    {
+      "type": "tryit",
+      "title": "Compute an object's footprint by hand",
+      "instructions": "A class on 64-bit HotSpot with compressed oops has one int field and one reference field. Header is 12 bytes, int is 4, a compressed reference is 4, and the total is padded up to a multiple of 8. Print the total instance size in bytes.",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        int header = 12;\n        int fields = 4 /* int */ + 4 /* ref */;\n        // TODO: pad (header + fields) up to a multiple of 8 and print it\n    }\n}",
+      "check": { "stdout_equals": "24" },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        int header = 12;\n        int fields = 4 + 4;\n        int raw = header + fields;        // 20\n        int total = (raw + 7) & ~7;       // round up to multiple of 8 -> 24\n        System.out.println(total);\n    }\n}",
+      "passMsg": "Correct — 12 + 8 = 20, padded up to 24. The 4 padding bytes are real wasted memory.",
+      "failMsg": "Total = roundUpTo8(header + fields) = roundUpTo8(12 + 8) = roundUpTo8(20) = 24. Use (raw + 7) & ~7."
+    }
+  ],
+  "problems": [
+    {
+      "id": "java-t4-p1",
+      "title": "Escape-analysis allocator: stack vs heap split",
+      "difficulty": "hard",
+      "instructions": "<p>Model what escape analysis does to a batch of allocations. Line 1: an integer <code class=\"inline\">q</code> (1 ≤ q ≤ 100000), the number of allocation groups. Each of the next <code class=\"inline\">q</code> lines is <code class=\"inline\">&lt;escape&gt; &lt;size&gt; &lt;count&gt;</code> where <code class=\"inline\">escape</code> is one of <code class=\"inline\">NONE</code>, <code class=\"inline\">ARG</code>, <code class=\"inline\">GLOBAL</code>; <code class=\"inline\">size</code> is the per-object byte size (1 ≤ size ≤ 10^6); <code class=\"inline\">count</code> is how many such objects are allocated (1 ≤ count ≤ 10^6).</p><p>Rule: only <code class=\"inline\">NONE</code> (does-not-escape) objects are scalar-replaced and counted as <strong>stack</strong> allocations; <code class=\"inline\">ARG</code> and <code class=\"inline\">GLOBAL</code> escape and count as <strong>heap</strong> allocations. For each class, accumulate the object count and the total bytes (<code class=\"inline\">size × count</code>, may exceed 32 bits — use <code class=\"inline\">long</code>).</p><p><strong>Output</strong> exactly two lines:<br><code class=\"inline\">stack &lt;stackObjects&gt; &lt;stackBytes&gt;</code><br><code class=\"inline\">heap &lt;heapObjects&gt; &lt;heapBytes&gt;</code></p><p>The graded answer is the deterministic byte/object split. Use the ▶ Run and ⏱ Profile buttons with the attached flags to watch how toggling escape analysis changes real GC behavior.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        // TODO: NONE -> stack (scalar-replaced); ARG/GLOBAL -> heap\n        // TODO: accumulate counts and bytes (use long for bytes)\n        // TODO: print \"stack <objs> <bytes>\" then \"heap <objs> <bytes>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        long stackBytes = 0, heapBytes = 0;\n        long stackCount = 0, heapCount = 0;\n        for (int i = 0; i < q; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine().trim());\n            String escape = st.nextToken();\n            long size = Long.parseLong(st.nextToken());\n            long count = Long.parseLong(st.nextToken());\n            boolean stackAllocatable = escape.equals(\"NONE\");\n            if (stackAllocatable) {\n                stackBytes += size * count;\n                stackCount += count;\n            } else {\n                heapBytes += size * count;\n                heapCount += count;\n            }\n        }\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"stack \").append(stackCount).append(' ').append(stackBytes).append('\\n');\n        sb.append(\"heap \").append(heapCount).append(' ').append(heapBytes).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-XX:+DoEscapeAnalysis", "-Xlog:gc"],
+      "stdin": "4\nNONE 24 1000\nARG 32 500\nGLOBAL 16 250\nNONE 40 100\n",
+      "tests": [
+        {
+          "name": "visible: mixed escape states",
+          "stdin": "4\nNONE 24 1000\nARG 32 500\nGLOBAL 16 250\nNONE 40 100\n",
+          "expectStdout": "stack 1100 28000\nheap 750 20000",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: everything escapes -> all heap",
+          "stdin": "2\nGLOBAL 48 10\nARG 16 5\n",
+          "expectStdout": "stack 0 0\nheap 15 560",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: nothing escapes, large byte total",
+          "stdin": "1\nNONE 64 1000000\n",
+          "expectStdout": "stack 1000000 64000000\nheap 0 0",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "Only escape==NONE is scalar-replaced (stack). ARG and GLOBAL both escape, so both go to heap. bytes = size*count and can exceed Integer.MAX_VALUE — accumulate in long."
+    },
+    {
+      "id": "java-t4-p2",
+      "title": "Object footprint calculator (compressed oops)",
+      "difficulty": "hard",
+      "instructions": "<p>Compute the exact heap footprint of one instance on 64-bit HotSpot with <strong>compressed oops</strong>. Line 1: integer <code class=\"inline\">f</code> (0 ≤ f ≤ 1000), the number of fields. Each of the next <code class=\"inline\">f</code> lines is a field type, one of: <code class=\"inline\">boolean</code>, <code class=\"inline\">byte</code>, <code class=\"inline\">char</code>, <code class=\"inline\">short</code>, <code class=\"inline\">int</code>, <code class=\"inline\">float</code>, <code class=\"inline\">long</code>, <code class=\"inline\">double</code>, <code class=\"inline\">ref</code>.</p><p>Widths (bytes): <code class=\"inline\">boolean</code>=1, <code class=\"inline\">byte</code>=1, <code class=\"inline\">char</code>=2, <code class=\"inline\">short</code>=2, <code class=\"inline\">int</code>=4, <code class=\"inline\">float</code>=4, <code class=\"inline\">long</code>=8, <code class=\"inline\">double</code>=8, <code class=\"inline\">ref</code>=4 (compressed oop). The object <strong>header is 12 bytes</strong>. Sum header + all field widths, then <strong>pad the total up to a multiple of 8 bytes</strong>. (For this model, sum field widths directly — do not reorder or insert inter-field gaps; only the final 8-byte alignment padding applies.)</p><p><strong>Output</strong> exactly four lines:<br><code class=\"inline\">header 12</code><br><code class=\"inline\">fields &lt;sumOfFieldWidths&gt;</code><br><code class=\"inline\">padding &lt;bytesAddedForAlignment&gt;</code><br><code class=\"inline\">total &lt;finalSizePaddedTo8&gt;</code></p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int f = Integer.parseInt(br.readLine().trim());\n        // TODO: map each type to its width; ref=4, header=12\n        // TODO: total = roundUpToMultipleOf8(header + fieldBytes)\n        // TODO: print header/fields/padding/total\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static long widthOf(String t) {\n        switch (t) {\n            case \"boolean\": case \"byte\": return 1;\n            case \"char\": case \"short\": return 2;\n            case \"int\": case \"float\": return 4;\n            case \"long\": case \"double\": return 8;\n            case \"ref\": return 4;\n            default: throw new IllegalArgumentException(t);\n        }\n    }\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int f = Integer.parseInt(br.readLine().trim());\n        long fieldBytes = 0;\n        for (int i = 0; i < f; i++) {\n            String t = br.readLine().trim();\n            fieldBytes += widthOf(t);\n        }\n        long header = 12;\n        long raw = header + fieldBytes;\n        long padded = (raw + 7) & ~7L;\n        long padding = padded - raw;\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"header \").append(header).append('\\n');\n        sb.append(\"fields \").append(fieldBytes).append('\\n');\n        sb.append(\"padding \").append(padding).append('\\n');\n        sb.append(\"total \").append(padded).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-Xlog:gc+heap+coops=info"],
+      "stdin": "2\nint\nref\n",
+      "tests": [
+        {
+          "name": "visible: int + ref -> padded to 24",
+          "stdin": "2\nint\nref\n",
+          "expectStdout": "header 12\nfields 8\npadding 4\ntotal 24",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: empty object is 16 bytes",
+          "stdin": "0\n",
+          "expectStdout": "header 12\nfields 0\npadding 4\ntotal 16",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: long + long + boolean -> 32",
+          "stdin": "3\nlong\nlong\nboolean\n",
+          "expectStdout": "header 12\nfields 17\npadding 3\ntotal 32",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: three ints already 8-aligned",
+          "stdin": "3\nint\nint\nint\n",
+          "expectStdout": "header 12\nfields 12\npadding 0\ntotal 24",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "header=12, ref=4 under compressed oops. raw = 12 + sum(widths); total = (raw + 7) & ~7; padding = total - raw. An object with no fields is 12 -> padded to 16."
+    },
+    {
+      "id": "java-t4-p3",
+      "title": "G1 region tracker with humongous detection",
+      "difficulty": "hard",
+      "instructions": "<p>Simulate how G1 places allocations into fixed-size regions. Line 1: integer <code class=\"inline\">regionKb</code> — the region size in KiB (a power of two, 1024 ≤ regionKb ≤ 32768). Line 2: integer <code class=\"inline\">n</code> (1 ≤ n ≤ 200000), the number of allocations. The next <code class=\"inline\">n</code> lines each give one object's size in bytes (1 ≤ size ≤ 2×10^9).</p><p>Let <code class=\"inline\">regionBytes = regionKb × 1024</code>. An object is <strong>humongous</strong> when <code class=\"inline\">size ≥ 50%</code> of a region (i.e. <code class=\"inline\">size × 2 ≥ regionBytes</code>); it consumes <code class=\"inline\">ceil(size / regionBytes)</code> dedicated regions. <strong>Normal</strong> objects are packed greedily into regions in input order: keep filling the current region while the running used bytes plus the new object stay ≤ <code class=\"inline\">regionBytes</code>; otherwise open a new region. A normal object is never split across regions.</p><p><strong>Output</strong> exactly three lines:<br><code class=\"inline\">humongous &lt;humongousObjs&gt; &lt;humongousRegions&gt;</code><br><code class=\"inline\">normal &lt;normalObjs&gt; &lt;normalRegions&gt;</code><br><code class=\"inline\">regions &lt;humongousRegions + normalRegions&gt;</code></p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        long regionKb = Long.parseLong(br.readLine().trim());\n        int n = Integer.parseInt(br.readLine().trim());\n        // TODO: regionBytes = regionKb*1024\n        // TODO: humongous when size*2 >= regionBytes -> ceil(size/regionBytes) regions\n        // TODO: normal objects greedily packed; new region when they don't fit\n        // TODO: print humongous / normal / total region counts\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        long regionKb = Long.parseLong(br.readLine().trim());\n        long regionBytes = regionKb * 1024;\n        int n = Integer.parseInt(br.readLine().trim());\n        long humongousObjs = 0, humongousRegions = 0;\n        long normalObjs = 0, normalRegions = 0;\n        long usedInCurrent = 0;\n        boolean haveOpenRegion = false;\n        for (int i = 0; i < n; i++) {\n            long size = Long.parseLong(br.readLine().trim());\n            if (size * 2 >= regionBytes) {\n                humongousObjs++;\n                long regions = (size + regionBytes - 1) / regionBytes;\n                humongousRegions += regions;\n            } else {\n                normalObjs++;\n                if (!haveOpenRegion || usedInCurrent + size > regionBytes) {\n                    normalRegions++;\n                    usedInCurrent = 0;\n                    haveOpenRegion = true;\n                }\n                usedInCurrent += size;\n            }\n        }\n        long totalRegions = humongousRegions + normalRegions;\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"humongous \").append(humongousObjs).append(' ').append(humongousRegions).append('\\n');\n        sb.append(\"normal \").append(normalObjs).append(' ').append(normalRegions).append('\\n');\n        sb.append(\"regions \").append(totalRegions).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-XX:+UseG1GC", "-Xlog:gc"],
+      "stdin": "1024\n4\n300000\n300000\n600000\n2000000\n",
+      "tests": [
+        {
+          "name": "visible: two normals pack, two humongous",
+          "stdin": "1024\n4\n300000\n300000\n600000\n2000000\n",
+          "expectStdout": "humongous 2 3\nnormal 2 1\nregions 4",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: four normals pack into two regions",
+          "stdin": "1024\n4\n400000\n400000\n400000\n400000\n",
+          "expectStdout": "humongous 0 0\nnormal 4 2\nregions 2",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: object exactly one region is humongous",
+          "stdin": "1024\n1\n1048576\n",
+          "expectStdout": "humongous 1 1\nnormal 0 0\nregions 1",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "hint": "regionBytes = regionKb*1024. Humongous iff size*2 >= regionBytes, costing ceil(size/regionBytes) regions. Pack normals greedily: open a new region whenever usedInCurrent + size > regionBytes. Use long everywhere — sizes reach 2e9."
+    },
+    {
+      "id": "java-t4-p4",
+      "title": "Allocation-rate minor-GC counter",
+      "difficulty": "hard",
+      "instructions": "<p>Estimate minor-GC frequency from an allocation stream against a fixed Eden. Line 1: integer <code class=\"inline\">edenKb</code> — Eden capacity in KiB (1 ≤ edenKb ≤ 10^6). Line 2: integer <code class=\"inline\">g</code> (1 ≤ g ≤ 100000), the number of allocation groups. Each of the next <code class=\"inline\">g</code> lines is <code class=\"inline\">&lt;size&gt; &lt;count&gt;</code>: allocate <code class=\"inline\">count</code> objects (1 ≤ count ≤ 10^6) of <code class=\"inline\">size</code> bytes each (1 ≤ size ≤ edenKb×1024, so any single object fits in empty Eden).</p><p>Model: maintain <code class=\"inline\">used</code> bytes in Eden, starting at 0. To allocate one object of <code class=\"inline\">size</code>: if <code class=\"inline\">used + size &gt; edenBytes</code>, a <strong>minor GC</strong> fires first (reset <code class=\"inline\">used</code> to 0, increment the GC counter), then place the object (<code class=\"inline\">used += size</code>). Process objects in input order, expanding each group's count. Accumulate total bytes allocated.</p><p><strong>Output</strong> exactly two lines:<br><code class=\"inline\">allocated &lt;totalBytesAllocated&gt;</code><br><code class=\"inline\">minorGC &lt;numberOfMinorGCs&gt;</code></p><p>Run with <code class=\"inline\">-Xlog:gc</code> attached and watch the real minor-GC count track your prediction as allocation rate climbs.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        long edenKb = Long.parseLong(br.readLine().trim());\n        int g = Integer.parseInt(br.readLine().trim());\n        // TODO: edenBytes = edenKb*1024; track used bytes\n        // TODO: if used+size > edenBytes -> minor GC (used=0, count++), then place\n        // TODO: print \"allocated <bytes>\" and \"minorGC <count>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        long edenKb = Long.parseLong(br.readLine().trim());\n        long edenBytes = edenKb * 1024;\n        int g = Integer.parseInt(br.readLine().trim());\n        long used = 0, totalBytes = 0, minorGcs = 0;\n        for (int i = 0; i < g; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine().trim());\n            long size = Long.parseLong(st.nextToken());\n            long count = Long.parseLong(st.nextToken());\n            for (long c = 0; c < count; c++) {\n                if (used + size > edenBytes) { minorGcs++; used = 0; }\n                used += size;\n                totalBytes += size;\n            }\n        }\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"allocated \").append(totalBytes).append('\\n');\n        sb.append(\"minorGC \").append(minorGcs).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-XX:+UseZGC", "-Xlog:gc"],
+      "stdin": "1\n1\n256 10\n",
+      "tests": [
+        {
+          "name": "visible: 256B x10 into 1KiB Eden -> 2 GCs",
+          "stdin": "1\n1\n256 10\n",
+          "expectStdout": "allocated 2560\nminorGC 2",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: everything fits, no GC",
+          "stdin": "64\n1\n1024 4\n",
+          "expectStdout": "allocated 4096\nminorGC 0",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: object exactly fills Eden each time",
+          "stdin": "1\n1\n1024 5\n",
+          "expectStdout": "allocated 5120\nminorGC 4",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: high allocation rate stress",
+          "stdin": "4\n1\n512 100000\n",
+          "expectStdout": "allocated 51200000\nminorGC 12499",
+          "matchMode": "trim",
+          "timeBudgetMs": 4000,
+          "memBudgetKb": 524288,
+          "hidden": true
+        }
+      ],
+      "hint": "GC fires BEFORE placing the object that wouldn't fit: if used+size>edenBytes then used=0 and count++. minor-GC frequency tracks allocationRate/edenSize — that's the whole point of the model."
+    },
+    {
+      "id": "java-t4-p5",
+      "title": "JIT tier promotion simulator (C1/C2)",
+      "difficulty": "hard",
+      "instructions": "<p>Model HotSpot tiered compilation with simplified thresholds: <code class=\"inline\">C1_THRESHOLD = 2000</code> and <code class=\"inline\">C2_THRESHOLD = 10000</code> cumulative invocations. Line 1: integer <code class=\"inline\">q</code> (1 ≤ q ≤ 200000), the number of invocation events. Each of the next <code class=\"inline\">q</code> lines is <code class=\"inline\">METHOD &lt;name&gt; &lt;invocations&gt;</code> (name has no spaces; 1 ≤ invocations ≤ 10^7). Events for the same method accumulate.</p><p>After summing all events, each method's compilation level is decided by its <strong>cumulative</strong> invocation count: <code class=\"inline\">&lt; 2000</code> → <code class=\"inline\">INTERPRETED</code>; <code class=\"inline\">2000 ≤ c &lt; 10000</code> → <code class=\"inline\">C1</code>; <code class=\"inline\">c ≥ 10000</code> → <code class=\"inline\">C2</code>.</p><p><strong>Output</strong> one line per method <strong>in first-seen order</strong>:<br><code class=\"inline\">&lt;name&gt; &lt;cumulativeCount&gt; &lt;LEVEL&gt;</code><br>then a final line <code class=\"inline\">c2 &lt;numberOfMethodsAtC2&gt;</code>.</p><p>Run under <code class=\"inline\">-Xint</code> (pure interpreter, no JIT) versus the default and Profile both to feel exactly how much throughput C2 buys you.</p>",
+      "language": "java",
+      "engine": "backend",
+      "starter": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        // TODO: accumulate invocations per method, preserving first-seen order\n        // TODO: level: <2000 INTERPRETED, <10000 C1, else C2\n        // TODO: print \"<name> <count> <LEVEL>\" per method, then \"c2 <count at C2>\"\n    }\n}",
+      "solution": "import java.util.*;\nimport java.io.*;\n\npublic class Main {\n    static final long C1 = 2000, C2 = 10000;\n    static String level(long c) {\n        if (c >= C2) return \"C2\";\n        if (c >= C1) return \"C1\";\n        return \"INTERPRETED\";\n    }\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int q = Integer.parseInt(br.readLine().trim());\n        LinkedHashMap<String, Long> counts = new LinkedHashMap<>();\n        for (int i = 0; i < q; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine().trim());\n            st.nextToken();\n            String name = st.nextToken();\n            long inv = Long.parseLong(st.nextToken());\n            counts.merge(name, inv, Long::sum);\n        }\n        StringBuilder sb = new StringBuilder();\n        int c2count = 0;\n        for (Map.Entry<String, Long> e : counts.entrySet()) {\n            String lv = level(e.getValue());\n            if (lv.equals(\"C2\")) c2count++;\n            sb.append(e.getKey()).append(' ').append(e.getValue()).append(' ').append(lv).append('\\n');\n        }\n        sb.append(\"c2 \").append(c2count).append('\\n');\n        System.out.print(sb);\n    }\n}",
+      "runtimeFlags": ["-Xint"],
+      "stdin": "4\nMETHOD hot 1500\nMETHOD cold 50\nMETHOD hot 600\nMETHOD veryhot 12000\n",
+      "tests": [
+        {
+          "name": "visible: mixed tiers, accumulation",
+          "stdin": "4\nMETHOD hot 1500\nMETHOD cold 50\nMETHOD hot 600\nMETHOD veryhot 12000\n",
+          "expectStdout": "hot 2100 C1\ncold 50 INTERPRETED\nveryhot 12000 C2\nc2 1",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": false
+        },
+        {
+          "name": "hidden: exact threshold boundaries",
+          "stdin": "2\nMETHOD a 2000\nMETHOD b 9999\n",
+          "expectStdout": "a 2000 C1\nb 9999 C1\nc2 0",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        },
+        {
+          "name": "hidden: single method reaches C2",
+          "stdin": "1\nMETHOD onlyhot 10000\n",
+          "expectStdout": "onlyhot 10000 C2\nc2 1",
+          "matchMode": "trim",
+          "timeBudgetMs": 2000,
+          "memBudgetKb": 262144,
+          "hidden": true
+        }
+      ],
+      "complexity": {
+        "codeTemplate": "import java.util.*;\npublic class Main {\n    static final long C1 = 2000, C2 = 10000;\n    public static void main(String[] a){\n        int N = {N};\n        long[] counts = new long[8];     // 8 hot methods, round-robin invocations\n        long promotions = 0;\n        for (int i = 0; i < N; i++){\n            int m = i & 7;\n            long c = ++counts[m];\n            if (c == C1 || c == C2) promotions++;   // crossed a tier threshold\n        }\n        System.out.println(promotions);\n    }\n}",
+        "sizes": [10000, 50000, 100000, 500000, 1000000],
+        "expected": "O(n)"
+      },
+      "hint": "Use a LinkedHashMap<String,Long> so methods print in first-seen order; merge with Long::sum to accumulate repeated events. Level boundaries are inclusive at the low end: exactly 2000 is C1, exactly 10000 is C2."
+    }
+  ]
+}
