@@ -1,52 +1,62 @@
-/* ===== Java in 22 Days — playful, kid-friendly theme (Java palette) ===== */
+/* ===== Java Pro — Exact Claude theme (Anthropic palette) ===== */
 :root {
-  --bg: #fef6ee;
+  --bg: #faf9f5;
   --bg-card: #ffffff;
-  --ink: #2c2620;
-  --ink-soft: #6f6457;
-  --brand: #5382a1;
-  --brand-2: #f89820;
-  --green: #1dd1a1;
-  --green-deep: #10ac84;
-  --yellow: #feca57;
-  --red: #ff6b6b;
-  --blue: #5382a1;
-  --code-bg: #2b2620;
-  --code-ink: #fdf6ec;
-  --shadow: 0 10px 30px rgba(83, 130, 161, 0.18);
-  --shadow-sm: 0 4px 14px rgba(44, 38, 32, 0.10);
-  --radius: 20px;
-  --radius-sm: 12px;
+  --ink: #191817;
+  --ink-soft: #6b665d;
+  --brand: #c15f3c;
+  --brand-2: #d97757;
+  --green: #4a7c59;
+  --green-deep: #3c6b4a;
+  --yellow: #d4a574;
+  --red: #b23a1f;
+  --blue: #6c8ab5;
+  --code-bg: #2b2926;
+  --code-ink: #faf9f5;
+  --shadow: 0 8px 24px rgba(25, 24, 23, 0.06);
+  --shadow-sm: 0 2px 8px rgba(25, 24, 23, 0.05);
+  --radius: 14px;
+  --radius-sm: 10px;
   --maxw: 920px;
 }
 
 /* ===== Dark theme ===== */
 [data-theme="dark"] {
-  --bg: #161325;
-  --bg-card: #211d36;
-  --ink: #f3f0fb;
-  --ink-soft: #aaa2c4;
-  --brand: #7fb0d0;
-  --brand-2: #ffab3d;
-  --green: #1dd1a1;
-  --green-deep: #10ac84;
-  --yellow: #feca57;
-  --red: #ff7b7b;
-  --blue: #7fb0d0;
-  --code-bg: #100d1c;
-  --code-ink: #fdf6ec;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --bg: #262624;
+  --bg-card: #30302e;
+  --ink: #f4f3ee;
+  --ink-soft: #b8b1a6;
+  --brand: #e08a68;
+  --brand-2: #d97757;
+  --green: #6ba17d;
+  --green-deep: #5c9070;
+  --yellow: #e0b788;
+  --red: #d16758;
+  --blue: #8ba8cf;
+  --code-bg: #1a1918;
+  --code-ink: #f4f3ee;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 [data-theme="dark"] body {
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(248, 152, 32, 0.10), transparent 40%),
-    radial-gradient(circle at 88% 8%, rgba(127, 176, 208, 0.10), transparent 40%),
-    radial-gradient(circle at 70% 90%, rgba(29, 209, 161, 0.08), transparent 45%);
+  background-image: none;
 }
 [data-theme="dark"] .topbar {
-  background: rgba(22, 19, 37, 0.85);
-  border-bottom-color: rgba(127, 176, 208, 0.14);
+  background: rgba(38, 38, 36, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: -0.005em;
+}
+h1, h2, h3, .brand-name, .hero h1 {
+  font-family: "Instrument Serif", "Copernicus", "Charter", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+code, pre, .code-area, .flash-content {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 [data-theme="dark"] .progress-bar { background: #2c2742; }
 [data-theme="dark"] .goal-box { background: #18302a; border-color: #1f5e4c; }
