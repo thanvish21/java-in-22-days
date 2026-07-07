@@ -1,365 +1,137 @@
 {
-  "day": 15,
-  "emoji": "🔌",
-  "title": "Interfaces",
-  "subtitle": "Write a promise once, and let many different classes keep it their own way.",
-  "goal": "Learn what an interface is, write your own with interface and implements, let one class implement several interfaces at once, use default methods, and understand when to pick an interface over an abstract class.",
-  "estMinutes": 180,
-  "tags": [
-    "oop"
-  ],
-  "blocks": [
-    {
-      "type": "text",
-      "heading": "An interface is a promise 🤝",
-      "html": "<p>Imagine a wall socket. Anything with the right plug can use it — a lamp, a phone charger, a toaster. The socket doesn't care <em>what</em> you plug in, only that you have the right plug. That plug shape is a <strong>contract</strong>: \"if you fit, you work.\"</p><p>In Java an <strong>interface</strong> is exactly that kind of contract. It lists method names a class <em>promises</em> to provide, but it doesn't say how. Each class that signs the contract fills in the details its own way.</p>"
-    },
-    {
-      "type": "text",
-      "heading": "Writing one: interface and implements",
-      "html": "<p>You create a contract with the word <code class=\"inline\">interface</code>. Inside, you list methods with no body — just the promise:</p><p><code class=\"inline\">interface Drawable { void draw(); }</code></p><p>A class signs the contract with the word <code class=\"inline\">implements</code>. When it does, it <strong>must</strong> write a real <code class=\"inline\">draw()</code> method, or Java refuses to run:</p><p><code class=\"inline\">class Circle implements Drawable { ... }</code></p>"
-    },
-    {
-      "type": "code",
-      "caption": "Two classes keep the same promise differently",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Drawable circle = new Circle();\n        Drawable square = new Square();\n        circle.draw();\n        square.draw();\n    }\n}\n\ninterface Drawable {\n    void draw();\n}\n\nclass Circle implements Drawable {\n    public void draw() {\n        System.out.println(\"Drawing a round circle: O\");\n    }\n}\n\nclass Square implements Drawable {\n    public void draw() {\n        System.out.println(\"Drawing a square: []\");\n    }\n}",
-      "output": "Drawing a round circle: O\nDrawing a square: []",
-      "explain": "Drawable is the contract — it just promises a draw() method. Circle and Square each keep that promise in their own way. Notice we can call draw() on both because both signed the same contract."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Methods in an interface have no body.</strong> You write <code class=\"inline\">void draw();</code> with a semicolon, not <code class=\"inline\">{ }</code> curly braces. The body lives in the class that implements it.",
-      "variant": "info"
-    },
-    {
-      "type": "text",
-      "heading": "One class, many contracts 🎯",
-      "html": "<p>Remember inheritance? A class can only <code class=\"inline\">extends</code> <strong>one</strong> parent — that's <em>single inheritance</em>. But a class can <code class=\"inline\">implements</code> <strong>as many interfaces as you like</strong>, separated by commas!</p><p>A duck can be both a <code class=\"inline\">Swimmer</code> and a <code class=\"inline\">Runner</code>. It just signs both contracts: <code class=\"inline\">class Duck implements Swimmer, Runner</code>.</p>"
-    },
-    {
-      "type": "text",
-      "heading": "Default methods (Java 8+)",
-      "html": "<p>Normally interface methods have no body. But sometimes you want to share a ready-made method that every class gets for free. That's a <strong>default method</strong> — it uses the word <code class=\"inline\">default</code> and <em>does</em> have a body:</p><p><code class=\"inline\">default void describe() { ... }</code></p><p>Classes get it automatically and can use it as-is, or replace it with their own version.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "A Duck implements TWO interfaces, plus a free default method",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Duck duck = new Duck();\n        duck.swim();\n        duck.run();\n        duck.describe();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Runner {\n    void run();\n\n    default void describe() {\n        System.out.println(\"I can move on land and in water!\");\n    }\n}\n\nclass Duck implements Swimmer, Runner {\n    public void swim() {\n        System.out.println(\"The duck paddles across the pond.\");\n    }\n\n    public void run() {\n        System.out.println(\"The duck waddles along the shore.\");\n    }\n}",
-      "output": "The duck paddles across the pond.\nThe duck waddles along the shore.\nI can move on land and in water!",
-      "explain": "Duck signs both Swimmer and Runner, so it must write swim() and run(). It gets describe() for free because Runner gave it a default body — Duck never wrote describe() itself!"
-    },
-    {
-      "type": "text",
-      "heading": "Interface vs abstract class — which one? 🤔",
-      "html": "<p>Both let you list methods that subclasses must fill in, so when do you pick which?</p><ul><li><strong>Interface</strong> — use it for a <em>can-do</em> ability that unrelated things might share. A Bird and a Plane have nothing in common, yet both are <code class=\"inline\">Flyable</code>. A class can implement many interfaces.</li><li><strong>Abstract class</strong> — use it for an <em>is-a</em> family that shares real code and fields. A <code class=\"inline\">Dog</code> and a <code class=\"inline\">Cat</code> are both an <code class=\"inline\">Animal</code> and share a name field. A class can extend only one.</li></ul><p>Rule of thumb: <strong>shared ability → interface; shared family with shared code → abstract class.</strong></p>"
-    },
-    {
-      "type": "text",
-      "heading": "Programming to an interface",
-      "html": "<p>Here's the superpower. If your code only mentions the <em>interface</em> (the contract) instead of any one class, it works for <strong>every</strong> class that signs that contract — even ones you write later!</p><p>A method that takes a <code class=\"inline\">Flyable</code> can fly a Bird today and a Plane tomorrow, with zero changes. This is called <em>programming to an interface</em>, and it keeps code flexible.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "One method, any Flyable thing",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Flyable bird = new Bird();\n        Flyable plane = new Plane();\n        letItFly(bird);\n        letItFly(plane);\n    }\n\n    static void letItFly(Flyable thing) {\n        thing.fly();\n    }\n}\n\ninterface Flyable {\n    void fly();\n}\n\nclass Bird implements Flyable {\n    public void fly() {\n        System.out.println(\"The bird flaps its wings and soars.\");\n    }\n}\n\nclass Plane implements Flyable {\n    public void fly() {\n        System.out.println(\"The plane roars down the runway and lifts off.\");\n    }\n}",
-      "output": "The bird flaps its wings and soars.\nThe plane roars down the runway and lifts off.",
-      "explain": "letItFly() only knows about Flyable, not Bird or Plane. So it happily flies BOTH. If you invented a Rocket that implements Flyable, letItFly would work on it too — no changes needed. That's programming to an interface."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Java already gives you interfaces!</strong> <code class=\"inline\">Comparable</code> is a built-in contract with one method, <code class=\"inline\">compareTo</code>. Any class that implements it can be sorted automatically. You're already surrounded by interfaces.",
-      "variant": "info"
-    },
-    {
-      "type": "quiz",
-      "question": "What does an interface actually contain?",
-      "options": [
-        "A list of methods a class promises to provide (the contract)",
-        "The full working code for every method",
-        "Only variables, never methods",
-        "A copy of the main() method"
-      ],
-      "answerIndex": 0,
-      "explain": "An interface is a contract: it lists method names a class promises to provide. The real code lives in the class that implements it (except for default methods)."
-    },
-    {
-      "type": "quiz",
-      "question": "How many interfaces can a single class implement?",
-      "options": [
-        "Exactly one, just like extends",
-        "As many as you want, separated by commas",
-        "Zero — interfaces can't be implemented",
-        "At most two"
-      ],
-      "answerIndex": 1,
-      "explain": "Unlike extends (single inheritance, one parent only), a class can implement many interfaces: class Duck implements Swimmer, Runner."
-    },
-    {
-      "type": "quiz",
-      "question": "You have unrelated things — a Bird and a Plane — that should both be able to fly. What fits best?",
-      "options": [
-        "An abstract class they both extend",
-        "A Flyable interface they both implement",
-        "Copy the fly() code into each one separately",
-        "Nothing — they can't share anything"
-      ],
-      "answerIndex": 1,
-      "explain": "A shared can-do ability across unrelated classes is exactly what an interface is for. Bird and Plane aren't the same family, so an abstract class is a poor fit."
-    },
-    {
-      "type": "tryit",
-      "title": "Sign your first contract",
-      "instructions": "Finish the Robot class so it keeps the Greetable promise. Write a greet() method that prints a greeting from the robot. Your code must use implements and the interface Greetable.",
-      "starter": "public class Main {\n    public static void main(String[] args) {\n        Greetable robot = new Robot();\n        robot.greet();\n    }\n}\n\ninterface Greetable {\n    void greet();\n}\n\nclass Robot implements Greetable {\n    public void greet() {\n        // print a greeting from the robot here\n        System.out.println(\"...\");\n    }\n}",
-      "check": {
-        "code_includes": [
-          "interface",
-          "implements",
-          "greet"
-        ]
-      },
-      "solution": "public class Main {\n    public static void main(String[] args) {\n        Greetable robot = new Robot();\n        robot.greet();\n    }\n}\n\ninterface Greetable {\n    void greet();\n}\n\nclass Robot implements Greetable {\n    public void greet() {\n        System.out.println(\"Beep boop, hello human!\");\n    }\n}",
-      "solutionOutput": "Beep boop, hello human!",
-      "passMsg": "Contract signed! Robot kept its promise to greet.",
-      "failMsg": "Keep the Greetable interface and Robot implements Greetable, and make greet() print a greeting."
-    },
-    {
-      "type": "tryit",
-      "title": "One animal, two abilities",
-      "instructions": "Make the Frog implement BOTH Swimmer and Jumper. Fill in swim() to print how the frog swims, and jump() to print how it jumps. Your code must implement both interfaces.",
-      "starter": "public class Main {\n    public static void main(String[] args) {\n        Frog frog = new Frog();\n        frog.swim();\n        frog.jump();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Jumper {\n    void jump();\n}\n\nclass Frog implements Swimmer, Jumper {\n    public void swim() {\n        // make the frog swim\n        System.out.println(\"...\");\n    }\n\n    public void jump() {\n        // make the frog jump\n        System.out.println(\"...\");\n    }\n}",
-      "check": {
-        "code_includes": [
-          "implements Swimmer, Jumper",
-          "swim",
-          "jump"
-        ]
-      },
-      "solution": "public class Main {\n    public static void main(String[] args) {\n        Frog frog = new Frog();\n        frog.swim();\n        frog.jump();\n    }\n}\n\ninterface Swimmer {\n    void swim();\n}\n\ninterface Jumper {\n    void jump();\n}\n\nclass Frog implements Swimmer, Jumper {\n    public void swim() {\n        System.out.println(\"The frog kicks through the water.\");\n    }\n\n    public void jump() {\n        System.out.println(\"The frog leaps high into the air!\");\n    }\n}",
-      "solutionOutput": "The frog kicks through the water.\nThe frog leaps high into the air!",
-      "passMsg": "Two contracts, one frog — that's the power interfaces give you!",
-      "failMsg": "Frog must implement Swimmer, Jumper (both, comma-separated) and fill in swim() and jump()."
-    },
-    {
-      "type": "surprise",
-      "title": "Surprise Quiz! Days 11–15",
-      "intro": "Pop quiz! Let's see what stuck from the last 5 days. No grades, just fun 🎉",
-      "questions": [
+    "day": 15,
+    "emoji": "🧬",
+    "title": "Inheritance",
+    "subtitle": "Let one class borrow another's powers so you never write the same code twice.",
+    "goal": "Use extends to make a subclass reuse a superclass, call the parent constructor with super(...), reuse a parent method with super.method(), override methods with @Override, and understand that every class secretly extends Object and can override toString().",
+    "estMinutes": 180,
+    "tags": ["oop"],
+    "blocks": [
         {
-          "question": "What do you use to create a new object from a class?",
-          "options": [
-            "the new keyword",
-            "the print keyword",
-            "a for loop",
-            "an int"
-          ],
-          "answerIndex": 0,
-          "explain": "new builds a fresh object from a class, for example: Dog d = new Dog(); (Day 11!)"
+            "type": "text",
+            "heading": "What is inheritance? 🧬",
+            "html": "<p>Imagine you built a wonderful <code class=\"inline\">Animal</code> class with an <code class=\"inline\">eat()</code> method. Now you want a <code class=\"inline\">Dog</code> that can eat AND bark. Do you copy all the eating code into Dog? No way!</p><p>Instead you say: <em>\"Dog, you're a kind of Animal — just take everything Animal has.\"</em> That borrowing is called <strong>inheritance</strong>. The class you borrow from is the <strong>superclass</strong> (parent), and the one that borrows is the <strong>subclass</strong> (child). We connect them with the magic word <code class=\"inline\">extends</code>.</p>"
         },
         {
-          "question": "Why do we make fields private and use getters and setters?",
-          "options": [
-            "To make the code longer for fun",
-            "To hide and protect the data so it can only change in safe ways",
-            "To make the program crash",
-            "Because Java forbids public fields"
-          ],
-          "answerIndex": 1,
-          "explain": "That's encapsulation: keeping fields private protects them, and setters can check that new values are valid. (Day 12!)"
+            "type": "code",
+            "caption": "Dog extends Animal and gets eat() for free",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog();\n        rex.eat();\n        rex.bark();\n    }\n}\n\nclass Animal {\n    void eat() {\n        System.out.println(\"This animal is eating.\");\n    }\n}\n\nclass Dog extends Animal {\n    void bark() {\n        System.out.println(\"Woof! Woof!\");\n    }\n}",
+            "output": "This animal is eating.\nWoof! Woof!",
+            "explain": "Dog never wrote an eat() method, but it can still call eat() because Dog extends Animal. The child inherits the parent's methods. Dog adds its own bark() on top. That's reuse with zero copy-paste!"
         },
         {
-          "question": "Which keyword lets one class reuse the code of another (a parent class)?",
-          "options": [
-            "extends",
-            "import",
-            "static",
-            "return"
-          ],
-          "answerIndex": 0,
-          "explain": "A subclass uses extends to inherit fields and methods from its parent (superclass). (Day 13!)"
+            "type": "tip",
+            "html": "<strong>The \"is-a\" test 🧪:</strong> Use inheritance only when the child truly <em>is a</em> kind of the parent. A Dog <em>is an</em> Animal ✅. A Car <em>is a</em> Vehicle ✅. But a Car is NOT a kind of Engine — a car <em>has an</em> engine, so that's not inheritance."
         },
         {
-          "question": "What does @Override tell Java?",
-          "options": [
-            "Delete the method",
-            "This method replaces a method from the parent class",
-            "Run the method twice",
-            "Make the method private"
-          ],
-          "answerIndex": 1,
-          "explain": "@Override marks a method that re-defines (overrides) one from the parent, and lets Java double-check you did it right. (Day 14!)"
+            "type": "text",
+            "heading": "Calling the parent's constructor with super(...) 🏗️",
+            "html": "<p>When the parent class has a constructor that needs information (like a <code class=\"inline\">name</code>), the child must pass that info up to the parent. You do it with <code class=\"inline\">super(...)</code> — it means <em>\"run my parent's constructor first.\"</em></p><p>The <code class=\"inline\">super(...)</code> call must be the very first line inside the child's constructor.</p>"
         },
         {
-          "question": "Which keyword lets a class promise to provide certain methods, using an interface?",
-          "options": [
-            "implements",
-            "extends",
-            "new",
-            "switch"
-          ],
-          "answerIndex": 0,
-          "explain": "A class uses implements to fulfill an interface, promising to provide all the methods the interface lists. (Day 15!)"
+            "type": "code",
+            "caption": "super(name) hands the name up to Animal",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        rex.describe();\n        rex.bark();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void describe() {\n        System.out.println(\"I am an animal named \" + name + \".\");\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    void bark() {\n        System.out.println(name + \" says Woof!\");\n    }\n}",
+            "output": "I am an animal named Rex.\nRex says Woof!",
+            "explain": "Dog's constructor calls super(name), which runs Animal's constructor and stores the name. Because of that, Dog can use the inherited name field inside bark() — even though Dog never declared name itself."
+        },
+        {
+            "type": "text",
+            "heading": "Overriding: the child does it differently ✏️",
+            "html": "<p>Sometimes the child wants to <strong>replace</strong> a parent method with its own version. That's called <strong>overriding</strong>. You write a method with the exact same name in the child, and you mark it with <code class=\"inline\">@Override</code> so Java double-checks you did it right.</p><p>Now when you call that method on a child object, Java runs the child's version instead of the parent's.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Cat overrides speak()",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal generic = new Animal();\n        Cat whiskers = new Cat();\n        generic.speak();\n        whiskers.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"Some animal sound...\");\n    }\n}\n\nclass Cat extends Animal {\n    @Override\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}",
+            "output": "Some animal sound...\nMeow!",
+            "explain": "Both classes have a speak() method. The plain Animal uses the parent version, but the Cat replaced it with its own. The @Override tag tells Java 'I mean to replace the parent method' — if you misspell the name, Java warns you."
+        },
+        {
+            "type": "tip",
+            "variant": "warn",
+            "html": "<strong>Always add @Override!</strong> It's optional, but if you forget and accidentally typo the method name (like <code class=\"inline\">speek</code>), Java would silently create a brand-new method instead of overriding. <code class=\"inline\">@Override</code> catches that mistake for you."
+        },
+        {
+            "type": "text",
+            "heading": "super.method() and the secret Object parent 👑",
+            "html": "<p>Overriding doesn't have to throw away the parent's work. You can call <code class=\"inline\">super.method()</code> to run the parent's version <em>and then</em> add your own extra steps.</p><p>Here's a secret: <strong>every</strong> Java class extends a built-in class called <code class=\"inline\">Object</code>, even if you never write <code class=\"inline\">extends</code>. Object gives every class a <code class=\"inline\">toString()</code> method that decides what prints when you do <code class=\"inline\">System.out.println(myObject)</code>. The default is ugly (like <code class=\"inline\">Dog@1b6d</code>), so we usually override <code class=\"inline\">toString()</code> to print something friendly.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "super.fetch() reuses the parent, and toString() makes printing pretty",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        rex.fetch();\n        System.out.println(rex);\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void fetch() {\n        System.out.println(name + \" runs to fetch the ball.\");\n    }\n\n    @Override\n    public String toString() {\n        return \"Animal[name=\" + name + \"]\";\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    @Override\n    void fetch() {\n        super.fetch();\n        System.out.println(name + \" brings it back!\");\n    }\n}",
+            "output": "Rex runs to fetch the ball.\nRex brings it back!\nAnimal[name=Rex]",
+            "explain": "Dog's fetch() calls super.fetch() to run Animal's version first, then prints its own extra line. And because Animal overrode toString() (inherited from Object), println(rex) shows the friendly Animal[name=Rex] instead of a messy code."
+        },
+        {
+            "type": "quiz",
+            "question": "Which keyword makes one class inherit from another in Java?",
+            "options": [
+                "inherits",
+                "extends",
+                "borrows",
+                "isa"
+            ],
+            "answerIndex": 1,
+            "explain": "You write 'class Dog extends Animal' to make Dog a subclass of Animal. The keyword is extends."
+        },
+        {
+            "type": "quiz",
+            "question": "What does super(name) do inside a subclass constructor?",
+            "options": [
+                "Deletes the parent class",
+                "Calls the parent (superclass) constructor",
+                "Creates a brand-new variable called super",
+                "Overrides the parent method"
+            ],
+            "answerIndex": 1,
+            "explain": "super(...) runs the superclass's constructor, passing along the values it needs. It must be the first line inside the child constructor."
+        },
+        {
+            "type": "quiz",
+            "question": "Why do we put @Override above a method?",
+            "options": [
+                "It makes the method run faster",
+                "It tells Java we mean to replace a parent method, so Java catches typos",
+                "It hides the method from the parent",
+                "It is required or the code won't compile"
+            ],
+            "answerIndex": 1,
+            "explain": "@Override is a safety check. It tells Java 'this should replace a parent method' — if the name doesn't match a real parent method, Java gives you an error instead of silently making a new method."
+        },
+        {
+            "type": "tryit",
+            "title": "Start the car",
+            "instructions": "Car already extends Vehicle, so it inherited the start() method. Right now main() only honks. Add one line that calls myCar.start() BEFORE the honk, so the output shows the engine starting first.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Car myCar = new Car();\n        // Call the inherited start() method here, then honk.\n        myCar.honk();\n    }\n}\n\nclass Vehicle {\n    void start() {\n        System.out.println(\"The engine starts. Vroom!\");\n    }\n}\n\nclass Car extends Vehicle {\n    void honk() {\n        System.out.println(\"Beep beep!\");\n    }\n}",
+            "check": { "code_includes": "myCar.start()" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Car myCar = new Car();\n        myCar.start();\n        myCar.honk();\n    }\n}\n\nclass Vehicle {\n    void start() {\n        System.out.println(\"The engine starts. Vroom!\");\n    }\n}\n\nclass Car extends Vehicle {\n    void honk() {\n        System.out.println(\"Beep beep!\");\n    }\n}",
+            "solutionOutput": "The engine starts. Vroom!\nBeep beep!",
+            "passMsg": "Vroom! The Car used a method it inherited from Vehicle without writing it. 🚗",
+            "failMsg": "Add the line myCar.start(); before myCar.honk(); — start() comes from the Vehicle parent."
+        },
+        {
+            "type": "tryit",
+            "title": "Make the cat meow",
+            "instructions": "Cat extends Animal but hasn't overridden makeSound() yet, so it prints the boring generic sound. Add an @Override makeSound() method inside Cat that prints exactly Meow meow! instead.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Cat felix = new Cat();\n        felix.makeSound();\n    }\n}\n\nclass Animal {\n    void makeSound() {\n        System.out.println(\"Some generic sound\");\n    }\n}\n\nclass Cat extends Animal {\n    // Override makeSound() so the cat says \"Meow meow!\" instead.\n}",
+            "check": { "code_includes": "@Override" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Cat felix = new Cat();\n        felix.makeSound();\n    }\n}\n\nclass Animal {\n    void makeSound() {\n        System.out.println(\"Some generic sound\");\n    }\n}\n\nclass Cat extends Animal {\n    @Override\n    void makeSound() {\n        System.out.println(\"Meow meow!\");\n    }\n}",
+            "solutionOutput": "Meow meow!",
+            "passMsg": "Purr-fect! The Cat overrode the parent method with its own voice. 🐱",
+            "failMsg": "Inside Cat, add: @Override void makeSound() { System.out.println(\"Meow meow!\"); }"
         }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're building a student grade system. Different grading strategies (percentage-based, pass/fail) should all work through the same interface. Use an interface to define a contract, then two classes implement it differently.</p>",
-      "caption": "Flexible grading system using interfaces",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Grader pct = new PercentGrader();\n        Grader pf = new PassFailGrader();\n        System.out.println(\"Score 85:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(85));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(85));\n        System.out.println(\"Score 45:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(45));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(45));\n    }\n}\n\ninterface Grader {\n    String grade(int score);\n}\n\nclass PercentGrader implements Grader {\n    public String grade(int score) {\n        if (score >= 90) return \"A\";\n        if (score >= 80) return \"B\";\n        if (score >= 70) return \"C\";\n        if (score >= 60) return \"D\";\n        return \"F\";\n    }\n}\n\nclass PassFailGrader implements Grader {\n    public String grade(int score) {\n        return score >= 50 ? \"PASS\" : \"FAIL\";\n    }\n}",
-      "output": "Score 85:\n  Percent grade: B\n  Pass/Fail:     PASS\nScore 45:\n  Percent grade: F\n  Pass/Fail:     FAIL",
-      "explain": "Both PercentGrader and PassFailGrader implement the Grader interface but grade differently. The main method uses the interface type, so it works with any grading strategy — that's programming to an interface (Day 15), using classes (Day 11), encapsulation (Day 12), and conditionals (Day 6)."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 11–15",
-      "intro": "OOP checkpoint! Classes, objects, encapsulation, inheritance, and interfaces. 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which keyword creates a new object from a class?",
-          "options": [
-            "class",
-            "new",
-            "static",
-            "void"
-          ],
-          "answerIndex": 1,
-          "explain": "The new keyword builds a fresh object from a class blueprint, e.g. Dog d = new Dog(); (Day 11)"
-        },
-        {
-          "question": "Why do we make fields private and use getters/setters?",
-          "options": [
-            "To make the code longer",
-            "To hide and protect data so it changes only in safe ways",
-            "Because Java requires it",
-            "To make methods run faster"
-          ],
-          "answerIndex": 1,
-          "explain": "Encapsulation hides internal data. Setters can validate new values before accepting them. (Day 12)"
-        },
-        {
-          "question": "Which keyword lets a subclass reuse code from a parent class?",
-          "options": [
-            "implements",
-            "extends",
-            "import",
-            "return"
-          ],
-          "answerIndex": 1,
-          "explain": "A subclass uses extends to inherit fields and methods from its superclass. (Day 13)"
-        },
-        {
-          "question": "What does @Override do?",
-          "options": [
-            "Deletes the parent method",
-            "Marks that this method replaces one from the parent",
-            "Makes the method run twice",
-            "Prevents the method from being called"
-          ],
-          "answerIndex": 1,
-          "explain": "@Override tells Java this method intentionally replaces one from the parent class, and Java checks the signature matches. (Day 14)"
-        },
-        {
-          "question": "How many interfaces can a single class implement?",
-          "options": [
-            "Exactly one",
-            "At most two",
-            "As many as you want",
-            "Zero — interfaces can't be implemented"
-          ],
-          "answerIndex": 2,
-          "explain": "A class can implement any number of interfaces, separated by commas: class Duck implements Swimmer, Runner. (Day 15)"
-        }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're building a student grade system. Different grading strategies (percentage-based, pass/fail) should all work through the same interface.</p>",
-      "caption": "Flexible grading system using interfaces",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Grader pct = new PercentGrader();\n        Grader pf = new PassFailGrader();\n        System.out.println(\"Score 85:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(85));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(85));\n        System.out.println(\"Score 45:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(45));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(45));\n    }\n}\n\ninterface Grader {\n    String grade(int score);\n}\n\nclass PercentGrader implements Grader {\n    public String grade(int score) {\n        if (score >= 90) return \"A\";\n        if (score >= 80) return \"B\";\n        if (score >= 70) return \"C\";\n        if (score >= 60) return \"D\";\n        return \"F\";\n    }\n}\n\nclass PassFailGrader implements Grader {\n    public String grade(int score) {\n        return score >= 50 ? \"PASS\" : \"FAIL\";\n    }\n}",
-      "output": "Score 85:\n  Percent grade: B\n  Pass/Fail:     PASS\nScore 45:\n  Percent grade: F\n  Pass/Fail:     FAIL",
-      "explain": "Both graders implement the Grader interface but grade differently. The main method uses the interface type — that's programming to an interface (Day 15)."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 11–15",
-      "intro": "OOP checkpoint! Classes, encapsulation, inheritance, and interfaces. 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which keyword creates a new object from a class?",
-          "options": [
-            "class",
-            "new",
-            "static",
-            "void"
-          ],
-          "answerIndex": 1,
-          "explain": "The new keyword builds a fresh object from a class blueprint. (Day 11)"
-        },
-        {
-          "question": "Why make fields private and use getters/setters?",
-          "options": [
-            "To make code longer",
-            "To hide and protect data so it changes only in safe ways",
-            "Because Java requires it",
-            "To make methods faster"
-          ],
-          "answerIndex": 1,
-          "explain": "Encapsulation hides internal data. Setters can validate values. (Day 12)"
-        },
-        {
-          "question": "Which keyword lets a subclass reuse code from a parent?",
-          "options": [
-            "implements",
-            "extends",
-            "import",
-            "return"
-          ],
-          "answerIndex": 1,
-          "explain": "A subclass uses extends to inherit fields and methods. (Day 13)"
-        },
-        {
-          "question": "What does @Override do?",
-          "options": [
-            "Deletes the parent method",
-            "Marks that this method replaces one from the parent",
-            "Makes the method run twice",
-            "Prevents the method from being called"
-          ],
-          "answerIndex": 1,
-          "explain": "@Override tells Java this method replaces one from the parent class. (Day 14)"
-        },
-        {
-          "question": "How many interfaces can a single class implement?",
-          "options": [
-            "Exactly one",
-            "At most two",
-            "As many as you want",
-            "Zero"
-          ],
-          "answerIndex": 2,
-          "explain": "A class can implement any number of interfaces, separated by commas. (Day 15)"
-        }
-      ]
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "A polite dog that remembers its parent",
+        "instructions": "Finish two overrides. (1) In Animal, override toString() to return \"Animal named \" + name. (2) In Dog, override greet() so it first calls super.greet() (the parent's hello) and then prints name + \" also says Woof!\". The output must match exactly.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Dog buddy = new Dog(\"Buddy\");\n        System.out.println(buddy);\n        buddy.greet();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void greet() {\n        System.out.println(\"Hi, I am \" + name + \".\");\n    }\n\n    // Add an @Override toString() that returns \"Animal named \" + name\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    // Override greet(): first call super.greet(), then print name + \" also says Woof!\"\n}",
+        "check": { "code_includes": "super.greet()" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Dog buddy = new Dog(\"Buddy\");\n        System.out.println(buddy);\n        buddy.greet();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void greet() {\n        System.out.println(\"Hi, I am \" + name + \".\");\n    }\n\n    @Override\n    public String toString() {\n        return \"Animal named \" + name;\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    @Override\n    void greet() {\n        super.greet();\n        System.out.println(name + \" also says Woof!\");\n    }\n}",
+        "solutionOutput": "Animal named Buddy\nHi, I am Buddy.\nBuddy also says Woof!",
+        "hint": "toString() goes in Animal and returns (not prints) the text. In Dog's greet(), the first line is super.greet(); then a System.out.println for the Woof line. Mark both with @Override.",
+        "passMsg": "🏆 Brilliant! You used super to call the parent, overrode toString(), and made a class that's truly an Animal. Day 13 conquered!"
     }
-  ],
-  "challenge": {
-    "title": "Build a Pet contract with a default method",
-    "instructions": "Create an interface Pet with a method makeSound() and a DEFAULT method play() that prints a generic play message. Make a Cat that implements Pet and prints a cat sound (it should use the free default play()). Make a Dog that implements Pet, prints a dog sound, AND writes its OWN play() that prints something dog-specific. In main, create both as Pet, then call makeSound() and play() on each.",
-    "starter": "public class Main {\n    public static void main(String[] args) {\n        Pet cat = new Cat();\n        Pet dog = new Dog();\n        // call makeSound() and play() on cat, then on dog\n    }\n}\n\ninterface Pet {\n    void makeSound();\n\n    default void play() {\n        // print a generic play message\n        System.out.println(\"...\");\n    }\n}\n\nclass Cat implements Pet {\n    public void makeSound() {\n        // print a cat sound\n        System.out.println(\"...\");\n    }\n}\n\nclass Dog implements Pet {\n    public void makeSound() {\n        // print a dog sound\n        System.out.println(\"...\");\n    }\n    // give Dog its OWN play() that overrides the default\n}",
-    "check": {
-      "code_includes": [
-        "interface Pet",
-        "default void play",
-        "implements Pet",
-        "makeSound"
-      ]
-    },
-    "solution": "public class Main {\n    public static void main(String[] args) {\n        Pet cat = new Cat();\n        Pet dog = new Dog();\n        cat.makeSound();\n        cat.play();\n        dog.makeSound();\n        dog.play();\n    }\n}\n\ninterface Pet {\n    void makeSound();\n\n    default void play() {\n        System.out.println(\"This pet loves to play!\");\n    }\n}\n\nclass Cat implements Pet {\n    public void makeSound() {\n        System.out.println(\"Meow!\");\n    }\n}\n\nclass Dog implements Pet {\n    public void makeSound() {\n        System.out.println(\"Woof!\");\n    }\n\n    public void play() {\n        System.out.println(\"The dog fetches the ball!\");\n    }\n}",
-    "solutionOutput": "Meow!\nThis pet loves to play!\nWoof!\nThe dog fetches the ball!",
-    "hint": "Cat doesn't write play() at all — it gets the default one for free, so it prints the generic message. Dog writes its own play(), which replaces (overrides) the default. That's why their play() outputs differ.",
-    "passMsg": "🏆 Day 15 complete! You wrote a contract, implemented it two ways, and used a default method. Interfaces are how big Java programs stay flexible — you're thinking like a real engineer now."
-  }
 }

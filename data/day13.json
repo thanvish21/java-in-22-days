@@ -1,137 +1,129 @@
 {
     "day": 13,
-    "emoji": "🧬",
-    "title": "Inheritance",
-    "subtitle": "Let one class borrow another's powers so you never write the same code twice.",
-    "goal": "Use extends to make a subclass reuse a superclass, call the parent constructor with super(...), reuse a parent method with super.method(), override methods with @Override, and understand that every class secretly extends Object and can override toString().",
+    "emoji": "🏗️",
+    "title": "Classes & Objects",
+    "subtitle": "Build your own LEGO-style blueprints, then snap real things out of them.",
+    "goal": "Understand what a class and an object are, write a class with fields, a constructor, and instance methods, and make several objects from it using the new keyword.",
     "estMinutes": 180,
     "tags": ["oop"],
     "blocks": [
         {
             "type": "text",
-            "heading": "What is inheritance? 🧬",
-            "html": "<p>Imagine you built a wonderful <code class=\"inline\">Animal</code> class with an <code class=\"inline\">eat()</code> method. Now you want a <code class=\"inline\">Dog</code> that can eat AND bark. Do you copy all the eating code into Dog? No way!</p><p>Instead you say: <em>\"Dog, you're a kind of Animal — just take everything Animal has.\"</em> That borrowing is called <strong>inheritance</strong>. The class you borrow from is the <strong>superclass</strong> (parent), and the one that borrows is the <strong>subclass</strong> (child). We connect them with the magic word <code class=\"inline\">extends</code>.</p>"
+            "heading": "Blueprints and the things you build 🏗️",
+            "html": "<p>Imagine a <strong>cookie cutter</strong>. The cutter itself is not a cookie — it is the <em>shape</em> that decides how every cookie will look. Press it into the dough once, twice, ten times, and you get ten cookies. They share the same shape, but each one is its own cookie.</p><p>In Java a <strong>class</strong> is the cookie cutter (the blueprint). An <strong>object</strong> is a cookie you actually made from it. One class, many objects. Today you learn to design your own cutters and stamp out objects with them.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Fields: what an object remembers",
+            "html": "<p>Every object can <em>remember</em> things about itself. A dog remembers its name. A player remembers its score. Those memories are called <strong>fields</strong> (also called <em>instance variables</em>) — little boxes inside each object that hold its own values.</p><p>Below is a tiny class <code class=\"inline\">Dog</code> with one field, <code class=\"inline\">name</code>. Notice the rule: every runnable program needs a <code class=\"inline\">public class Main</code> with <code class=\"inline\">main</code>, and our helper class <code class=\"inline\">Dog</code> sits in the same file <em>without</em> the word <code class=\"inline\">public</code>.</p>"
         },
         {
             "type": "code",
-            "caption": "Dog extends Animal and gets eat() for free",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog();\n        rex.eat();\n        rex.bark();\n    }\n}\n\nclass Animal {\n    void eat() {\n        System.out.println(\"This animal is eating.\");\n    }\n}\n\nclass Dog extends Animal {\n    void bark() {\n        System.out.println(\"Woof! Woof!\");\n    }\n}",
-            "output": "This animal is eating.\nWoof! Woof!",
-            "explain": "Dog never wrote an eat() method, but it can still call eat() because Dog extends Animal. The child inherits the parent's methods. Dog adds its own bark() on top. That's reuse with zero copy-paste!"
+            "caption": "A class is a blueprint; new builds an object from it",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog();\n        rex.name = \"Rex\";\n        System.out.println(\"My dog is named \" + rex.name);\n    }\n}\n\nclass Dog {\n    String name;\n}",
+            "output": "My dog is named Rex",
+            "explain": "class Dog is the blueprint. new Dog() builds one real object and rex points to it. rex.name reaches inside that object to set and read its name field. Only Main is public; Dog is a plain helper class in the same file."
         },
         {
             "type": "tip",
-            "html": "<strong>The \"is-a\" test 🧪:</strong> Use inheritance only when the child truly <em>is a</em> kind of the parent. A Dog <em>is an</em> Animal ✅. A Car <em>is a</em> Vehicle ✅. But a Car is NOT a kind of Engine — a car <em>has an</em> engine, so that's not inheritance."
+            "html": "<strong>One public class per file.</strong> The file must be named after the public class, so it is <code class=\"inline\">Main.java</code>. Helper classes like <code class=\"inline\">Dog</code> live in the same file but are <em>not</em> marked public."
         },
         {
             "type": "text",
-            "heading": "Calling the parent's constructor with super(...) 🏗️",
-            "html": "<p>When the parent class has a constructor that needs information (like a <code class=\"inline\">name</code>), the child must pass that info up to the parent. You do it with <code class=\"inline\">super(...)</code> — it means <em>\"run my parent's constructor first.\"</em></p><p>The <code class=\"inline\">super(...)</code> call must be the very first line inside the child's constructor.</p>"
+            "heading": "Constructors and this 🛠️",
+            "html": "<p>Setting <code class=\"inline\">rex.name</code> by hand after building is clumsy. A <strong>constructor</strong> is a special set-up method that runs the moment you say <code class=\"inline\">new</code>. It lets you hand over values right away, like filling in a form when you build the object.</p><p>Inside the constructor the word <code class=\"inline\">this</code> means <em>this exact object</em>. So <code class=\"inline\">this.name = name</code> reads as: <em>“put the name I was given into MY own name box.”</em> It tells apart the object's field from the value passed in.</p>"
         },
         {
             "type": "code",
-            "caption": "super(name) hands the name up to Animal",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        rex.describe();\n        rex.bark();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void describe() {\n        System.out.println(\"I am an animal named \" + name + \".\");\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    void bark() {\n        System.out.println(name + \" says Woof!\");\n    }\n}",
-            "output": "I am an animal named Rex.\nRex says Woof!",
-            "explain": "Dog's constructor calls super(name), which runs Animal's constructor and stores the name. Because of that, Dog can use the inherited name field inside bark() — even though Dog never declared name itself."
+            "caption": "A constructor sets up the object; this points at itself",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        Dog bella = new Dog(\"Bella\");\n        rex.bark();\n        bella.bark();\n    }\n}\n\nclass Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n\n    void bark() {\n        System.out.println(this.name + \" says: Woof!\");\n    }\n}",
+            "output": "Rex says: Woof!\nBella says: Woof!",
+            "explain": "Dog(String name) is the constructor — it runs at new Dog(\"Rex\"). this.name = name stores the given name in that object's own box. bark() is an instance method: each dog barks with its own name. Two separate objects, two separate names, one shared blueprint."
         },
         {
             "type": "text",
-            "heading": "Overriding: the child does it differently ✏️",
-            "html": "<p>Sometimes the child wants to <strong>replace</strong> a parent method with its own version. That's called <strong>overriding</strong>. You write a method with the exact same name in the child, and you mark it with <code class=\"inline\">@Override</code> so Java double-checks you did it right.</p><p>Now when you call that method on a child object, Java runs the child's version instead of the parent's.</p>"
+            "heading": "Instance methods: things an object can DO",
+            "html": "<p>Fields are what an object <em>knows</em>; <strong>instance methods</strong> are what an object can <em>do</em>. A <code class=\"inline\">Player</code> can score points. A <code class=\"inline\">Rectangle</code> can work out its own area. Each method runs on one specific object and can use that object's own fields.</p>"
         },
         {
             "type": "code",
-            "caption": "Cat overrides speak()",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal generic = new Animal();\n        Cat whiskers = new Cat();\n        generic.speak();\n        whiskers.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"Some animal sound...\");\n    }\n}\n\nclass Cat extends Animal {\n    @Override\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}",
-            "output": "Some animal sound...\nMeow!",
-            "explain": "Both classes have a speak() method. The plain Animal uses the parent version, but the Cat replaced it with its own. The @Override tag tells Java 'I mean to replace the parent method' — if you misspell the name, Java warns you."
+            "caption": "Objects with their own data and behavior",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(10);\n        hero.addScore(5);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Rectangle box = new Rectangle(4, 3);\n        System.out.println(\"Area is \" + box.area());\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}\n\nclass Rectangle {\n    int width;\n    int height;\n\n    Rectangle(int width, int height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    int area() {\n        return this.width * this.height;\n    }\n}",
+            "output": "Hero has 15 points\nArea is 12",
+            "explain": "Player starts at score 0, then addScore(10) and addScore(5) grow its own score to 15. Rectangle(4, 3) stores width and height, and area() multiplies them to return 12. Three classes in one file, but still only one public class: Main."
         },
         {
             "type": "tip",
-            "variant": "warn",
-            "html": "<strong>Always add @Override!</strong> It's optional, but if you forget and accidentally typo the method name (like <code class=\"inline\">speek</code>), Java would silently create a brand-new method instead of overriding. <code class=\"inline\">@Override</code> catches that mistake for you."
-        },
-        {
-            "type": "text",
-            "heading": "super.method() and the secret Object parent 👑",
-            "html": "<p>Overriding doesn't have to throw away the parent's work. You can call <code class=\"inline\">super.method()</code> to run the parent's version <em>and then</em> add your own extra steps.</p><p>Here's a secret: <strong>every</strong> Java class extends a built-in class called <code class=\"inline\">Object</code>, even if you never write <code class=\"inline\">extends</code>. Object gives every class a <code class=\"inline\">toString()</code> method that decides what prints when you do <code class=\"inline\">System.out.println(myObject)</code>. The default is ugly (like <code class=\"inline\">Dog@1b6d</code>), so we usually override <code class=\"inline\">toString()</code> to print something friendly.</p>"
-        },
-        {
-            "type": "code",
-            "caption": "super.fetch() reuses the parent, and toString() makes printing pretty",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        rex.fetch();\n        System.out.println(rex);\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void fetch() {\n        System.out.println(name + \" runs to fetch the ball.\");\n    }\n\n    @Override\n    public String toString() {\n        return \"Animal[name=\" + name + \"]\";\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    @Override\n    void fetch() {\n        super.fetch();\n        System.out.println(name + \" brings it back!\");\n    }\n}",
-            "output": "Rex runs to fetch the ball.\nRex brings it back!\nAnimal[name=Rex]",
-            "explain": "Dog's fetch() calls super.fetch() to run Animal's version first, then prints its own extra line. And because Animal overrode toString() (inherited from Object), println(rex) shows the friendly Animal[name=Rex] instead of a messy code."
+            "html": "<strong>new makes a fresh object every time.</strong> Two <code class=\"inline\">new Dog(...)</code> calls give two separate dogs with separate memories. Changing one never touches the other.",
+            "variant": "info"
         },
         {
             "type": "quiz",
-            "question": "Which keyword makes one class inherit from another in Java?",
+            "question": "What is the difference between a class and an object?",
             "options": [
-                "inherits",
-                "extends",
-                "borrows",
-                "isa"
+                "They are exactly the same thing",
+                "A class is the blueprint; an object is a real thing built from it with new",
+                "A class is faster than an object",
+                "An object is the blueprint; a class is built from it"
             ],
             "answerIndex": 1,
-            "explain": "You write 'class Dog extends Animal' to make Dog a subclass of Animal. The keyword is extends."
+            "explain": "A class is the cookie cutter (blueprint). An object is a cookie stamped out of it using the new keyword. One class can make many objects."
         },
         {
             "type": "quiz",
-            "question": "What does super(name) do inside a subclass constructor?",
+            "question": "Inside a constructor, what does this.name = name do?",
             "options": [
-                "Deletes the parent class",
-                "Calls the parent (superclass) constructor",
-                "Creates a brand-new variable called super",
-                "Overrides the parent method"
+                "Deletes the name field",
+                "Stores the value passed in into this object's own name field",
+                "Creates a brand new class",
+                "Prints the name to the screen"
             ],
             "answerIndex": 1,
-            "explain": "super(...) runs the superclass's constructor, passing along the values it needs. It must be the first line inside the child constructor."
+            "explain": "this means this exact object. this.name is the object's own field; name is the value handed to the constructor. So it saves the given value into this object's memory."
         },
         {
             "type": "quiz",
-            "question": "Why do we put @Override above a method?",
+            "question": "How many public classes can a single .java file have?",
             "options": [
-                "It makes the method run faster",
-                "It tells Java we mean to replace a parent method, so Java catches typos",
-                "It hides the method from the parent",
-                "It is required or the code won't compile"
+                "As many as you want",
+                "Exactly one, and the file is named after it",
+                "Zero, public is not allowed",
+                "Exactly two"
             ],
             "answerIndex": 1,
-            "explain": "@Override is a safety check. It tells Java 'this should replace a parent method' — if the name doesn't match a real parent method, Java gives you an error instead of silently making a new method."
+            "explain": "Only one public class per file, and the file name must match it (Main.java). Helper classes in the same file are written without public."
         },
         {
             "type": "tryit",
-            "title": "Start the car",
-            "instructions": "Car already extends Vehicle, so it inherited the start() method. Right now main() only honks. Add one line that calls myCar.start() BEFORE the honk, so the output shows the engine starting first.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Car myCar = new Car();\n        // Call the inherited start() method here, then honk.\n        myCar.honk();\n    }\n}\n\nclass Vehicle {\n    void start() {\n        System.out.println(\"The engine starts. Vroom!\");\n    }\n}\n\nclass Car extends Vehicle {\n    void honk() {\n        System.out.println(\"Beep beep!\");\n    }\n}",
-            "check": { "code_includes": "myCar.start()" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Car myCar = new Car();\n        myCar.start();\n        myCar.honk();\n    }\n}\n\nclass Vehicle {\n    void start() {\n        System.out.println(\"The engine starts. Vroom!\");\n    }\n}\n\nclass Car extends Vehicle {\n    void honk() {\n        System.out.println(\"Beep beep!\");\n    }\n}",
-            "solutionOutput": "The engine starts. Vroom!\nBeep beep!",
-            "passMsg": "Vroom! The Car used a method it inherited from Vehicle without writing it. 🚗",
-            "failMsg": "Add the line myCar.start(); before myCar.honk(); — start() comes from the Vehicle parent."
+            "title": "Give the Cat a name and a meow",
+            "instructions": "Finish the Cat class. Add a field name, a constructor that takes a name and stores it with this.name, and a meow() method that prints the cat's name followed by ' says: Meow!'. The Main code is already calling new Cat(\"Whiskers\").",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    // 1. add a field: String name;\n    // 2. add a constructor Cat(String name) that does this.name = name;\n    // 3. add void meow() that prints  name + \" says: Meow!\"\n}",
+            "check": { "code_includes": "this.name = name" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    String name;\n\n    Cat(String name) {\n        this.name = name;\n    }\n\n    void meow() {\n        System.out.println(this.name + \" says: Meow!\");\n    }\n}",
+            "solutionOutput": "Whiskers says: Meow!",
+            "passMsg": "Purr-fect! You built a class with a field, a constructor, and a method.",
+            "failMsg": "Make sure your constructor uses this.name = name and meow() prints the name plus \" says: Meow!\"."
         },
         {
             "type": "tryit",
-            "title": "Make the cat meow",
-            "instructions": "Cat extends Animal but hasn't overridden makeSound() yet, so it prints the boring generic sound. Add an @Override makeSound() method inside Cat that prints exactly Meow meow! instead.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Cat felix = new Cat();\n        felix.makeSound();\n    }\n}\n\nclass Animal {\n    void makeSound() {\n        System.out.println(\"Some generic sound\");\n    }\n}\n\nclass Cat extends Animal {\n    // Override makeSound() so the cat says \"Meow meow!\" instead.\n}",
-            "check": { "code_includes": "@Override" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Cat felix = new Cat();\n        felix.makeSound();\n    }\n}\n\nclass Animal {\n    void makeSound() {\n        System.out.println(\"Some generic sound\");\n    }\n}\n\nclass Cat extends Animal {\n    @Override\n    void makeSound() {\n        System.out.println(\"Meow meow!\");\n    }\n}",
-            "solutionOutput": "Meow meow!",
-            "passMsg": "Purr-fect! The Cat overrode the parent method with its own voice. 🐱",
-            "failMsg": "Inside Cat, add: @Override void makeSound() { System.out.println(\"Meow meow!\"); }"
+            "title": "Build two players from one blueprint",
+            "instructions": "The Player class is finished. In main, create a SECOND player named \"Luna\", give her 20 points with addScore(20), then print her name and score just like Hero. One class, two separate objects!",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        // Make a second player named Luna, give her 20 points, then print her info\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
+            "check": { "regex": "new\\s+Player\\s*\\(\\s*\"Luna\"\\s*\\)" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Player luna = new Player(\"Luna\");\n        luna.addScore(20);\n        System.out.println(luna.name + \" has \" + luna.score + \" points\");\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
+            "solutionOutput": "Hero has 50 points\nLuna has 20 points",
+            "passMsg": "Two objects, two scores, one blueprint — that is the heart of OOP!",
+            "failMsg": "Create a second Player with new Player(\"Luna\"), call luna.addScore(20), then print luna.name and luna.score."
         }
     ],
     "challenge": {
-        "type": "tryit",
-        "title": "A polite dog that remembers its parent",
-        "instructions": "Finish two overrides. (1) In Animal, override toString() to return \"Animal named \" + name. (2) In Dog, override greet() so it first calls super.greet() (the parent's hello) and then prints name + \" also says Woof!\". The output must match exactly.",
-        "starter": "public class Main {\n    public static void main(String[] args) {\n        Dog buddy = new Dog(\"Buddy\");\n        System.out.println(buddy);\n        buddy.greet();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void greet() {\n        System.out.println(\"Hi, I am \" + name + \".\");\n    }\n\n    // Add an @Override toString() that returns \"Animal named \" + name\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    // Override greet(): first call super.greet(), then print name + \" also says Woof!\"\n}",
-        "check": { "code_includes": "super.greet()" },
-        "solution": "public class Main {\n    public static void main(String[] args) {\n        Dog buddy = new Dog(\"Buddy\");\n        System.out.println(buddy);\n        buddy.greet();\n    }\n}\n\nclass Animal {\n    String name;\n\n    Animal(String name) {\n        this.name = name;\n    }\n\n    void greet() {\n        System.out.println(\"Hi, I am \" + name + \".\");\n    }\n\n    @Override\n    public String toString() {\n        return \"Animal named \" + name;\n    }\n}\n\nclass Dog extends Animal {\n    Dog(String name) {\n        super(name);\n    }\n\n    @Override\n    void greet() {\n        super.greet();\n        System.out.println(name + \" also says Woof!\");\n    }\n}",
-        "solutionOutput": "Animal named Buddy\nHi, I am Buddy.\nBuddy also says Woof!",
-        "hint": "toString() goes in Animal and returns (not prints) the text. In Dog's greet(), the first line is super.greet(); then a System.out.println for the Woof line. Mark both with @Override.",
-        "passMsg": "🏆 Brilliant! You used super to call the parent, overrode toString(), and made a class that's truly an Animal. Day 13 conquered!"
+        "title": "Design a BankAccount class",
+        "instructions": "Build a BankAccount class with two fields: owner (String) and balance (int). Write a constructor that takes an owner name and starts the balance at 0. Add a deposit(int amount) method that adds to the balance, and a show() method that prints the owner and balance like 'Maya has 150 in the bank'. In main, create an account for \"Maya\", deposit 100, deposit 50, then call show().",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        // deposit 100, then deposit 50, then call acc.show();\n    }\n}\n\nclass BankAccount {\n    // fields: String owner; int balance;\n    // constructor BankAccount(String owner) -> this.owner = owner; this.balance = 0;\n    // void deposit(int amount) -> add amount to balance\n    // void show() -> print owner + \" has \" + balance + \" in the bank\"\n}",
+        "check": { "code_includes": "class BankAccount" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        acc.deposit(100);\n        acc.deposit(50);\n        acc.show();\n    }\n}\n\nclass BankAccount {\n    String owner;\n    int balance;\n\n    BankAccount(String owner) {\n        this.owner = owner;\n        this.balance = 0;\n    }\n\n    void deposit(int amount) {\n        this.balance = this.balance + amount;\n    }\n\n    void show() {\n        System.out.println(this.owner + \" has \" + this.balance + \" in the bank\");\n    }\n}",
+        "solutionOutput": "Maya has 150 in the bank",
+        "hint": "Start balance at 0 in the constructor. deposit adds to this.balance. After depositing 100 then 50, the balance is 150.",
+        "passMsg": "🏆 You designed a whole class from scratch — fields, a constructor, and methods. Day 11 complete, you are thinking in objects now!"
     }
 }

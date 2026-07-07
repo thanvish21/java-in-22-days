@@ -1,130 +1,130 @@
 {
     "day": 14,
-    "emoji": "🎭",
-    "title": "Polymorphism & Abstract",
-    "subtitle": "One word, many forms — let your objects wear different masks.",
-    "goal": "Understand how a parent-type variable can hold any child object, how the right overridden method runs automatically, and how abstract classes force children to fill in the blanks.",
+    "emoji": "🔒",
+    "title": "Encapsulation & static",
+    "subtitle": "Lock up your data behind a vault door, and learn the magic word that everyone shares: static.",
+    "goal": "Use public and private access modifiers, hide fields behind getters and setters (encapsulation), validate data inside setters, and understand the static keyword for class-level fields, counters, and constants.",
     "estMinutes": 180,
     "tags": ["oop"],
     "blocks": [
         {
             "type": "text",
-            "heading": "What is polymorphism? 🎭",
-            "html": "<p><strong>Polymorphism</strong> is a big word that means <em>“many forms.”</em> In Java it means one variable can take on many shapes depending on what you put inside it.</p><p>Imagine a box labeled <code class=\"inline\">Animal</code>. You can drop a <code class=\"inline\">Dog</code> in it, or a <code class=\"inline\">Cat</code>, or a <code class=\"inline\">Cow</code> — the box still says <code class=\"inline\">Animal</code>, but what's inside decides how it behaves. 🐶🐱🐮</p>"
-        },
-        {
-            "type": "text",
-            "heading": "A parent box holding a child",
-            "html": "<p>If <code class=\"inline\">Dog</code> extends <code class=\"inline\">Animal</code>, then this line is perfectly legal:</p><p><code class=\"inline\">Animal a = new Dog();</code></p><p>The <em>left side</em> is the box type (Animal). The <em>right side</em> is the real object (a Dog). When you call <code class=\"inline\">a.speak()</code>, Java looks at the <strong>real object</strong> and runs the Dog's version. This is called <strong>dynamic method dispatch</strong> — a fancy name for “the overridden method runs.”</p>"
+            "heading": "Who gets to touch your stuff? 🔑",
+            "html": "<p>Imagine your class is a house. Some things you're happy for anyone to use (the front doorbell). Other things you want locked away where strangers can't mess with them (your diary, your money).</p><p>Java gives every field and method a <strong>label</strong> that says who's allowed to touch it:</p><ul><li><code class=\"inline\">public</code> — anyone, anywhere can use it.</li><li><code class=\"inline\">private</code> — only code <em>inside the same class</em> can use it.</li></ul><p>These labels are called <strong>access modifiers</strong>.</p>"
         },
         {
             "type": "code",
-            "caption": "A parent variable, a child object",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        Animal b = new Cat();\n        a.speak();\n        b.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"Some animal sound\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}",
-            "output": "Woof!\nMeow!",
-            "explain": "Even though a and b are declared as Animal, Java runs the Dog and Cat versions of speak(). The real object decides which method runs — not the box label."
+            "caption": "public name, private age",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog d = new Dog();\n        d.name = \"Rex\";\n        System.out.println(d.name);\n        System.out.println(d.getSecretAge());\n    }\n}\n\nclass Dog {\n    public String name;\n    private int age = 3;\n\n    public int getSecretAge() {\n        return age;\n    }\n}",
+            "output": "Rex\n3",
+            "explain": "We can set d.name straight from Main because name is public. But age is private, so Main is NOT allowed to write d.age. The only way to peek at it is through getSecretAge(), a public method that lives inside Dog and is allowed to read it."
+        },
+        {
+            "type": "text",
+            "heading": "Encapsulation: hide the field, share a door 🚪",
+            "html": "<p><strong>Encapsulation</strong> is a big word for a simple, smart idea: make your fields <code class=\"inline\">private</code>, then offer public <strong>methods</strong> as the only way in and out.</p><ul><li>A <strong>getter</strong> lets others <em>read</em> a value: <code class=\"inline\">getBalance()</code>.</li><li>A <strong>setter</strong> lets others <em>change</em> it: <code class=\"inline\">setName(...)</code> — but on YOUR terms.</li></ul><p>Why bother? Because a setter can <strong>check the rules first</strong>. Nobody can secretly set your bank balance to a billion dollars or to a negative number — your method decides what's allowed.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A BankAccount that protects itself",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount();\n        acc.deposit(100);\n        acc.withdraw(30);\n        acc.withdraw(1000);\n        System.out.println(\"Balance: \" + acc.getBalance());\n    }\n}\n\nclass BankAccount {\n    private int balance = 0;\n\n    public void deposit(int amount) {\n        if (amount > 0) {\n            balance += amount;\n        }\n    }\n\n    public void withdraw(int amount) {\n        if (amount > 0 && amount <= balance) {\n            balance -= amount;\n        } else {\n            System.out.println(\"Cannot withdraw \" + amount);\n        }\n    }\n\n    public int getBalance() {\n        return balance;\n    }\n}",
+            "output": "Cannot withdraw 1000\nBalance: 70",
+            "explain": "balance is private, so the only way to change it is through deposit and withdraw. When we tried to withdraw 1000 from an account holding only 70, the if-check refused and printed a warning. The balance stays safe at 100 - 30 = 70. That guard is the whole point of encapsulation."
         },
         {
             "type": "tip",
-            "html": "<strong>Remember:</strong> the variable type (left side) is the <em>box</em>; the object (right side) is what's <em>inside</em>. The object always wins when deciding which overridden method to run.",
-            "variant": "info"
+            "html": "<strong>The golden habit:</strong> make fields <code class=\"inline\">private</code>, then add <code class=\"inline\">public</code> getters and setters. It feels like extra typing today, but it stops bugs where some far-away code quietly breaks your object's data."
+        },
+        {
+            "type": "quiz",
+            "question": "Why do we make a field private and add a getter/setter instead of just leaving it public?",
+            "options": [
+                "To make the program run faster",
+                "So the class can check the rules and protect its data from bad values",
+                "Because private fields use less memory",
+                "Because public is not allowed in Java"
+            ],
+            "answerIndex": 1,
+            "explain": "A private field can only be changed through your own methods, so a setter can validate the value first (no negative balances!). That data protection is the heart of encapsulation."
+        },
+        {
+            "type": "quiz",
+            "question": "From inside Main, which line is NOT allowed if a Dog's age field is private?",
+            "options": [
+                "d.getSecretAge()",
+                "d.age = 5",
+                "d.name = \"Rex\"",
+                "System.out.println(d.name)"
+            ],
+            "answerIndex": 1,
+            "explain": "age is private, so only code inside the Dog class may touch it. Main cannot write d.age = 5 directly — it must go through a public method."
         },
         {
             "type": "text",
-            "heading": "Treating many objects the same way 🔁",
-            "html": "<p>The real magic is that you can put lots of different children into one <strong>parent array</strong> and loop over them with the same code. You don't need to know exactly what each one is — you just say <code class=\"inline\">speak()</code> and each object does its own thing.</p>"
+            "heading": "The static keyword: shared by everyone 🤝",
+            "html": "<p>Normally, every object gets its OWN copy of a field. Three dogs means three separate <code class=\"inline\">age</code> values.</p><p>But sometimes you want ONE value that <em>all objects share</em> — a value that belongs to the <strong>class itself</strong>, not to any single object. That's what <code class=\"inline\">static</code> means.</p><p>You reach a static field through the class name, like <code class=\"inline\">Robot.count</code>, not through one object. A classic use is a <strong>counter</strong> that ticks up every time a new object is born.</p>"
         },
         {
             "type": "code",
-            "caption": "One loop, many different sounds",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal[] zoo = { new Dog(), new Cat(), new Cow() };\n        for (Animal animal : zoo) {\n            animal.speak();\n        }\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}\n\nclass Cow extends Animal {\n    void speak() {\n        System.out.println(\"Moo!\");\n    }\n}",
-            "output": "Woof!\nMeow!\nMoo!",
-            "explain": "The array is an Animal[], but it holds a Dog, a Cat, and a Cow. The loop calls speak() once per animal, and each one answers in its own voice. One loop, three behaviors — that's polymorphism in action."
+            "caption": "A static counter and a static constant",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Robot r1 = new Robot();\n        Robot r2 = new Robot();\n        Robot r3 = new Robot();\n        System.out.println(\"r1 id: \" + r1.id);\n        System.out.println(\"r3 id: \" + r3.id);\n        System.out.println(\"Total robots: \" + Robot.count);\n        System.out.println(\"Max power: \" + Robot.MAX_POWER);\n    }\n}\n\nclass Robot {\n    static int count = 0;\n    static final int MAX_POWER = 100;\n    int id;\n\n    public Robot() {\n        count++;\n        id = count;\n    }\n}",
+            "output": "r1 id: 1\nr3 id: 3\nTotal robots: 3\nMax power: 100",
+            "explain": "id is a normal (instance) field, so each robot has its own: 1, 2, 3. But count is static — there is only ONE count shared by all robots, and every constructor bumps it. After three robots, Robot.count is 3. MAX_POWER is static final, a constant that never changes and is the same for every robot."
         },
         {
             "type": "text",
-            "heading": "Abstract classes: a promise to fill in later 📝",
-            "html": "<p>Sometimes a parent class doesn't make sense on its own. What is the “area” of a plain <code class=\"inline\">Shape</code>? You can't say — it depends on whether it's a circle or a square.</p><p>So we mark the class <code class=\"inline\">abstract</code>. An <strong>abstract class</strong> cannot be created directly (no <code class=\"inline\">new Shape()</code>). It can have <strong>abstract methods</strong> — methods with no body, just a promise. Any child <em>must</em> fill them in, or the code won't compile.</p>"
-        },
-        {
-            "type": "code",
-            "caption": "Abstract Shape with Circle and Square",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(2.0), new Square(3.0) };\n        for (Shape shape : shapes) {\n            System.out.println(\"Area: \" + shape.area());\n        }\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Circle extends Shape {\n    double radius;\n\n    Circle(double radius) {\n        this.radius = radius;\n    }\n\n    double area() {\n        return 3.14 * radius * radius;\n    }\n}\n\nclass Square extends Shape {\n    double side;\n\n    Square(double side) {\n        this.side = side;\n    }\n\n    double area() {\n        return side * side;\n    }\n}",
-            "output": "Area: 12.56\nArea: 9.0",
-            "explain": "Shape promises an area() but doesn't define it. Circle and Square each keep the promise with their own formula. You can store both in a Shape[] and ask for area() without caring which shape it really is."
+            "heading": "static vs instance, and static final constants 🧊",
+            "html": "<p>Two quick rules of thumb:</p><ul><li><strong>Instance</strong> field (no <code class=\"inline\">static</code>) = belongs to one object. Each new object gets its own copy.</li><li><strong>Static</strong> field = belongs to the class. One copy, shared by all objects, reached as <code class=\"inline\">ClassName.field</code>.</li></ul><p>Add <code class=\"inline\">final</code> and you get a <strong>constant</strong> — a value that can never change after it's set. We write constants in <code class=\"inline\">UPPER_SNAKE_CASE</code>, like <code class=\"inline\">static final int MAX_POWER = 100;</code>. You've already used one: <code class=\"inline\">Math.PI</code> is a static final field on the Math class!</p>"
         },
         {
             "type": "tip",
-            "html": "<strong>Heads up:</strong> writing <code class=\"inline\">new Shape()</code> on an abstract class is an error — Java won't let you build something that has unfinished (abstract) methods. You can only build the finished children.",
-            "variant": "warn"
+            "variant": "warn",
+            "html": "<strong>Don't mix them up:</strong> reach a static field through the <em>class</em> (<code class=\"inline\">Robot.count</code>), and an instance field through an <em>object</em> (<code class=\"inline\">r1.id</code>). A static field is shared, so changing it changes it for everyone at once."
         },
         {
             "type": "quiz",
-            "question": "What does Animal a = new Dog(); a.speak(); print, if Dog overrides speak() to say \"Woof!\"?",
+            "question": "You make a field 'static int count'. Three objects are created, and each constructor does count++. What is the class's count now?",
             "options": [
-                "Some animal sound",
-                "Woof!",
-                "An error, because a is an Animal",
-                "Both the Animal and Dog versions"
+                "1, because each object resets it",
+                "3, because there is one shared count for all objects",
+                "0, because static fields can't change",
+                "9, because it triples"
             ],
             "answerIndex": 1,
-            "explain": "The real object is a Dog, so Java runs the Dog's overridden speak(). That's dynamic method dispatch — the object wins, not the box label."
-        },
-        {
-            "type": "quiz",
-            "question": "Why do we make a class abstract?",
-            "options": [
-                "To make it run faster",
-                "So it can be created with new many times",
-                "Because it's incomplete on its own and forces children to fill in certain methods",
-                "To hide it from other files"
-            ],
-            "answerIndex": 2,
-            "explain": "An abstract class represents an idea that isn't complete by itself. It cannot be instantiated, and its abstract methods must be implemented by each child."
-        },
-        {
-            "type": "quiz",
-            "question": "What's the benefit of putting different child objects in one Animal[] array?",
-            "options": [
-                "It saves memory automatically",
-                "You can loop over them with the same code and each behaves in its own way",
-                "It deletes the children when done",
-                "It turns them all into the same animal"
-            ],
-            "answerIndex": 1,
-            "explain": "A parent array lets you treat many objects uniformly. One loop, one method call, but each object responds with its own overridden behavior."
+            "explain": "A static field is one shared value owned by the class. Three constructors each added 1, so the single shared count is 3."
         },
         {
             "type": "tryit",
-            "title": "Give the parrot a voice",
-            "instructions": "A Parrot is an Animal, but right now its speak() just prints ___. Change the text inside Parrot's speak() so it prints Squawk! Then press Check.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"___\");\n    }\n}",
-            "check": { "code_includes": "Squawk!" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"Squawk!\");\n    }\n}",
-            "solutionOutput": "Squawk!",
-            "passMsg": "Squawk! The parrot found its voice — that's an overridden method running through a parent variable.",
-            "failMsg": "Keep pet declared as Animal, and make Parrot's speak() print exactly Squawk! inside the quotes."
+            "title": "Lock up the score",
+            "instructions": "The Player class already has a public getter getScore(). Right now its 'score' field is public, which is risky. Change the field from public to PRIVATE so the only way to read it is through the getter. The program should still print 50.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Player p = new Player();\n        System.out.println(p.getScore());\n    }\n}\n\nclass Player {\n    public int score = 50;\n\n    public int getScore() {\n        return score;\n    }\n}",
+            "check": { "code_includes": "private int score" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Player p = new Player();\n        System.out.println(p.getScore());\n    }\n}\n\nclass Player {\n    private int score = 50;\n\n    public int getScore() {\n        return score;\n    }\n}",
+            "solutionOutput": "50",
+            "passMsg": "Locked and loaded — score is private and only readable through your getter. 🔒",
+            "failMsg": "Change 'public int score' to 'private int score', then add a public method getScore() that does 'return score;'."
         },
         {
             "type": "tryit",
-            "title": "Finish the abstract Shape",
-            "instructions": "Rectangle extends the abstract Shape but its area() returns 0.0 — wrong! Make area() return width * height so the program prints Area: 20.0.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return 0.0;\n    }\n}",
-            "check": { "regex": "width\\s*\\*\\s*height" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return width * height;\n    }\n}",
-            "solutionOutput": "Area: 20.0",
-            "passMsg": "Perfect — Rectangle kept the promise made by abstract Shape, and 4 * 5 gives 20.0.",
-            "failMsg": "Inside Rectangle's area(), return width * height instead of 0.0."
+            "title": "Count the cookies",
+            "instructions": "Right now Cookie's 'count' field is a plain instance field, so each cookie has its own separate copy — the last cookie only ever sees a count of 1. Add the word STATIC in front of 'int count' so all cookies share ONE counter. After three cookies, it should print 'Cookies baked: 3' instead of 1.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        new Cookie();\n        new Cookie();\n        Cookie last = new Cookie();\n        System.out.println(\"Cookies baked: \" + last.count);\n    }\n}\n\nclass Cookie {\n    int count = 0;\n\n    public Cookie() {\n        count++;\n    }\n}",
+            "check": { "code_includes": "static int count" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        new Cookie();\n        new Cookie();\n        Cookie last = new Cookie();\n        System.out.println(\"Cookies baked: \" + last.count);\n    }\n}\n\nclass Cookie {\n    static int count = 0;\n\n    public Cookie() {\n        count++;\n    }\n}",
+            "solutionOutput": "Cookies baked: 3",
+            "passMsg": "Three cookies, one shared counter — that's static in action! 🍪",
+            "failMsg": "Add 'static int count = 0;' to Cookie, and give Cookie a constructor that runs count++ each time."
         }
     ],
     "challenge": {
-        "title": "Build a one-line band 🥁🎸🎹",
-        "instructions": "Make an abstract class Instrument with an abstract method play(). Create three children — Drum, Guitar, and Piano — that each override play() to print their own sound. Put all three in an Instrument[] array and loop over it so the program prints:\nBoom boom!\nTwang!\nPlink plink!",
-        "starter": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\n// Add Guitar and Piano classes below, then add them to the band array.\n",
-        "check": { "regex": "new\\s+Drum\\(\\)[\\s\\S]*new\\s+Guitar\\(\\)[\\s\\S]*new\\s+Piano\\(\\)" },
-        "solution": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum(), new Guitar(), new Piano() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\nclass Guitar extends Instrument {\n    void play() {\n        System.out.println(\"Twang!\");\n    }\n}\n\nclass Piano extends Instrument {\n    void play() {\n        System.out.println(\"Plink plink!\");\n    }\n}",
-        "solutionOutput": "Boom boom!\nTwang!\nPlink plink!",
-        "hint": "Each instrument needs its own class that extends Instrument and overrides play(). Then write { new Drum(), new Guitar(), new Piano() } in the array so the loop plays all three.",
-        "passMsg": "🏆 The whole band plays from one loop — that's polymorphism plus abstract classes working together. Day 14 done!"
+        "type": "tryit",
+        "title": "Build a safe Wallet",
+        "instructions": "This Wallet already keeps cash private with a getter, but its addMoney method is too trusting — it adds ANY amount, even negative ones. Right now the program adds 40, then -5, then 10, ending at 45. Fix addMoney so it only adds when amount is greater than 0 (wrap the line in 'if (amount > 0) { ... }'). The -5 should be ignored, leaving 'Cash: 50'.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Wallet w = new Wallet();\n        w.addMoney(40);\n        w.addMoney(-5);\n        w.addMoney(10);\n        System.out.println(\"Cash: \" + w.getCash());\n    }\n}\n\nclass Wallet {\n    private int cash = 0;\n\n    public void addMoney(int amount) {\n        cash += amount;\n    }\n\n    public int getCash() {\n        return cash;\n    }\n}",
+        "check": { "code_includes": "if (amount > 0)" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Wallet w = new Wallet();\n        w.addMoney(40);\n        w.addMoney(-5);\n        w.addMoney(10);\n        System.out.println(\"Cash: \" + w.getCash());\n    }\n}\n\nclass Wallet {\n    private int cash = 0;\n\n    public void addMoney(int amount) {\n        if (amount > 0) {\n            cash += amount;\n        }\n    }\n\n    public int getCash() {\n        return cash;\n    }\n}",
+        "solutionOutput": "Cash: 50",
+        "hint": "Inside addMoney, wrap 'cash += amount;' in an if (amount > 0) { ... } so the -5 is quietly ignored. Then 40 + 10 = 50.",
+        "passMsg": "🏆 Your Wallet guards its own cash — no negatives allowed! You've finished Day 12. Encapsulation and static are officially yours."
     }
 }

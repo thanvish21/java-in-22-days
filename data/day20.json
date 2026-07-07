@@ -1,343 +1,131 @@
 {
-  "day": 20,
-  "emoji": "🏷️",
-  "title": "Enums & Records",
-  "subtitle": "Give your data tidy name tags and build mini data classes in one short line.",
-  "goal": "Use an enum to hold a fixed set of named choices (and switch on them), and use a record to make a short, read-only data class with free getters, equals, and toString.",
-  "estMinutes": 180,
-  "tags": [
-    "modern"
-  ],
-  "blocks": [
-    {
-      "type": "text",
-      "heading": "Why enums? A fixed set of choices 🏷️",
-      "html": "<p>Some things in life have a <strong>fixed set of options</strong>. A traffic light is RED, YELLOW, or GREEN — never \"purple\". The days of the week are MON through SUN — never \"Funday\".</p><p>An <strong>enum</strong> (short for <em>enumeration</em>) lets you give Java that exact list of allowed names. Once you do, Java won't let anyone sneak in a value that isn't on the list. No typos, no surprises.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "An enum is just a list of named constants",
-      "code": "public class Main {\n    enum TrafficLight { RED, YELLOW, GREEN }\n\n    public static void main(String[] args) {\n        TrafficLight light = TrafficLight.RED;\n        System.out.println(\"The light is \" + light);\n\n        switch (light) {\n            case RED -> System.out.println(\"Stop! 🛑\");\n            case YELLOW -> System.out.println(\"Slow down. ⚠️\");\n            case GREEN -> System.out.println(\"Go! 🟢\");\n        }\n    }\n}",
-      "output": "The light is RED\nStop! 🛑",
-      "explain": "enum TrafficLight { RED, YELLOW, GREEN } says \"the only valid lights are these three.\" Each name is a constant you reach with TrafficLight.RED. A switch can branch on every option, and the arrow -> form is short and tidy."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Enum names are SHOUTY.</strong> By tradition we write enum constants in <code class=\"inline\">UPPER_CASE</code> like <code class=\"inline\">RED</code> and <code class=\"inline\">GREEN</code>. It makes them easy to spot as fixed values."
-    },
-    {
-      "type": "text",
-      "heading": "Enums can carry extra info 🎴",
-      "html": "<p>An enum constant can be more than a name — it can hold its own little piece of data. Here each card suit also remembers the symbol that's printed on the card.</p><p>You add a field, a tiny constructor, and a method to read it. Then you can loop over every option with <code class=\"inline\">values()</code>.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "Each suit knows its own symbol",
-      "code": "public class Main {\n    enum Suit {\n        HEARTS(\"♥\"),\n        DIAMONDS(\"♦\"),\n        CLUBS(\"♣\"),\n        SPADES(\"♠\");\n\n        private final String symbol;\n\n        Suit(String symbol) {\n            this.symbol = symbol;\n        }\n\n        String getSymbol() {\n            return symbol;\n        }\n    }\n\n    public static void main(String[] args) {\n        for (Suit s : Suit.values()) {\n            System.out.println(s + \" looks like \" + s.getSymbol());\n        }\n    }\n}",
-      "output": "HEARTS looks like ♥\nDIAMONDS looks like ♦\nCLUBS looks like ♣\nSPADES looks like ♠",
-      "explain": "HEARTS(\"♥\") passes the symbol into the constructor, which saves it in the symbol field. values() gives you every constant in order, so the loop visits all four suits. Notice the field is final — once set, a suit's symbol never changes."
-    },
-    {
-      "type": "quiz",
-      "question": "What is an enum best used for?",
-      "options": [
-        "Storing a number that changes a lot",
-        "A fixed set of named choices, like RED, YELLOW, GREEN",
-        "Reading text typed by the user",
-        "Doing math faster"
-      ],
-      "answerIndex": 1,
-      "explain": "An enum locks in a fixed list of allowed values. Java then refuses anything not on that list, which stops typos and invalid states."
-    },
-    {
-      "type": "text",
-      "heading": "Records: a data class in one line 📦",
-      "html": "<p>Lots of the time you just want a little bag of data — a <code class=\"inline\">Point</code> with an x and a y, or a <code class=\"inline\">Person</code> with a name and an age. The old way meant writing a class with fields, a constructor, getters, <code class=\"inline\">equals</code>, and <code class=\"inline\">toString</code> by hand. Tedious!</p><p>A <strong>record</strong> (Java 16+) writes all of that <em>for you</em>. You declare the pieces of data, and Java fills in the rest.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "One short line gives you a full data class",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Point p = new Point(1, 2);\n        System.out.println(p);\n        System.out.println(\"x is \" + p.x() + \", y is \" + p.y());\n\n        Person alice = new Person(\"Alice\", 30);\n        Person alice2 = new Person(\"Alice\", 30);\n        System.out.println(alice);\n        System.out.println(\"Same person? \" + alice.equals(alice2));\n    }\n}\n\nrecord Point(int x, int y) {}\n\nrecord Person(String name, int age) {}",
-      "output": "Point[x=1, y=2]\nx is 1, y is 2\nPerson[name=Alice, age=30]\nSame person? true",
-      "explain": "record Point(int x, int y) {} hands you a constructor (new Point(1, 2)), getters named x() and y(), a neat toString that prints Point[x=1, y=2], and an equals that says two records are equal when all their parts match — which is why alice.equals(alice2) is true. Records are immutable: once built, their values can't change."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Record getters have no \"get\".</strong> You read a record's value with <code class=\"inline\">p.x()</code>, not <code class=\"inline\">p.getX()</code>. The method is named after the field itself.",
-      "variant": "info"
-    },
-    {
-      "type": "text",
-      "heading": "Record or regular class? 🤔",
-      "html": "<p>Reach for a <strong>record</strong> when the object is mostly just data that never changes — coordinates, a person's name and age, a setting. You get clean code for free.</p><p>Reach for a <strong>regular class</strong> when the object needs to <em>change</em> over time, hide its insides, or do a lot of behavior. Records are locked and read-only on purpose, so they aren't the right tool when you need mutation.</p>"
-    },
-    {
-      "type": "quiz",
-      "question": "What does a record give you automatically?",
-      "options": [
-        "A getter, equals, and a readable toString",
-        "A way to change its fields later",
-        "A database connection",
-        "Nothing — you write it all yourself"
-      ],
-      "answerIndex": 0,
-      "explain": "A record auto-generates the constructor, getters (named like the fields), equals, hashCode, and toString. Its data is immutable, so it does NOT give you a way to change fields later."
-    },
-    {
-      "type": "quiz",
-      "question": "How does a record's toString print a Point(1, 2)?",
-      "options": [
-        "Point(1, 2)",
-        "Point{x:1, y:2}",
-        "Point[x=1, y=2]",
-        "{1, 2}"
-      ],
-      "answerIndex": 2,
-      "explain": "A record's built-in toString uses the format Name[field=value, field=value], so a Point with x=1 and y=2 prints exactly Point[x=1, y=2]."
-    },
-    {
-      "type": "tryit",
-      "title": "Make your own enum",
-      "instructions": "Inside Main, create an enum called Pet with three constants: DOG, CAT, and FISH. The loop already prints every value — just fill in the enum line so it compiles and runs.",
-      "starter": "public class Main {\n    enum Pet { /* add DOG, CAT, FISH here */ }\n\n    public static void main(String[] args) {\n        for (Pet p : Pet.values()) {\n            System.out.println(\"Pet: \" + p);\n        }\n    }\n}",
-      "check": {
-        "code_includes": "enum Pet { DOG, CAT, FISH }"
-      },
-      "solution": "public class Main {\n    enum Pet { DOG, CAT, FISH }\n\n    public static void main(String[] args) {\n        for (Pet p : Pet.values()) {\n            System.out.println(\"Pet: \" + p);\n        }\n    }\n}",
-      "solutionOutput": "Pet: DOG\nPet: CAT\nPet: FISH",
-      "passMsg": "Nice! You listed a fixed set of choices and looped over every one. 🐾",
-      "failMsg": "Put the three names inside the braces: enum Pet { DOG, CAT, FISH }"
-    },
-    {
-      "type": "tryit",
-      "title": "Build a record",
-      "instructions": "Declare a record named Animal with a String name and an int age. The main method already builds one and prints it — just add the record line at the bottom so it compiles.",
-      "starter": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Animal(\"Rex\", 5);\n        System.out.println(a);\n        System.out.println(a.name() + \" is \" + a.age() + \" years old\");\n    }\n}\n\n// add your record below\n",
-      "check": {
-        "regex": "record\\s+Animal\\s*\\(\\s*String\\s+name\\s*,\\s*int\\s+age\\s*\\)"
-      },
-      "solution": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Animal(\"Rex\", 5);\n        System.out.println(a);\n        System.out.println(a.name() + \" is \" + a.age() + \" years old\");\n    }\n}\n\nrecord Animal(String name, int age) {}",
-      "solutionOutput": "Animal[name=Rex, age=5]\nRex is 5 years old",
-      "passMsg": "One line, a whole data class! Look at that free toString. 📦",
-      "failMsg": "Add this at the bottom: record Animal(String name, int age) {}"
-    },
-    {
-      "type": "surprise",
-      "title": "Surprise Quiz! Days 16–20",
-      "intro": "Pop quiz! Let's see what stuck from the last 5 days. No grades, just fun 🎉",
-      "questions": [
+    "day": 20,
+    "emoji": "📋",
+    "title": "ArrayList",
+    "subtitle": "A list that grows and shrinks whenever you want — no fixed size.",
+    "goal": "Create an ArrayList, add and read items, change and remove them, loop over the list, and use generics to keep it type-safe.",
+    "estMinutes": 180,
+    "tags": ["collections"],
+    "blocks": [
         {
-          "question": "Which pair of keywords lets you try risky code and handle an error if it happens?",
-          "options": [
-            "if / else",
-            "try / catch",
-            "for / while",
-            "new / class"
-          ],
-          "answerIndex": 1,
-          "explain": "try runs the risky code; catch handles the exception if one is thrown, so the program doesn't crash. (Day 16!)"
+            "type": "text",
+            "heading": "Why arrays aren't enough 📋",
+            "html": "<p>Remember arrays? They are great, but they have one big rule: once you make an array, its <strong>size never changes</strong>. If you make room for 3 names and a 4th friend shows up, you are stuck.</p><p>An <strong>ArrayList</strong> fixes that. It is a list that can <em>grow</em> when you add things and <em>shrink</em> when you remove them. Think of it like a to-do list on paper — you can always write one more line or cross one out.</p>"
         },
         {
-          "question": "What is special about an ArrayList compared to a plain array?",
-          "options": [
-            "It can never hold numbers",
-            "It can grow and shrink as you add or remove items",
-            "It is always exactly 10 items long",
-            "It cannot be looped over"
-          ],
-          "answerIndex": 1,
-          "explain": "An ArrayList resizes itself, so you can add() and remove() items freely. A plain array has a fixed length. (Day 17!)"
+            "type": "text",
+            "heading": "Making your first ArrayList",
+            "html": "<p>ArrayList lives in a toolbox called <code class=\"inline\">java.util</code>, so we tell Java to grab it with <code class=\"inline\">import</code> at the top of the file. We import two things:</p><p><code class=\"inline\">import java.util.ArrayList;</code><br><code class=\"inline\">import java.util.List;</code></p><p>Then we make one like this:</p><p><code class=\"inline\">List&lt;String&gt; names = new ArrayList&lt;&gt;();</code></p><p>The <code class=\"inline\">&lt;String&gt;</code> part is a promise: <em>this list will only hold Strings</em>. That promise is called <strong>generics</strong>, and it keeps your list tidy and safe.</p>"
         },
         {
-          "question": "Which collection stores key-value pairs, like a name and a score?",
-          "options": [
-            "HashMap",
-            "int",
-            "boolean",
-            "for loop"
-          ],
-          "answerIndex": 0,
-          "explain": "A HashMap links each key to a value: map.put(\"Sam\", 10) then map.get(\"Sam\") gives back 10. (Day 18!)"
+            "type": "code",
+            "caption": "Add names, then read the list",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> names = new ArrayList<>();\n        names.add(\"Maya\");\n        names.add(\"Leo\");\n        names.add(\"Sam\");\n        System.out.println(\"First name: \" + names.get(0));\n        System.out.println(\"How many names? \" + names.size());\n        System.out.println(\"All names: \" + names);\n    }\n}",
+            "output": "First name: Maya\nHow many names? 3\nAll names: [Maya, Leo, Sam]",
+            "explain": "add() puts something at the end of the list. get(0) reads the item at position 0 (lists start counting at 0, just like arrays). size() tells you how many items are in the list right now. Printing the whole list shows everything inside square brackets."
         },
         {
-          "question": "What does the T in a generic class like Box<T> stand for?",
-          "options": [
-            "A fixed type that is always String",
-            "A type placeholder you fill in when you use the class",
-            "The number ten",
-            "A typo"
-          ],
-          "answerIndex": 1,
-          "explain": "T is a type parameter, a placeholder. Box<String> makes a Box that holds Strings; Box<Integer> holds Integers. (Day 19!)"
+            "type": "tip",
+            "html": "<strong>Counting starts at 0!</strong> The first item is <code class=\"inline\">get(0)</code>, the second is <code class=\"inline\">get(1)</code>, and so on. The last item is always at <code class=\"inline\">size() - 1</code>."
         },
         {
-          "question": "When should you use an enum?",
-          "options": [
-            "To store a fixed set of named choices, like days of the week",
-            "To read keyboard input",
-            "To make a loop run forever",
-            "To hide a field"
-          ],
-          "answerIndex": 0,
-          "explain": "An enum is perfect for a fixed list of named values, like Color.RED, Color.GREEN, Color.BLUE. (Day 20!)"
+            "type": "text",
+            "heading": "Change, remove, check, and loop",
+            "html": "<p>An ArrayList gives you handy commands:</p><ul><li><code class=\"inline\">set(i, value)</code> — replace the item at position <code class=\"inline\">i</code></li><li><code class=\"inline\">remove(value)</code> — take an item out (the list shrinks)</li><li><code class=\"inline\">contains(value)</code> — ask \"is this in the list?\" (gives back true or false)</li><li><code class=\"inline\">size()</code> — how many items are there</li></ul><p>To visit every item, use a <strong>for-each</strong> loop: <code class=\"inline\">for (String task : todo)</code> means \"for each task in the todo list.\"</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A to-do list you can edit",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> todo = new ArrayList<>();\n        todo.add(\"Brush teeth\");\n        todo.add(\"Do homwork\");\n        todo.add(\"Feed cat\");\n\n        todo.set(1, \"Do homework\");\n        todo.remove(\"Brush teeth\");\n\n        System.out.println(\"Things left to do:\");\n        for (String task : todo) {\n            System.out.println(\"- \" + task);\n        }\n        System.out.println(\"Is 'Feed cat' on the list? \" + todo.contains(\"Feed cat\"));\n    }\n}",
+            "output": "Things left to do:\n- Do homework\n- Feed cat\nIs 'Feed cat' on the list? true",
+            "explain": "set(1, ...) fixed the typo at position 1. remove(\"Brush teeth\") took that task out, so the list shrank from 3 items to 2. The for-each loop printed each remaining task, and contains() confirmed \"Feed cat\" is still there."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Lists shrink too!</strong> After <code class=\"inline\">remove()</code>, everything after the removed item slides up to fill the gap, and <code class=\"inline\">size()</code> goes down by one. You never have empty holes.",
+            "variant": "success"
+        },
+        {
+            "type": "text",
+            "heading": "Lists of numbers: List&lt;Integer&gt; 🔢",
+            "html": "<p>A list can hold numbers too — you write <code class=\"inline\">List&lt;Integer&gt;</code>. Notice it is <strong>Integer</strong> with a capital I, not the little <code class=\"inline\">int</code>. Generics need the full object name.</p><p>The cool part: you can still write <code class=\"inline\">scores.add(90)</code> with a plain number, and Java quietly turns it into an Integer for you. That automatic wrapping is called <strong>autoboxing</strong> — you don't have to think about it.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Add up a list of scores",
+            "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> scores = new ArrayList<>();\n        scores.add(90);\n        scores.add(75);\n        scores.add(100);\n\n        int total = 0;\n        for (int s : scores) {\n            total = total + s;\n        }\n        System.out.println(\"Number of scores: \" + scores.size());\n        System.out.println(\"Total: \" + total);\n        System.out.println(\"Average: \" + (total / scores.size()));\n    }\n}",
+            "output": "Number of scores: 3\nTotal: 265\nAverage: 88",
+            "explain": "List<Integer> holds whole numbers. We added 90, 75, and 100 — autoboxing turned each plain number into an Integer automatically. The for-each loop added every score into total, then we divided by size() to get the average (265 / 3 = 88, since int division drops the leftover)."
+        },
+        {
+            "type": "quiz",
+            "question": "What is the main advantage of an ArrayList over a plain array?",
+            "options": [
+                "It can change size — you can add and remove items anytime",
+                "It runs faster than everything else",
+                "It does not need to be imported",
+                "It can only hold three items"
+            ],
+            "answerIndex": 0,
+            "explain": "Arrays have a fixed size forever. An ArrayList grows when you add and shrinks when you remove, so you are never stuck with a size that is too small or too big."
+        },
+        {
+            "type": "quiz",
+            "question": "In List<String> names = new ArrayList<>();, what does the <String> part promise?",
+            "options": [
+                "The list can hold any type at all",
+                "The list will only hold Strings (this is generics keeping it type-safe)",
+                "The list is named String",
+                "The list can hold exactly one item"
+            ],
+            "answerIndex": 1,
+            "explain": "The <String> is generics. It promises the list only holds Strings, so Java catches mistakes early and you always know what is inside."
+        },
+        {
+            "type": "quiz",
+            "question": "Which type do you use for a list of whole numbers?",
+            "options": [
+                "List<int>",
+                "List<number>",
+                "List<Integer>",
+                "List<digits>"
+            ],
+            "answerIndex": 2,
+            "explain": "Generics need the object name Integer (capital I), not the small int. Thanks to autoboxing you can still call add(90) with a plain number."
+        },
+        {
+            "type": "tryit",
+            "title": "Build a fruit list",
+            "instructions": "Add \"apple\" and \"banana\" to the list using add(), in that order. Then it gets printed. Press Check.",
+            "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = new ArrayList<>();\n        // add \"apple\" and \"banana\" here\n\n        System.out.println(\"My fruits: \" + fruits);\n    }\n}",
+            "check": { "regex": "fruits\\.add\\(\"apple\"\\)[\\s\\S]*fruits\\.add\\(\"banana\"\\)" },
+            "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = new ArrayList<>();\n        fruits.add(\"apple\");\n        fruits.add(\"banana\");\n        System.out.println(\"My fruits: \" + fruits);\n    }\n}",
+            "solutionOutput": "My fruits: [apple, banana]",
+            "passMsg": "Nice — your list grew as you added each fruit!",
+            "failMsg": "Use fruits.add(\"apple\"); then fruits.add(\"banana\"); on separate lines."
+        },
+        {
+            "type": "tryit",
+            "title": "Loop over numbers",
+            "instructions": "The list already holds 3, 6, and 9. Finish the for-each loop so it prints each number on its own line. Press Check.",
+            "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>();\n        nums.add(3);\n        nums.add(6);\n        nums.add(9);\n        for (int n : nums) {\n            // print n here\n        }\n    }\n}",
+            "check": { "code_includes": "System.out.println(n)" },
+            "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>();\n        nums.add(3);\n        nums.add(6);\n        nums.add(9);\n        for (int n : nums) {\n            System.out.println(n);\n        }\n    }\n}",
+            "solutionOutput": "3\n6\n9",
+            "passMsg": "Great — the for-each loop visited every number in order!",
+            "failMsg": "Inside the loop, write System.out.println(n); to print each number."
         }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You manage a small inventory. Each product has a name, category (enum), and price (record). List all products, then filter only the ones under ₹500 and print a summary.</p>",
-      "caption": "Inventory report with enum + record",
-      "code": "import java.util.ArrayList;\n\npublic class Main {\n    enum Category { ELECTRONICS, FOOD, CLOTHING }\n\n    record Product(String name, Category cat, double price) {}\n\n    public static void main(String[] args) {\n        ArrayList<Product> inv = new ArrayList<>();\n        inv.add(new Product(\"Headphones\", Category.ELECTRONICS, 1200.0));\n        inv.add(new Product(\"Rice 5kg\", Category.FOOD, 320.0));\n        inv.add(new Product(\"T-Shirt\", Category.CLOTHING, 450.0));\n        inv.add(new Product(\"USB Cable\", Category.ELECTRONICS, 150.0));\n\n        System.out.println(\"=== Full Inventory ===\");\n        for (Product p : inv) {\n            System.out.println(p.name() + \" [\" + p.cat() + \"] - Rs.\" + p.price());\n        }\n\n        System.out.println(\"\\n=== Under Rs.500 ===\");\n        int count = 0;\n        for (Product p : inv) {\n            if (p.price() < 500) {\n                System.out.println(\"- \" + p.name() + \" (Rs.\" + p.price() + \")\");\n                count++;\n            }\n        }\n        System.out.println(count + \" affordable item(s)\");\n    }\n}",
-      "output": "=== Full Inventory ===\nHeadphones [ELECTRONICS] - Rs.1200.0\nRice 5kg [FOOD] - Rs.320.0\nT-Shirt [CLOTHING] - Rs.450.0\nUSB Cable [ELECTRONICS] - Rs.150.0\n\n=== Under Rs.500 ===\n- Rice 5kg (Rs.320.0)\n- T-Shirt (Rs.450.0)\n- USB Cable (Rs.150.0)\n3 affordable item(s)",
-      "explain": "This uses an enum for fixed categories (Day 20), a record for immutable product data (Day 20), an ArrayList to hold the inventory (Day 17), and a for-each loop with an if filter (Days 6, 8)."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 16–20",
-      "intro": "Exceptions, collections, generics, and modern Java! 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which pair of keywords handles risky code and catches errors?",
-          "options": [
-            "if / else",
-            "try / catch",
-            "for / while",
-            "new / class"
-          ],
-          "answerIndex": 1,
-          "explain": "try runs code that might fail; catch handles the exception so the program doesn’t crash. (Day 16)"
-        },
-        {
-          "question": "What makes ArrayList different from a plain array?",
-          "options": [
-            "ArrayList is always size 10",
-            "ArrayList can grow and shrink dynamically",
-            "ArrayList only holds numbers",
-            "ArrayList cannot use a for-each loop"
-          ],
-          "answerIndex": 1,
-          "explain": "An ArrayList resizes automatically when you add() or remove() items. A plain array has a fixed length. (Day 17)"
-        },
-        {
-          "question": "Which collection stores key-value pairs?",
-          "options": [
-            "ArrayList",
-            "HashMap",
-            "int[]",
-            "boolean"
-          ],
-          "answerIndex": 1,
-          "explain": "HashMap maps each key to a value, like map.put(\"name\", \"Sam\") and map.get(\"name\") returns \"Sam\". (Day 18)"
-        },
-        {
-          "question": "What does T in Box<T> represent?",
-          "options": [
-            "The letter T literally",
-            "A type placeholder you fill in when using the class",
-            "The number ten",
-            "A boolean flag"
-          ],
-          "answerIndex": 1,
-          "explain": "T is a generic type parameter. Box<String> makes a Box holding Strings; Box<Integer> holds Integers. (Day 19)"
-        },
-        {
-          "question": "What does a record give you for free?",
-          "options": [
-            "Constructor, getters, equals, and toString",
-            "A way to change its fields later",
-            "A database connection",
-            "An inheritance hierarchy"
-          ],
-          "answerIndex": 0,
-          "explain": "A record auto-generates constructor, getters (named like fields), equals, hashCode, and toString. Data is immutable. (Day 20)"
-        }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You manage a small inventory. Each product has a name, category (enum), and price (record). List all products, then filter only the ones under ₹500.</p>",
-      "caption": "Inventory report with enum + record",
-      "code": "import java.util.ArrayList;\n\npublic class Main {\n    enum Category { ELECTRONICS, FOOD, CLOTHING }\n\n    record Product(String name, Category cat, double price) {}\n\n    public static void main(String[] args) {\n        ArrayList<Product> inv = new ArrayList<>();\n        inv.add(new Product(\"Headphones\", Category.ELECTRONICS, 1200.0));\n        inv.add(new Product(\"Rice 5kg\", Category.FOOD, 320.0));\n        inv.add(new Product(\"T-Shirt\", Category.CLOTHING, 450.0));\n        inv.add(new Product(\"USB Cable\", Category.ELECTRONICS, 150.0));\n\n        System.out.println(\"=== Full Inventory ===\");\n        for (Product p : inv) {\n            System.out.println(p.name() + \" [\" + p.cat() + \"] - Rs.\" + p.price());\n        }\n\n        System.out.println(\"\\n=== Under Rs.500 ===\");\n        int count = 0;\n        for (Product p : inv) {\n            if (p.price() < 500) {\n                System.out.println(\"- \" + p.name() + \" (Rs.\" + p.price() + \")\");\n                count++;\n            }\n        }\n        System.out.println(count + \" affordable item(s)\");\n    }\n}",
-      "output": "=== Full Inventory ===\nHeadphones [ELECTRONICS] - Rs.1200.0\nRice 5kg [FOOD] - Rs.320.0\nT-Shirt [CLOTHING] - Rs.450.0\nUSB Cable [ELECTRONICS] - Rs.150.0\n\n=== Under Rs.500 ===\n- Rice 5kg (Rs.320.0)\n- T-Shirt (Rs.450.0)\n- USB Cable (Rs.150.0)\n3 affordable item(s)",
-      "explain": "Uses enum for categories (Day 20), record for products (Day 20), ArrayList (Day 17), and for-each with if filter (Days 6, 8)."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 16–20",
-      "intro": "Exceptions, collections, generics, and modern Java! 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which pair of keywords handles risky code and catches errors?",
-          "options": [
-            "if / else",
-            "try / catch",
-            "for / while",
-            "new / class"
-          ],
-          "answerIndex": 1,
-          "explain": "try runs code that might fail; catch handles the exception. (Day 16)"
-        },
-        {
-          "question": "What makes ArrayList different from a plain array?",
-          "options": [
-            "Always size 10",
-            "Can grow and shrink dynamically",
-            "Only holds numbers",
-            "Cannot use for-each"
-          ],
-          "answerIndex": 1,
-          "explain": "ArrayList resizes automatically when you add() or remove(). (Day 17)"
-        },
-        {
-          "question": "Which collection stores key-value pairs?",
-          "options": [
-            "ArrayList",
-            "HashMap",
-            "int[]",
-            "boolean"
-          ],
-          "answerIndex": 1,
-          "explain": "HashMap maps each key to a value. (Day 18)"
-        },
-        {
-          "question": "What does T in Box<T> represent?",
-          "options": [
-            "The letter T literally",
-            "A type placeholder you fill in when using the class",
-            "The number ten",
-            "A boolean flag"
-          ],
-          "answerIndex": 1,
-          "explain": "T is a generic type parameter — a placeholder for any type. (Day 19)"
-        },
-        {
-          "question": "What does a record give you for free?",
-          "options": [
-            "Constructor, getters, equals, and toString",
-            "A way to change fields later",
-            "A database connection",
-            "An inheritance hierarchy"
-          ],
-          "answerIndex": 0,
-          "explain": "A record auto-generates constructor, getters, equals, hashCode, and toString. Immutable. (Day 20)"
-        }
-      ]
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "Fix and tidy a shopping list",
+        "instructions": "The list has \"milk\", \"eggs\", and \"bred\" (a typo). Use set(2, \"bread\") to fix the typo, then remove(\"eggs\") to take eggs out. Then print how many items are left and loop over each one with \"- \" in front. Press Check.",
+        "starter": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> shopping = new ArrayList<>();\n        shopping.add(\"milk\");\n        shopping.add(\"eggs\");\n        shopping.add(\"bred\");\n        // fix \"bred\" to \"bread\" with set\n        // remove \"eggs\"\n        System.out.println(\"Items left: \" + shopping.size());\n        // loop and print each item with \"- \" in front\n    }\n}",
+        "check": { "regex": "shopping\\.set\\(2,\\s*\"bread\"\\)[\\s\\S]*shopping\\.remove\\(\"eggs\"\\)" },
+        "solution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> shopping = new ArrayList<>();\n        shopping.add(\"milk\");\n        shopping.add(\"eggs\");\n        shopping.add(\"bred\");\n        shopping.set(2, \"bread\");\n        shopping.remove(\"eggs\");\n        System.out.println(\"Items left: \" + shopping.size());\n        for (String item : shopping) {\n            System.out.println(\"- \" + item);\n        }\n    }\n}",
+        "solutionOutput": "Items left: 2\n- milk\n- bread",
+        "hint": "set(2, \"bread\") replaces the item at position 2. remove(\"eggs\") shrinks the list to 2 items. Then use for (String item : shopping) and print \"- \" + item inside.",
+        "passMsg": "🏆 You fixed a typo, removed an item, and looped the whole list — that is real list-wrangling. Day 17 complete!",
+        "failMsg": "Use shopping.set(2, \"bread\"); to fix the typo, then shopping.remove(\"eggs\"); before the loop."
     }
-  ],
-  "challenge": {
-    "type": "tryit",
-    "title": "A robot that knows where it faces",
-    "instructions": "Combine both ideas! Make a top-level enum Direction with NORTH, EAST, SOUTH, WEST, and a record Robot(String name, Direction facing). In main, build a robot named Bolt facing NORTH, print it, print which way it faces, and use a switch on r.facing() to print a heading message. Match the expected output exactly.",
-    "starter": "public class Main {\n    public static void main(String[] args) {\n        Robot r = new Robot(\"Bolt\", Direction.NORTH);\n        System.out.println(r);\n        System.out.println(r.name() + \" is facing \" + r.facing());\n\n        switch (r.facing()) {\n            // add a case for each direction\n        }\n    }\n}\n\n// add the enum and the record below\n",
-    "check": {
-      "regex": "record\\s+Robot\\s*\\(\\s*String\\s+name\\s*,\\s*Direction\\s+facing\\s*\\)"
-    },
-    "solution": "public class Main {\n    public static void main(String[] args) {\n        Robot r = new Robot(\"Bolt\", Direction.NORTH);\n        System.out.println(r);\n        System.out.println(r.name() + \" is facing \" + r.facing());\n\n        switch (r.facing()) {\n            case NORTH -> System.out.println(\"Heading up! ⬆️\");\n            case EAST -> System.out.println(\"Heading right! ➡️\");\n            case SOUTH -> System.out.println(\"Heading down! ⬇️\");\n            case WEST -> System.out.println(\"Heading left! ⬅️\");\n        }\n    }\n}\n\nenum Direction { NORTH, EAST, SOUTH, WEST }\n\nrecord Robot(String name, Direction facing) {}",
-    "solutionOutput": "Robot[name=Bolt, facing=NORTH]\nBolt is facing NORTH\nHeading up! ⬆️",
-    "hint": "A record can store an enum just like any other type: record Robot(String name, Direction facing) {}. Inside the switch, use the bare constant name (case NORTH ->), not Direction.NORTH.",
-    "passMsg": "🏆 You combined an enum, a record, and a switch — that's exactly how modern Java models tidy data. Day 20 done!",
-    "failMsg": "Make sure Direction has all four constants and Robot is a record with (String name, Direction facing)."
-  }
 }

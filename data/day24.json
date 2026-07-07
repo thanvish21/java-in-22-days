@@ -1,0 +1,129 @@
+{
+    "day": 24,
+    "emoji": "✨",
+    "title": "Lambdas & Streams",
+    "subtitle": "Trade clunky loops for one smooth line that filters, changes, and adds up your data.",
+    "goal": "Write lambda expressions, use the built-in functional interfaces, and process lists with the Stream API using filter, map, forEach, collect, count, and sum, plus method references.",
+    "estMinutes": 180,
+    "tags": ["functional"],
+    "blocks": [
+        {
+            "type": "text",
+            "heading": "A function you can hand over ✨",
+            "html": "<p>Up to now, every piece of code lived inside a method with a name. A <strong>lambda</strong> is a tiny method with <em>no name</em> that you can store in a variable and pass around like any other value.</p><p>The shape is simple: <code class=\"inline\">x -&gt; x * 2</code> reads as <em>“give me an x, and I'll hand back x times 2.”</em> The left side is the input, the arrow <code class=\"inline\">-&gt;</code> is the bridge, and the right side is the answer. That's it — a recipe you can carry in your pocket.</p>"
+        },
+        {
+            "type": "text",
+            "heading": "Functional interfaces: the slots lambdas fit into",
+            "html": "<p>A lambda needs a <strong>type</strong> to live in, and Java gives you ready-made ones in <code class=\"inline\">java.util.function</code>. Think of them as labeled slots:</p><p><code class=\"inline\">Function&lt;T, R&gt;</code> takes one value, returns another (<code class=\"inline\">apply</code>). <code class=\"inline\">Predicate&lt;T&gt;</code> asks a yes/no question (<code class=\"inline\">test</code>). <code class=\"inline\">Consumer&lt;T&gt;</code> takes a value and does something, returning nothing (<code class=\"inline\">accept</code>). <code class=\"inline\">Supplier&lt;T&gt;</code> takes nothing and produces a value (<code class=\"inline\">get</code>). The old friend <code class=\"inline\">Runnable</code> takes nothing and returns nothing (<code class=\"inline\">run</code>).</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Lambdas plugged into functional interfaces",
+            "code": "import java.util.*;\nimport java.util.function.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Function<Integer, Integer> doubler = x -> x * 2;\n        System.out.println(\"double of 5 is \" + doubler.apply(5));\n\n        Predicate<Integer> isEven = n -> n % 2 == 0;\n        System.out.println(\"is 4 even? \" + isEven.test(4));\n        System.out.println(\"is 7 even? \" + isEven.test(7));\n\n        Runnable greet = () -> System.out.println(\"Hello from a lambda!\");\n        greet.run();\n    }\n}",
+            "output": "double of 5 is 10\nis 4 even? true\nis 7 even? false\nHello from a lambda!",
+            "explain": "doubler is a Function: feed it 5 with apply(5) and it returns 10. isEven is a Predicate: test(4) answers true, test(7) answers false. greet is a Runnable with empty () because it takes no input. Each lambda is just a small recipe stored in a variable."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Empty parentheses mean no input.</strong> If a lambda takes nothing you write <code class=\"inline\">() -&gt; ...</code>. One input can skip the parentheses: <code class=\"inline\">x -&gt; x * 2</code>. Two or more need them: <code class=\"inline\">(a, b) -&gt; a + b</code>."
+        },
+        {
+            "type": "text",
+            "heading": "Streams: a pipeline for your list 🌊",
+            "html": "<p>A <strong>Stream</strong> lets your data flow through a pipeline of steps. You start with <code class=\"inline\">list.stream()</code>, then chain steps like <code class=\"inline\">filter</code> (keep only what passes a test), <code class=\"inline\">map</code> (change each item), and finish with <code class=\"inline\">forEach</code> (do something with each one).</p><p>Watch the same job — print the even numbers — done the <em>old loop way</em> and the <em>new stream way</em>. Same result, but the stream reads almost like a sentence.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Before (loop) vs after (stream): print even numbers",
+            "code": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> numbers = List.of(1, 2, 3, 4, 5, 6);\n\n        // BEFORE: the old loop way\n        System.out.println(\"Loop way:\");\n        for (int n : numbers) {\n            if (n % 2 == 0) {\n                System.out.println(n);\n            }\n        }\n\n        // AFTER: the stream way (same result)\n        System.out.println(\"Stream way:\");\n        numbers.stream()\n               .filter(n -> n % 2 == 0)\n               .forEach(n -> System.out.println(n));\n    }\n}",
+            "output": "Loop way:\n2\n4\n6\nStream way:\n2\n4\n6",
+            "explain": "The loop needs a for and an if just to keep the even ones. The stream says it plainly: take the numbers, filter to the evens, forEach print. filter keeps items where the test is true. Both print 2, 4, 6 — the stream just says what you want, not how to loop."
+        },
+        {
+            "type": "text",
+            "heading": "map, collect, count, and sum",
+            "html": "<p>Streams do more than print. <code class=\"inline\">map</code> turns each item into a new one — and instead of writing <code class=\"inline\">s -&gt; s.toUpperCase()</code> you can use a <strong>method reference</strong>: <code class=\"inline\">String::toUpperCase</code>, which means “call toUpperCase on each one.”</p><p>To gather results into a new list, end with <code class=\"inline\">collect(Collectors.toList())</code>. To add numbers up, use <code class=\"inline\">mapToInt(...)</code> then <code class=\"inline\">sum()</code>. To count what's left, use <code class=\"inline\">count()</code>.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Uppercase a list, sum prices, count items",
+            "code": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> names = List.of(\"ada\", \"alan\", \"grace\");\n\n        // map with a method reference, then collect into a new list\n        List<String> shouting = names.stream()\n                                     .map(String::toUpperCase)\n                                     .collect(Collectors.toList());\n        System.out.println(shouting);\n\n        List<Integer> prices = List.of(10, 25, 5, 60);\n        int total = prices.stream()\n                          .mapToInt(p -> p)\n                          .sum();\n        System.out.println(\"Total price: \" + total);\n\n        long howMany = prices.stream()\n                            .filter(p -> p > 10)\n                            .count();\n        System.out.println(\"Items over 10: \" + howMany);\n    }\n}",
+            "output": "[ADA, ALAN, GRACE]\nTotal price: 100\nItems over 10: 2",
+            "explain": "map(String::toUpperCase) shouts each name, and collect(Collectors.toList()) bundles them into a new list printed as [ADA, ALAN, GRACE]. mapToInt(p -> p).sum() adds 10+25+5+60 = 100. filter(p -> p > 10).count() keeps 25 and 60, so the count is 2. count() returns a long, so howMany is a long."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Streams don't change your list.</strong> The original list stays exactly the same — a stream builds a new result instead of editing the old data. That's why <code class=\"inline\">collect</code> hands you a brand-new list.",
+            "variant": "info"
+        },
+        {
+            "type": "quiz",
+            "question": "What does the lambda x -> x * 2 do?",
+            "options": [
+                "Deletes x",
+                "Takes an input x and returns x times 2",
+                "Prints x twice",
+                "Compares x to 2"
+            ],
+            "answerIndex": 1,
+            "explain": "The left side x is the input, the arrow -> bridges to the result, and x * 2 is what comes back. So feeding it 5 returns 10."
+        },
+        {
+            "type": "quiz",
+            "question": "In a stream, what does filter do?",
+            "options": [
+                "Changes every item into something new",
+                "Adds all the numbers together",
+                "Keeps only the items that pass a true/false test",
+                "Prints each item"
+            ],
+            "answerIndex": 2,
+            "explain": "filter takes a Predicate (a yes/no test) and keeps only the items where it is true. map is the one that changes items; forEach prints them."
+        },
+        {
+            "type": "quiz",
+            "question": "What is String::toUpperCase an example of?",
+            "options": [
+                "A method reference, shorthand for s -> s.toUpperCase()",
+                "A brand new class",
+                "A way to delete strings",
+                "A loop"
+            ],
+            "answerIndex": 0,
+            "explain": "A method reference is a shorter way to write a lambda that just calls one method. String::toUpperCase means the same as s -> s.toUpperCase()."
+        },
+        {
+            "type": "tryit",
+            "title": "Uppercase a list with a stream",
+            "instructions": "Replace the for-loop with a stream. Use fruits.stream().map(String::toUpperCase).forEach(...) so each fruit prints in CAPITAL letters, one per line.",
+            "starter": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = List.of(\"apple\", \"banana\", \"cherry\");\n        // Use .stream().map(String::toUpperCase).forEach(...) to print each in CAPS\n        // Replace the loop below with a stream!\n        for (String f : fruits) {\n            System.out.println(f);\n        }\n    }\n}",
+            "check": { "code_includes": "String::toUpperCase" },
+            "solution": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> fruits = List.of(\"apple\", \"banana\", \"cherry\");\n        fruits.stream()\n              .map(String::toUpperCase)\n              .forEach(f -> System.out.println(f));\n    }\n}",
+            "solutionOutput": "APPLE\nBANANA\nCHERRY",
+            "passMsg": "Clean and smooth — you turned a loop into a one-line pipeline!",
+            "failMsg": "Use fruits.stream().map(String::toUpperCase).forEach(f -> System.out.println(f)); to shout each fruit."
+        },
+        {
+            "type": "tryit",
+            "title": "Sum the even numbers",
+            "instructions": "Build a stream from numbers, filter to keep only the even ones (n % 2 == 0), turn them into ints with mapToInt(n -> n), then sum() them. Store the result in total.",
+            "starter": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8);\n        // Build a stream: filter even numbers, mapToInt, then sum()\n        int total = 0;\n        System.out.println(\"Sum of evens: \" + total);\n    }\n}",
+            "check": { "code_includes": ".sum()" },
+            "solution": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> numbers = List.of(1, 2, 3, 4, 5, 6, 7, 8);\n        int total = numbers.stream()\n                          .filter(n -> n % 2 == 0)\n                          .mapToInt(n -> n)\n                          .sum();\n        System.out.println(\"Sum of evens: \" + total);\n    }\n}",
+            "solutionOutput": "Sum of evens: 20",
+            "passMsg": "2 + 4 + 6 + 8 = 20. You chained filter, mapToInt, and sum like a pro!",
+            "failMsg": "Chain numbers.stream().filter(n -> n % 2 == 0).mapToInt(n -> n).sum() and store it in total. The answer should be 20."
+        }
+    ],
+    "challenge": {
+        "title": "Shopping cart with streams",
+        "instructions": "You have a cart of prices: List.of(15, 8, 40, 3, 22). Using streams, keep only the 'expensive' items where price > 10. Print how many expensive items there are using count(), and the total of those expensive items using mapToInt(price -> price).sum(). Print exactly two lines: 'Expensive items: ' then the count, and 'Total of expensive items: ' then the total.",
+        "starter": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> cart = List.of(15, 8, 40, 3, 22);\n        // 1. Keep only prices > 10 with filter\n        // 2. count() how many, and sum the total with mapToInt(...).sum()\n        // 3. Print the two lines below\n\n        // System.out.println(\"Expensive items: \" + count);\n        // System.out.println(\"Total of expensive items: \" + total);\n    }\n}",
+        "check": { "code_includes": ".filter(" },
+        "solution": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> cart = List.of(15, 8, 40, 3, 22);\n\n        int total = cart.stream()\n                       .filter(price -> price > 10)\n                       .mapToInt(price -> price)\n                       .sum();\n\n        long count = cart.stream()\n                        .filter(price -> price > 10)\n                        .count();\n\n        System.out.println(\"Expensive items: \" + count);\n        System.out.println(\"Total of expensive items: \" + total);\n    }\n}",
+        "solutionOutput": "Expensive items: 3\nTotal of expensive items: 77",
+        "hint": "The prices over 10 are 15, 40, and 22 — that's 3 items, and 15 + 40 + 22 = 77. Run filter(price -> price > 10) twice: once with count(), once with mapToInt(price -> price).sum().",
+        "passMsg": "🏆 Three expensive items totalling 77 — you filtered, counted, and summed with streams. You're writing pro Java now!"
+    }
+}

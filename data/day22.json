@@ -1,278 +1,131 @@
 {
-  "day": 22,
-  "emoji": "🏆",
-  "title": "Capstone & Roadmap",
-  "subtitle": "Twenty-one days of skills, one real app, and a map for everywhere you go next.",
-  "goal": "Look back at the whole 22-day journey, build a complete Library app that combines classes, an ArrayList, a HashMap, methods, loops and conditionals, then plan your real Java future.",
-  "estMinutes": 180,
-  "tags": [
-    "capstone"
-  ],
-  "blocks": [
-    {
-      "type": "text",
-      "heading": "You made it. 🏆",
-      "html": "<p>Twenty-two days ago you printed your very first line of Java. Today you are going to build a whole little app from scratch — and it will use almost everything you learned. Take a breath and feel proud: you stuck with it.</p><p>This last day has three parts: a quick <strong>look back</strong> at the journey, one <strong>capstone project</strong> we build together piece by piece, and a <strong>roadmap</strong> for what to learn next. Let's finish strong.</p>"
-    },
-    {
-      "type": "text",
-      "heading": "Everything you learned 📚",
-      "html": "<p>Here is the whole adventure in one list. Each of these is a real superpower you now have:</p><ul><li><strong>Days 1-4:</strong> printing, <code class=\"inline\">variables</code> and types, strings, and math operators.</li><li><strong>Days 5-8:</strong> input, <code class=\"inline\">if</code> conditionals, <code class=\"inline\">switch</code>, and loops.</li><li><strong>Days 9-10:</strong> arrays for holding many values, and <code class=\"inline\">methods</code> to package reusable steps.</li><li><strong>Days 11-15:</strong> the heart of Java — classes &amp; objects, encapsulation, inheritance, polymorphism, and interfaces.</li><li><strong>Day 16:</strong> exceptions, so your program stays calm when things go wrong.</li><li><strong>Days 17-19:</strong> the collections toolbox — <code class=\"inline\">ArrayList</code>, <code class=\"inline\">HashMap</code>, sets, and generics.</li><li><strong>Days 20-21:</strong> modern Java — enums, records, lambdas, and streams.</li></ul><p>That is a serious toolkit. Now we put it to work.</p>"
-    },
-    {
-      "type": "tip",
-      "html": "<strong>The same-file rule, one last time.</strong> Every runnable program has one <code class=\"inline\">public class Main</code> with <code class=\"inline\">main</code>, saved as <code class=\"inline\">Main.java</code>. Helper classes live in the same file <em>without</em> the word public. Run it all with <code class=\"inline\">java Main.java</code>.",
-      "variant": "info"
-    },
-    {
-      "type": "text",
-      "heading": "Our capstone: a Library app 🏛️",
-      "html": "<p>We are going to build a little <strong>Library</strong>. People can borrow books and return them, and the library can report how many are out. We will build it in three steps so nothing feels scary.</p><p><strong>Step 1:</strong> design a <code class=\"inline\">Book</code> blueprint. Every book remembers its title, its author, and whether it is currently checked out.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "Step 1 - the Book blueprint (a class with fields)",
-      "code": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Matilda\", \"Roald Dahl\");\n        System.out.println(b.title + \" by \" + b.author);\n        System.out.println(\"Checked out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}",
-      "output": "Matilda by Roald Dahl\nChecked out? false",
-      "explain": "Book is our blueprint (Day 11). It has three fields and a constructor that fills in the title and author and starts isOut at false, because a brand new book has not been borrowed yet. One object, one book."
-    },
-    {
-      "type": "text",
-      "heading": "Step 2: a Library that holds many books",
-      "html": "<p>One book is not a library. We need a <strong>list</strong> of them. That is exactly what an <code class=\"inline\">ArrayList</code> is for (Day 17). Our <code class=\"inline\">Library</code> class will keep an <code class=\"inline\">ArrayList&lt;Book&gt;</code>, add books to it with a method, and loop over them to print a list.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "Step 2 - a Library holding an ArrayList of books",
-      "code": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(\"Matilda\", \"Roald Dahl\");\n        lib.addBook(\"Holes\", \"Louis Sachar\");\n        lib.addBook(\"Wonder\", \"R.J. Palacio\");\n        lib.listBooks();\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}\n\nclass Library {\n    ArrayList<Book> books = new ArrayList<>();\n\n    void addBook(String title, String author) {\n        books.add(new Book(title, author));\n    }\n\n    void listBooks() {\n        System.out.println(\"The library has \" + books.size() + \" books:\");\n        for (Book b : books) {\n            String status = b.isOut ? \"out\" : \"available\";\n            System.out.println(\"- \" + b.title + \" by \" + b.author + \" (\" + status + \")\");\n        }\n    }\n}",
-      "output": "The library has 3 books:\n- Matilda by Roald Dahl (available)\n- Holes by Louis Sachar (available)\n- Wonder by R.J. Palacio (available)",
-      "explain": "The Library keeps an ArrayList<Book>. addBook builds a Book and adds it. listBooks uses a for-each loop (Day 8) to walk every book, and the ? : trick picks the word out or available. Three classes, one public Main."
-    },
-    {
-      "type": "text",
-      "heading": "Step 3: borrowing and returning",
-      "html": "<p>Now the real magic. We add a <code class=\"inline\">HashMap</code> (Day 18) that remembers <em>who</em> borrowed each book — the title is the key, the person is the value. The <code class=\"inline\">borrow</code> method uses <strong>conditionals</strong> (Day 6) to handle three cases: the book does not exist, it is already out, or it is free to take.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "Step 3 - the full Library app (classes + ArrayList + HashMap + methods + loop + conditionals)",
-      "code": "import java.util.ArrayList;\nimport java.util.HashMap;\n\npublic class Main {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(\"Matilda\", \"Roald Dahl\");\n        lib.addBook(\"Holes\", \"Louis Sachar\");\n        lib.addBook(\"Wonder\", \"R.J. Palacio\");\n\n        lib.borrow(\"Matilda\", \"Sam\");\n        lib.borrow(\"Holes\", \"Ava\");\n        lib.borrow(\"Matilda\", \"Leo\");\n\n        lib.giveBack(\"Holes\");\n        lib.report();\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n}\n\nclass Library {\n    ArrayList<Book> books = new ArrayList<>();\n    HashMap<String, String> borrowedBy = new HashMap<>();\n\n    void addBook(String title, String author) {\n        books.add(new Book(title, author));\n    }\n\n    Book find(String title) {\n        for (Book b : books) {\n            if (b.title.equals(title)) {\n                return b;\n            }\n        }\n        return null;\n    }\n\n    void borrow(String title, String person) {\n        Book b = find(title);\n        if (b == null) {\n            System.out.println(\"No book called \" + title);\n        } else if (b.isOut) {\n            System.out.println(title + \" is already borrowed by \" + borrowedBy.get(title));\n        } else {\n            b.isOut = true;\n            borrowedBy.put(title, person);\n            System.out.println(person + \" borrowed \" + title);\n        }\n    }\n\n    void giveBack(String title) {\n        Book b = find(title);\n        if (b != null && b.isOut) {\n            b.isOut = false;\n            borrowedBy.remove(title);\n            System.out.println(title + \" was returned\");\n        }\n    }\n\n    void report() {\n        int out = 0;\n        for (Book b : books) {\n            if (b.isOut) {\n                out++;\n            }\n        }\n        System.out.println(\"Books out: \" + out + \" of \" + books.size());\n    }\n}",
-      "output": "Sam borrowed Matilda\nAva borrowed Holes\nMatilda is already borrowed by Sam\nHoles was returned\nBooks out: 1 of 3",
-      "explain": "This one program uses almost everything: classes and objects, an ArrayList of books, a HashMap of who-has-what, methods like find and borrow, a for-each loop, and if / else if / else conditionals. Sam takes Matilda, Ava takes Holes, Leo is told Matilda is taken, Holes comes back, and the report counts one book still out. You just built a real app."
-    },
-    {
-      "type": "quiz",
-      "question": "In the Library app, why did we use a HashMap<String, String> for borrowedBy?",
-      "options": [
-        "To sort the books alphabetically",
-        "To remember which person (value) borrowed each book title (key)",
-        "Because ArrayList cannot hold text",
-        "To make the program run faster than a loop"
-      ],
-      "answerIndex": 1,
-      "explain": "A HashMap maps a key to a value. Here the book title is the key and the borrower's name is the value, so we can instantly look up who has a given book."
-    },
-    {
-      "type": "quiz",
-      "question": "When borrow is called for a book that is already out, which branch runs?",
-      "options": [
-        "The if (b == null) branch",
-        "The else if (b.isOut) branch",
-        "The final else branch",
-        "None of them, it crashes"
-      ],
-      "answerIndex": 1,
-      "explain": "The book exists, so b is not null. It is already checked out, so b.isOut is true and the else if branch prints that it is already borrowed."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Big programs are just small steps stacked up.</strong> We did not write the whole Library at once — we built a Book, then a list of books, then borrowing. Break every big idea into tiny steps and you can build anything.",
-      "variant": "success"
-    },
-    {
-      "type": "tryit",
-      "title": "Give Book a checkOut method",
-      "instructions": "The Book class has a field isOut that starts false. Add a method checkOut() that sets this.isOut to true. The Main code already builds a book and calls b.checkOut(), then prints whether it is out.",
-      "starter": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Holes\", \"Louis Sachar\");\n        b.checkOut();\n        System.out.println(b.title + \" is out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n\n    // add a method: void checkOut() that sets this.isOut = true;\n}",
-      "check": {
-        "code_includes": "this.isOut = true"
-      },
-      "solution": "public class Main {\n    public static void main(String[] args) {\n        Book b = new Book(\"Holes\", \"Louis Sachar\");\n        b.checkOut();\n        System.out.println(b.title + \" is out? \" + b.isOut);\n    }\n}\n\nclass Book {\n    String title;\n    String author;\n    boolean isOut;\n\n    Book(String title, String author) {\n        this.title = title;\n        this.author = author;\n        this.isOut = false;\n    }\n\n    void checkOut() {\n        this.isOut = true;\n    }\n}",
-      "solutionOutput": "Holes is out? true",
-      "passMsg": "Nice — a method that changes the object's own state. That is OOP in action!",
-      "failMsg": "Add void checkOut() inside Book and have it run this.isOut = true;."
-    },
-    {
-      "type": "tryit",
-      "title": "List books on a shelf",
-      "instructions": "Make an ArrayList<String> called shelf, add the three titles \"Matilda\", \"Holes\", and \"Wonder\", print how many books are on the shelf, then loop over the shelf printing each title with a \"- \" in front.",
-      "starter": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<String> shelf = new ArrayList<>();\n        // add \"Matilda\", \"Holes\", \"Wonder\"\n        // print: Shelf has <size> books\n        // loop and print each title with \"- \" in front\n    }\n}",
-      "check": {
-        "code_includes": "shelf.add"
-      },
-      "solution": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<String> shelf = new ArrayList<>();\n        shelf.add(\"Matilda\");\n        shelf.add(\"Holes\");\n        shelf.add(\"Wonder\");\n        System.out.println(\"Shelf has \" + shelf.size() + \" books\");\n        for (String title : shelf) {\n            System.out.println(\"- \" + title);\n        }\n    }\n}",
-      "solutionOutput": "Shelf has 3 books\n- Matilda\n- Holes\n- Wonder",
-      "passMsg": "An ArrayList plus a loop — two tools working together. You've got this.",
-      "failMsg": "Use shelf.add(...) three times, print shelf.size(), then a for-each loop over shelf."
-    },
-    {
-      "type": "text",
-      "heading": "Where to go next 🗺️",
-      "html": "<p>You have outgrown the browser. Here is your roadmap to becoming a real-world Java developer:</p><ol><li><strong>Install a real JDK.</strong> Download a free, long-term JDK from <strong>Adoptium / Temurin</strong> (adoptium.net). That gives you the <code class=\"inline\">java</code> and <code class=\"inline\">javac</code> commands on your own computer.</li><li><strong>Pick an IDE.</strong> An IDE is a smart code editor. Try <strong>IntelliJ IDEA</strong> (the Community edition is free) or <strong>VS Code</strong> with the Java extension pack. They autocomplete, catch mistakes, and run your code with one click.</li><li><strong>Learn a build tool.</strong> Real projects use many files and libraries. <strong>Maven</strong> or <strong>Gradle</strong> handle that for you, downloading libraries and building your app automatically.</li><li><strong>Then pick a path by what excites you:</strong><ul><li><strong>Android apps</strong> - build phone apps (learn a little <strong>Kotlin</strong> too; it pairs perfectly with Java).</li><li><strong>Backend &amp; websites</strong> - learn <strong>Spring Boot</strong> to build the servers that power apps and sites.</li><li><strong>Desktop apps</strong> - use <strong>JavaFX</strong> to make windowed programs with buttons and graphics.</li><li><strong>Data</strong> - process and analyze big piles of information with Java's data libraries.</li></ul></li></ol><p><strong>You are a Java programmer now.</strong> You understand variables, loops, classes, objects, collections, and streams. Everything from here is just more of the same building blocks, stacked higher. Keep building small projects, stay curious, and don't be afraid to break things — that is how everyone learns. Go make something awesome. 🚀</p>"
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're a project manager tracking tasks. Each task has a title, a status, and a priority. Build a mini task planner that adds tasks, marks them done, and prints a progress report.</p>",
-      "caption": "Project task planner",
-      "code": "import java.util.ArrayList;\nimport java.util.HashMap;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<HashMap<String, String>> tasks = new ArrayList<>();\n\n        addTask(tasks, \"Design database\", \"HIGH\");\n        addTask(tasks, \"Write API endpoints\", \"HIGH\");\n        addTask(tasks, \"Add unit tests\", \"MEDIUM\");\n        addTask(tasks, \"Write README\", \"LOW\");\n\n        markDone(tasks, \"Design database\");\n        markDone(tasks, \"Write API endpoints\");\n\n        report(tasks);\n    }\n\n    static void addTask(ArrayList<HashMap<String, String>> tasks, String title, String priority) {\n        HashMap<String, String> t = new HashMap<>();\n        t.put(\"title\", title);\n        t.put(\"status\", \"TODO\");\n        t.put(\"priority\", priority);\n        tasks.add(t);\n    }\n\n    static void markDone(ArrayList<HashMap<String, String>> tasks, String title) {\n        for (HashMap<String, String> t : tasks) {\n            if (t.get(\"title\").equals(title)) {\n                t.put(\"status\", \"DONE\");\n                return;\n            }\n        }\n    }\n\n    static void report(ArrayList<HashMap<String, String>> tasks) {\n        int done = 0;\n        for (HashMap<String, String> t : tasks) {\n            String mark = t.get(\"status\").equals(\"DONE\") ? \"✓\" : \"○\";\n            System.out.println(mark + \" [\" + t.get(\"priority\") + \"] \" + t.get(\"title\"));\n            if (t.get(\"status\").equals(\"DONE\")) done++;\n        }\n        System.out.println(\"Progress: \" + done + \"/\" + tasks.size() + \" done\");\n    }\n}",
-      "output": "✓ [HIGH] Design database\n✓ [HIGH] Write API endpoints\n○ [MEDIUM] Add unit tests\n○ [LOW] Write README\nProgress: 2/4 done",
-      "explain": "This final example combines ArrayList (Day 17), HashMap (Day 18), methods (Day 10), loops (Day 8), and conditionals (Day 6) — exactly the skills you've built over 22 days. A real project planner, no libraries needed."
-    },
-    {
-      "type": "assessment",
-      "title": "Final Exam — Full Course Review",
-      "intro": "The ultimate checkpoint! 5 questions covering everything from Day 1 to Day 22. 70% to pass.",
-      "passPct": 70,
-      "questions": [
+    "day": 22,
+    "emoji": "🧩",
+    "title": "Generics",
+    "subtitle": "Teach one class or method to work with any type — safely.",
+    "goal": "Understand type parameters, write a generic class Box<T> and Pair<A,B>, write a generic method, use a bounded type <T extends Number>, and see why generics beat casting from Object.",
+    "estMinutes": 180,
+    "tags": ["generics"],
+    "blocks": [
         {
-          "question": "What does the keyword 'static' mean on a method?",
-          "options": [
-            "The method belongs to the class, not to an object instance",
-            "The method cannot be called",
-            "The method runs automatically",
-            "The method is private"
-          ],
-          "answerIndex": 0,
-          "explain": "A static method belongs to the class itself, so you can call it without creating an object. That's why main is static. (Day 10)"
+            "type": "text",
+            "heading": "What are generics? 🧩",
+            "html": "<p><strong>Generics</strong> let you write a class or method with a <em>blank</em> for the type, then fill in the real type later. The blank is called a <strong>type parameter</strong>, and we usually name it with a single capital letter like <code class=\"inline\">T</code> (for \"Type\").</p><p>You have actually used generics already! Every time you wrote <code class=\"inline\">List&lt;String&gt;</code> or <code class=\"inline\">ArrayList&lt;Integer&gt;</code>, the part inside the angle brackets <code class=\"inline\">&lt; &gt;</code> told Java which type goes in the blank. Today you'll build your <em>own</em> generic things.</p>"
         },
         {
-          "question": "In OOP, what is encapsulation?",
-          "options": [
-            "Making fields private and controlling access through methods",
-            "Writing many classes in one file",
-            "Using for loops inside methods",
-            "Printing output to the console"
-          ],
-          "answerIndex": 0,
-          "explain": "Encapsulation means hiding internal data (private fields) and exposing it through controlled getters/setters. (Day 12)"
+            "type": "text",
+            "heading": "Writing a generic class: Box<T>",
+            "html": "<p>Imagine a box that can hold <em>one</em> thing. We don't want to write a separate <code class=\"inline\">StringBox</code>, <code class=\"inline\">IntBox</code>, and <code class=\"inline\">CatBox</code> — that's silly. Instead we write <code class=\"inline\">Box&lt;T&gt;</code> once, where <code class=\"inline\">T</code> is a stand-in for whatever type we put in later.</p><p>When you create one, you pick the type: <code class=\"inline\">new Box&lt;String&gt;(\"hello\")</code> makes a box of String, and Java remembers that.</p>"
         },
         {
-          "question": "What does a try/catch block do?",
-          "options": [
-            "Repeats code until it works",
-            "Runs risky code and handles errors if they occur",
-            "Creates a new object",
-            "Sorts an array"
-          ],
-          "answerIndex": 1,
-          "explain": "try attempts the risky code; if an exception is thrown, catch handles it gracefully instead of crashing. (Day 16)"
+            "type": "code",
+            "caption": "One Box class, many types",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Box<String> wordBox = new Box<>(\"hello\");\n        Box<Integer> numBox = new Box<>(42);\n\n        System.out.println(wordBox.get());\n        System.out.println(numBox.get());\n        System.out.println(\"Length: \" + wordBox.get().length());\n    }\n}\n\nclass Box<T> {\n    private T value;\n\n    Box(T value) {\n        this.value = value;\n    }\n\n    T get() {\n        return value;\n    }\n}",
+            "output": "hello\n42\nLength: 5",
+            "explain": "Box<T> uses T everywhere a normal class would name a real type. wordBox is a Box<String>, so get() returns a String — that's why we can call .length() on it with no casting. numBox is a Box<Integer>. One class, both work, fully type-safe."
         },
         {
-          "question": "What keyword does a class use to fulfill an interface's contract?",
-          "options": [
-            "extends",
-            "implements",
-            "inherits",
-            "uses"
-          ],
-          "answerIndex": 1,
-          "explain": "A class uses 'implements' to promise it will provide all methods listed in the interface. (Day 15)"
+            "type": "tip",
+            "html": "<strong>The diamond <code class=\"inline\">&lt;&gt;</code>:</strong> when you write <code class=\"inline\">Box&lt;String&gt; b = new Box&lt;&gt;(\"hi\")</code>, the empty <code class=\"inline\">&lt;&gt;</code> on the right is the \"diamond.\" Java already knows the type from the left side, so you don't have to repeat it."
         },
         {
-          "question": "Which modern Java feature creates an immutable data class in one line?",
-          "options": [
-            "enum",
-            "record",
-            "abstract class",
-            "interface"
-          ],
-          "answerIndex": 1,
-          "explain": "A record (Java 16+) auto-generates constructor, getters, equals, hashCode, and toString. It's immutable by design. (Day 20)"
+            "type": "text",
+            "heading": "Generic methods and a Pair<A,B>",
+            "html": "<p>A method can have its own type parameter too. You write the blank in angle brackets <em>before</em> the return type, like <code class=\"inline\">static &lt;T&gt; T firstOf(T[] items)</code>. Java figures out what <code class=\"inline\">T</code> is from the argument you pass.</p><p>And a class can have <em>more than one</em> type parameter. A <code class=\"inline\">Pair&lt;A, B&gt;</code> holds two values that can be different types — perfect for pairing a name with a number.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "A generic method plus a two-type Pair",
+            "code": "public class Main {\n    static <T> T firstOf(T[] items) {\n        return items[0];\n    }\n\n    public static void main(String[] args) {\n        String[] names = { \"Maya\", \"Leo\", \"Sam\" };\n        Integer[] scores = { 90, 85, 70 };\n\n        System.out.println(\"First name: \" + firstOf(names));\n        System.out.println(\"First score: \" + firstOf(scores));\n\n        Pair<String, Integer> age = new Pair<>(\"Leo\", 11);\n        System.out.println(age.getKey() + \" is \" + age.getValue());\n    }\n}\n\nclass Pair<A, B> {\n    private A key;\n    private B value;\n\n    Pair(A key, B value) {\n        this.key = key;\n        this.value = value;\n    }\n\n    A getKey() {\n        return key;\n    }\n\n    B getValue() {\n        return value;\n    }\n}",
+            "output": "First name: Maya\nFirst score: 90\nLeo is 11",
+            "explain": "firstOf works on a String[] AND an Integer[] — one method, any array type. Pair<A, B> uses two blanks: A for the key, B for the value. So Pair<String, Integer> keeps a String key and an Integer value, each given its own type."
+        },
+        {
+            "type": "text",
+            "heading": "Bounded types: <T extends Number>",
+            "html": "<p>Sometimes \"any type\" is too loose. If a method does math, the type must at least be a number. A <strong>bounded type</strong> says \"<code class=\"inline\">T</code> can be anything, as long as it's a <code class=\"inline\">Number</code>\" — written <code class=\"inline\">&lt;T extends Number&gt;</code>.</p><p>Because Java now knows <code class=\"inline\">T</code> is a Number, you're allowed to call Number methods like <code class=\"inline\">doubleValue()</code> on it.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Only numbers allowed",
+            "code": "public class Main {\n    static <T extends Number> double sum(T a, T b) {\n        return a.doubleValue() + b.doubleValue();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(sum(3, 4));\n        System.out.println(sum(2.5, 1.5));\n    }\n}",
+            "output": "7.0\n4.0",
+            "explain": "<T extends Number> restricts T to Number and its children (Integer, Double, and friends). That's what lets us call a.doubleValue(). Try passing a String and the code wouldn't even compile — the bound blocks it before your program ever runs."
+        },
+        {
+            "type": "tip",
+            "html": "<strong>Why generics beat <code class=\"inline\">Object</code> + casting:</strong> the old way was to store everything as <code class=\"inline\">Object</code> and then <em>cast</em> it back, like <code class=\"inline\">(String) box.get()</code>. If you guessed the wrong type, your program <em>crashed at runtime</em>. Generics catch that mistake while you're still writing the code, and you never have to cast. Safer and tidier.",
+            "variant": "success"
+        },
+        {
+            "type": "quiz",
+            "question": "In Box<T>, what is T?",
+            "options": [
+                "A built-in Java type like int",
+                "A type parameter — a blank that gets filled with a real type later",
+                "The name of the variable",
+                "A keyword that means 'true'"
+            ],
+            "answerIndex": 1,
+            "explain": "T is a type parameter: a placeholder for a type. When you write Box<String>, T becomes String for that box."
+        },
+        {
+            "type": "quiz",
+            "question": "What does <T extends Number> add to a generic method?",
+            "options": [
+                "It makes the method run faster",
+                "It limits T to Number (and its subtypes), so number methods are allowed",
+                "It turns T into a String",
+                "It means the method returns nothing"
+            ],
+            "answerIndex": 1,
+            "explain": "It's a bound. T must be a Number or a subtype like Integer or Double, which is why you can safely call something like doubleValue()."
+        },
+        {
+            "type": "quiz",
+            "question": "Why are generics better than storing things as Object and casting?",
+            "options": [
+                "Generics catch type mistakes at compile time, with no casting needed",
+                "Object is not a real Java type",
+                "Casting is impossible in Java",
+                "Generics use less memory than any other approach"
+            ],
+            "answerIndex": 0,
+            "explain": "With Object you cast and risk a runtime crash if you guess wrong. Generics check the type while you code and remove the casts entirely — safer and cleaner."
+        },
+        {
+            "type": "tryit",
+            "title": "Fill in the Box",
+            "instructions": "The Box<T> class is missing the body of get(). Make get() return the stored value. Then main prints what's inside. Press Check.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Box<String> b = new Box<>(\"treasure\");\n        System.out.println(\"Inside the box: \" + b.get());\n    }\n}\n\nclass Box<T> {\n    private T value;\n\n    Box(T value) {\n        this.value = value;\n    }\n\n    T get() {\n        return ___;\n    }\n}",
+            "check": { "code_includes": "return value" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Box<String> b = new Box<>(\"treasure\");\n        System.out.println(\"Inside the box: \" + b.get());\n    }\n}\n\nclass Box<T> {\n    private T value;\n\n    Box(T value) {\n        this.value = value;\n    }\n\n    T get() {\n        return value;\n    }\n}",
+            "solutionOutput": "Inside the box: treasure",
+            "passMsg": "Nice — your generic Box hands back exactly what you put in!",
+            "failMsg": "Inside get(), write return value; so the method returns the stored item."
+        },
+        {
+            "type": "tryit",
+            "title": "Make a Pair",
+            "instructions": "In main, create a Pair<String, Integer> holding the key \"apples\" and the value 6, store it in a variable named p, then print it as shown. The Pair class is already written for you. Press Check.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        // create a Pair<String, Integer> named p with \"apples\" and 6\n        ___\n        System.out.println(p.getKey() + \": \" + p.getValue());\n    }\n}\n\nclass Pair<A, B> {\n    private A key;\n    private B value;\n\n    Pair(A key, B value) {\n        this.key = key;\n        this.value = value;\n    }\n\n    A getKey() {\n        return key;\n    }\n\n    B getValue() {\n        return value;\n    }\n}",
+            "check": { "regex": "new\\s+Pair<>\\(\\s*\"apples\"\\s*,\\s*6\\s*\\)" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Pair<String, Integer> p = new Pair<>(\"apples\", 6);\n        System.out.println(p.getKey() + \": \" + p.getValue());\n    }\n}\n\nclass Pair<A, B> {\n    private A key;\n    private B value;\n\n    Pair(A key, B value) {\n        this.key = key;\n        this.value = value;\n    }\n\n    A getKey() {\n        return key;\n    }\n\n    B getValue() {\n        return value;\n    }\n}",
+            "solutionOutput": "apples: 6",
+            "passMsg": "Great — a Pair holds two values of different types at once!",
+            "failMsg": "Write Pair<String, Integer> p = new Pair<>(\"apples\", 6); on its own line before the println."
         }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're a project manager tracking tasks. Each task has a title, status, and priority. Build a mini task planner that adds tasks, marks them done, and prints a progress report.</p>",
-      "caption": "Project task planner",
-      "code": "import java.util.ArrayList;\nimport java.util.HashMap;\n\npublic class Main {\n    public static void main(String[] args) {\n        ArrayList<HashMap<String, String>> tasks = new ArrayList<>();\n\n        addTask(tasks, \"Design database\", \"HIGH\");\n        addTask(tasks, \"Write API endpoints\", \"HIGH\");\n        addTask(tasks, \"Add unit tests\", \"MEDIUM\");\n        addTask(tasks, \"Write README\", \"LOW\");\n\n        markDone(tasks, \"Design database\");\n        markDone(tasks, \"Write API endpoints\");\n\n        report(tasks);\n    }\n\n    static void addTask(ArrayList<HashMap<String, String>> tasks, String title, String priority) {\n        HashMap<String, String> t = new HashMap<>();\n        t.put(\"title\", title);\n        t.put(\"status\", \"TODO\");\n        t.put(\"priority\", priority);\n        tasks.add(t);\n    }\n\n    static void markDone(ArrayList<HashMap<String, String>> tasks, String title) {\n        for (HashMap<String, String> t : tasks) {\n            if (t.get(\"title\").equals(title)) {\n                t.put(\"status\", \"DONE\");\n                return;\n            }\n        }\n    }\n\n    static void report(ArrayList<HashMap<String, String>> tasks) {\n        int done = 0;\n        for (HashMap<String, String> t : tasks) {\n            String mark = t.get(\"status\").equals(\"DONE\") ? \"v\" : \"o\";\n            System.out.println(mark + \" [\" + t.get(\"priority\") + \"] \" + t.get(\"title\"));\n            if (t.get(\"status\").equals(\"DONE\")) done++;\n        }\n        System.out.println(\"Progress: \" + done + \"/\" + tasks.size() + \" done\");\n    }\n}",
-      "output": "v [HIGH] Design database\nv [HIGH] Write API endpoints\no [MEDIUM] Add unit tests\no [LOW] Write README\nProgress: 2/4 done",
-      "explain": "This final example combines ArrayList (Day 17), HashMap (Day 18), methods (Day 10), loops (Day 8), and conditionals (Day 6)."
-    },
-    {
-      "type": "assessment",
-      "title": "Final Exam — Full Course Review",
-      "intro": "The ultimate checkpoint! 5 questions covering Days 1–22. 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "What does the keyword 'static' mean on a method?",
-          "options": [
-            "The method belongs to the class, not to an object instance",
-            "The method cannot be called",
-            "The method runs automatically",
-            "The method is private"
-          ],
-          "answerIndex": 0,
-          "explain": "A static method belongs to the class itself — callable without creating an object. (Day 10)"
-        },
-        {
-          "question": "In OOP, what is encapsulation?",
-          "options": [
-            "Making fields private and controlling access through methods",
-            "Writing many classes in one file",
-            "Using for loops inside methods",
-            "Printing output"
-          ],
-          "answerIndex": 0,
-          "explain": "Encapsulation = hiding internal data (private fields) + controlled getters/setters. (Day 12)"
-        },
-        {
-          "question": "What does a try/catch block do?",
-          "options": [
-            "Repeats code until it works",
-            "Runs risky code and handles errors if they occur",
-            "Creates a new object",
-            "Sorts an array"
-          ],
-          "answerIndex": 1,
-          "explain": "try attempts risky code; catch handles exceptions gracefully. (Day 16)"
-        },
-        {
-          "question": "What keyword does a class use to fulfill an interface's contract?",
-          "options": [
-            "extends",
-            "implements",
-            "inherits",
-            "uses"
-          ],
-          "answerIndex": 1,
-          "explain": "A class uses 'implements' to promise it provides all interface methods. (Day 15)"
-        },
-        {
-          "question": "Which modern Java feature creates an immutable data class in one line?",
-          "options": [
-            "enum",
-            "record",
-            "abstract class",
-            "interface"
-          ],
-          "answerIndex": 1,
-          "explain": "A record auto-generates constructor, getters, equals, hashCode, and toString. Immutable by design. (Day 20)"
-        }
-      ]
+    ],
+    "challenge": {
+        "type": "tryit",
+        "title": "A generic middle() method",
+        "instructions": "Write a generic method middle that takes a T[] array and returns its middle element (use items[items.length / 2]). main already calls it on a String array and an Integer array. Fill in the method body. Press Check.",
+        "starter": "public class Main {\n    static <T> T middle(T[] items) {\n        return ___;\n    }\n\n    public static void main(String[] args) {\n        String[] words = { \"red\", \"green\", \"blue\" };\n        Integer[] nums = { 10, 20, 30 };\n        System.out.println(middle(words));\n        System.out.println(middle(nums));\n    }\n}",
+        "check": { "regex": "items\\[\\s*items\\.length\\s*/\\s*2\\s*\\]" },
+        "solution": "public class Main {\n    static <T> T middle(T[] items) {\n        return items[items.length / 2];\n    }\n\n    public static void main(String[] args) {\n        String[] words = { \"red\", \"green\", \"blue\" };\n        Integer[] nums = { 10, 20, 30 };\n        System.out.println(middle(words));\n        System.out.println(middle(nums));\n    }\n}",
+        "solutionOutput": "green\n20",
+        "hint": "The middle index of an array of length n is n / 2. So return items[items.length / 2]; — it works for any type T.",
+        "passMsg": "🏆 One method, any array type, zero casting — that's the power of generics. Day 19 complete!",
+        "failMsg": "Inside middle, return items[items.length / 2]; so it hands back the middle element no matter the type."
     }
-  ],
-  "challenge": {
-    "title": "Build a Quiz app from scratch",
-    "instructions": "Combine everything you learned into one app. Build a Question class with two fields, prompt and correct, plus a constructor. Build a Quiz class that holds an ArrayList<Question> and an int score starting at 0. Give Quiz these methods: addQuestion(prompt, correct) which adds a new Question; find(prompt) which loops to return the matching Question or null; answer(prompt, given) which finds the question and uses if / else if / else to print 'No such question', 'Correct: ' + prompt and add 1 to score, or 'Wrong: ' + prompt; and report() which prints 'Score: ' + score + ' of ' + questions.size(). In main, add the three questions shown, answer them as shown, then call report().",
-    "starter": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Quiz quiz = new Quiz();\n        quiz.addQuestion(\"Capital of Japan?\", \"Tokyo\");\n        quiz.addQuestion(\"2 + 2 equals?\", \"4\");\n        quiz.addQuestion(\"Color of the sky?\", \"Blue\");\n\n        quiz.answer(\"Capital of Japan?\", \"Tokyo\");\n        quiz.answer(\"2 + 2 equals?\", \"5\");\n        quiz.answer(\"Color of the sky?\", \"Blue\");\n\n        quiz.report();\n    }\n}\n\nclass Question {\n    // fields: String prompt; String correct;\n    // constructor Question(String prompt, String correct)\n}\n\nclass Quiz {\n    // ArrayList<Question> questions = new ArrayList<>();\n    // int score = 0;\n    // void addQuestion(String prompt, String correct)\n    // Question find(String prompt)  -> loop, return match or null\n    // void answer(String prompt, String given) -> if/else if/else\n    // void report() -> print Score: <score> of <size>\n}",
-    "check": {
-      "code_includes": "class Quiz"
-    },
-    "solution": "import java.util.ArrayList;\n\npublic class Main {\n    public static void main(String[] args) {\n        Quiz quiz = new Quiz();\n        quiz.addQuestion(\"Capital of Japan?\", \"Tokyo\");\n        quiz.addQuestion(\"2 + 2 equals?\", \"4\");\n        quiz.addQuestion(\"Color of the sky?\", \"Blue\");\n\n        quiz.answer(\"Capital of Japan?\", \"Tokyo\");\n        quiz.answer(\"2 + 2 equals?\", \"5\");\n        quiz.answer(\"Color of the sky?\", \"Blue\");\n\n        quiz.report();\n    }\n}\n\nclass Question {\n    String prompt;\n    String correct;\n\n    Question(String prompt, String correct) {\n        this.prompt = prompt;\n        this.correct = correct;\n    }\n}\n\nclass Quiz {\n    ArrayList<Question> questions = new ArrayList<>();\n    int score = 0;\n\n    void addQuestion(String prompt, String correct) {\n        questions.add(new Question(prompt, correct));\n    }\n\n    Question find(String prompt) {\n        for (Question q : questions) {\n            if (q.prompt.equals(prompt)) {\n                return q;\n            }\n        }\n        return null;\n    }\n\n    void answer(String prompt, String given) {\n        Question q = find(prompt);\n        if (q == null) {\n            System.out.println(\"No such question\");\n        } else if (q.correct.equals(given)) {\n            this.score = this.score + 1;\n            System.out.println(\"Correct: \" + prompt);\n        } else {\n            System.out.println(\"Wrong: \" + prompt);\n        }\n    }\n\n    void report() {\n        System.out.println(\"Score: \" + score + \" of \" + questions.size());\n    }\n}",
-    "solutionOutput": "Correct: Capital of Japan?\nWrong: 2 + 2 equals?\nCorrect: Color of the sky?\nScore: 2 of 3",
-    "hint": "Question is just a tiny blueprint with two fields. Quiz holds an ArrayList of them plus a score. In answer, first call find(prompt); if it is null print 'No such question', else if q.correct.equals(given) add to score and print Correct, otherwise print Wrong. To extend it: add a method that prints all the questions, or one that resets the score to 0!",
-    "passMsg": "🏆 You built a complete app using classes, an ArrayList, methods, a loop, and conditionals — all on your own. That is 22 days of Java, finished. You are a Java programmer now. Go build something amazing! 🚀"
-  }
 }

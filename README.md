@@ -1,6 +1,6 @@
-# Java in 22 Days ☕
+# Java Pro ☕
 
-A kid-friendly, self-paced website that takes a complete beginner from zero to comfortable with Java in 22 short daily lessons. Warm tone, bite-sized blocks, badges and a progress streak — but the code is real Java verified to produce exactly what the lessons claim.
+A kid-friendly, self-paced website that takes a complete beginner from zero to comfortable with Java in bite-sized lessons. Warm tone, bite-sized blocks, badges and a progress streak — but the code is real Java verified to produce exactly what the lessons claim.
 
 ## Why "predict-then-reveal" instead of in-browser execution
 
@@ -27,7 +27,7 @@ The front end POSTs `{ "language": "java", "code": "<source>" }` and reads `stdo
 No build step. Just serve the folder over HTTP (lessons are loaded with `fetch`, which won't work from `file://`):
 
 ```bash
-cd java-in-22-days
+cd java-pro
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
@@ -62,7 +62,7 @@ css/styles.css        Java-themed styling (shared class names with the renderer)
 js/runner-config.js   one line: JAVA_RUN_ENDPOINT (null disables Run buttons)
 js/render.js          turns a lesson JSON object into interactive DOM
 js/app.js             hash router, localStorage progress, day-unlock, badges
-data/manifest.json    the 22-day map (day, emoji, title, tag)
+data/manifest.json    the Pro map (day, emoji, title, tag)
 data/dayNN.json       one lesson per file (see schema below)
 verify-java.py        runs + asserts every snippet; schema-checks every lesson
 ```

@@ -1,343 +1,124 @@
 {
-  "day": 10,
-  "emoji": "🧰",
-  "title": "Methods",
-  "subtitle": "Build your own reusable commands and call them whenever you need.",
-  "goal": "Write static methods that take parameters and return values, call them from main, and use method overloading to reduce repetition.",
-  "estMinutes": 180,
-  "tags": [
-    "methods"
-  ],
-  "blocks": [
-    {
-      "type": "text",
-      "heading": "What is a method? 🧰",
-      "html": "<p>A <strong>method</strong> is a reusable block of code with a name. You write the steps once, give them a name, and then you can run those steps any time by <em>calling</em> the name — no copy-paste needed.</p><p>You have actually been using a method all along: <code class=\"inline\">main</code> is a method! Today you'll write your own helpers next to <code class=\"inline\">main</code> and call them from inside it.</p>"
-    },
-    {
-      "type": "text",
-      "heading": "Making a method that returns a number",
-      "html": "<p>Here is the shape of a simple method:</p><p><code class=\"inline\">static int add(int a, int b) { return a + b; }</code></p><p>Reading it left to right: <code class=\"inline\">static</code> means it belongs to the class (so <code class=\"inline\">main</code> can call it directly), <code class=\"inline\">int</code> is the <strong>return type</strong> (the kind of answer it hands back), <code class=\"inline\">add</code> is the name, and <code class=\"inline\">(int a, int b)</code> are the <strong>parameters</strong> it needs.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "A method that adds two numbers",
-      "code": "public class Main {\n    static int add(int a, int b) {\n        return a + b;\n    }\n\n    public static void main(String[] args) {\n        int sum = add(5, 3);\n        System.out.println(\"5 + 3 = \" + sum);\n        System.out.println(\"10 + 20 = \" + add(10, 20));\n    }\n}",
-      "output": "5 + 3 = 8\n10 + 20 = 30",
-      "explain": "add(int a, int b) takes two numbers and returns their sum. In main we call add(5, 3), and the result (8) comes back to replace the call. We can call it as many times as we like."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Parameters vs arguments:</strong> the names in the method definition — <code class=\"inline\">a</code> and <code class=\"inline\">b</code> — are <em>parameters</em>. The real values you pass in when calling, like <code class=\"inline\">5</code> and <code class=\"inline\">3</code>, are <em>arguments</em>."
-    },
-    {
-      "type": "text",
-      "heading": "Methods that return vs methods that say void",
-      "html": "<p>Some methods hand back an answer with <code class=\"inline\">return</code> — like <code class=\"inline\">add</code> returning an <code class=\"inline\">int</code>. Others just <em>do</em> something (like printing) and give nothing back. Those use the return type <code class=\"inline\">void</code>, which means \"no answer.\"</p>"
-    },
-    {
-      "type": "code",
-      "caption": "A void method (greet) and a returning method (isEven)",
-      "code": "public class Main {\n    static void greet(String name) {\n        System.out.println(\"Hello, \" + name + \"!\");\n    }\n\n    static boolean isEven(int n) {\n        return n % 2 == 0;\n    }\n\n    public static void main(String[] args) {\n        greet(\"Maya\");\n        greet(\"Leo\");\n        System.out.println(\"Is 4 even? \" + isEven(4));\n        System.out.println(\"Is 7 even? \" + isEven(7));\n    }\n}",
-      "output": "Hello, Maya!\nHello, Leo!\nIs 4 even? true\nIs 7 even? false",
-      "explain": "greet returns void — it just prints, so we call it on its own line. isEven returns a boolean (true or false), so we can print its answer. % gives the remainder, so n % 2 == 0 is true when n divides evenly by 2."
-    },
-    {
-      "type": "text",
-      "heading": "Method overloading: same name, different jobs 🪄",
-      "html": "<p>Java lets you have two methods with the <strong>same name</strong> as long as their <strong>parameters are different</strong>. This is called <strong>overloading</strong>. Java picks the right one by looking at the arguments you pass.</p>"
-    },
-    {
-      "type": "code",
-      "caption": "Two add methods with the same name",
-      "code": "public class Main {\n    static int add(int a, int b) {\n        return a + b;\n    }\n\n    static int add(int a, int b, int c) {\n        return a + b + c;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(add(2, 3));\n        System.out.println(add(2, 3, 4));\n    }\n}",
-      "output": "5\n9",
-      "explain": "Both methods are called add, but one takes two numbers and one takes three. Java sees how many arguments you gave and runs the matching version. That is overloading."
-    },
-    {
-      "type": "tip",
-      "html": "<strong>Why bother with methods?</strong> They stop repetition. Write the logic once, name it, and reuse it everywhere. If you need to fix a bug, you fix it in one place instead of ten.",
-      "variant": "success"
-    },
-    {
-      "type": "quiz",
-      "question": "In the line static int add(int a, int b), what does the first int mean?",
-      "options": [
-        "The method takes one number",
-        "The return type — the kind of answer the method gives back",
-        "The method is named int",
-        "It deletes the variable a"
-      ],
-      "answerIndex": 1,
-      "explain": "The type written before the method name is the return type. Here it is int, so add hands back a whole number."
-    },
-    {
-      "type": "quiz",
-      "question": "What return type do you use for a method that prints something but gives no value back?",
-      "options": [
-        "int",
-        "String",
-        "void",
-        "boolean"
-      ],
-      "answerIndex": 2,
-      "explain": "void means 'no answer.' Methods that just do an action (like printing) and return nothing use void."
-    },
-    {
-      "type": "quiz",
-      "question": "Why is method overloading allowed for these two methods: add(int a, int b) and add(int a, int b, int c)?",
-      "options": [
-        "Because they have the same name",
-        "Because they have different parameters (two numbers vs three)",
-        "Because Java allows any duplicate names",
-        "It is not allowed — this is an error"
-      ],
-      "answerIndex": 1,
-      "explain": "Overloading needs the same name but DIFFERENT parameters. Here one takes two ints and the other takes three, so Java can tell them apart."
-    },
-    {
-      "type": "tryit",
-      "title": "Write a square method",
-      "instructions": "Finish the method square(int n) so it returns n multiplied by itself. Then it will be called from main. Press Check.",
-      "starter": "public class Main {\n    static int square(int n) {\n        return ___;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"5 squared is \" + square(5));\n    }\n}",
-      "check": {
-        "code_includes": "n * n"
-      },
-      "solution": "public class Main {\n    static int square(int n) {\n        return n * n;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"5 squared is \" + square(5));\n    }\n}",
-      "solutionOutput": "5 squared is 25",
-      "passMsg": "Nice — your method squares any number you give it!",
-      "failMsg": "Inside square, return n * n so it multiplies the number by itself."
-    },
-    {
-      "type": "tryit",
-      "title": "Area of a circle",
-      "instructions": "Complete areaOfCircle(double r) so it returns 3.14 times r times r. main will call it with 2.0. Press Check.",
-      "starter": "public class Main {\n    static double areaOfCircle(double r) {\n        return ___;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Area: \" + areaOfCircle(2.0));\n    }\n}",
-      "check": {
-        "regex": "3\\.14\\s*\\*\\s*r\\s*\\*\\s*r"
-      },
-      "solution": "public class Main {\n    static double areaOfCircle(double r) {\n        return 3.14 * r * r;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Area: \" + areaOfCircle(2.0));\n    }\n}",
-      "solutionOutput": "Area: 12.56",
-      "passMsg": "Great — you turned a math formula into a reusable method!",
-      "failMsg": "Return 3.14 * r * r so it multiplies pi by the radius twice."
-    },
-    {
-      "type": "surprise",
-      "title": "Surprise Quiz! Days 6–10",
-      "intro": "Pop quiz! Let's see what stuck from the last 5 days. No grades, just fun 🎉",
-      "questions": [
+    "day": 10,
+    "emoji": "📊",
+    "title": "Arrays",
+    "subtitle": "One box, many values — keep a whole list of things in a single variable.",
+    "goal": "Make arrays, read items by their position, find the length, loop over every value, and tidy them up with the Arrays helper.",
+    "estMinutes": 180,
+    "tags": ["data"],
+    "blocks": [
         {
-          "question": "Which keyword runs a block of code only when a condition is true?",
-          "options": [
-            "for",
-            "if",
-            "class",
-            "return"
-          ],
-          "answerIndex": 1,
-          "explain": "if checks a condition and runs its code only when that condition is true. (Day 6!)"
+            "type": "text",
+            "heading": "What is an array? 📊",
+            "html": "<p>So far each variable held just one thing: one number, one name. But what if you have the scores of a whole class? You don't want 30 variables!</p><p>An <strong>array</strong> is one variable that holds <em>many</em> values of the <strong>same type</strong> — like an egg carton with a slot for each egg. All ints, or all Strings, lined up in a row.</p>"
         },
         {
-          "question": "In a classic switch, what does break do?",
-          "options": [
-            "Stops the whole program",
-            "Skips to the default case",
-            "Stops it from falling through into the next case",
-            "Repeats the case"
-          ],
-          "answerIndex": 2,
-          "explain": "Without break, a switch keeps running into the next cases (fall-through). break stops it after the matching case. (Day 7!)"
+            "type": "text",
+            "heading": "Making an array",
+            "html": "<p>Two common ways. Fill it right away with values in curly braces:</p><p><code class=\"inline\">int[] nums = {1, 2, 3};</code></p><p>Or make an empty one of a fixed size (Java fills it with zeros for you):</p><p><code class=\"inline\">int[] five = new int[5];</code></p><p>The <code class=\"inline\">[]</code> means \"this is an array of that type.\"</p>"
         },
         {
-          "question": "Which loop is best when you know exactly how many times to repeat?",
-          "options": [
-            "for loop",
-            "while(true) loop",
-            "if statement",
-            "switch"
-          ],
-          "answerIndex": 0,
-          "explain": "A for loop has a built-in counter, perfect for a known number of repeats. (Day 8!)"
+            "type": "code",
+            "caption": "Reading items and counting them",
+            "code": "import java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        int[] scores = {90, 85, 100};\n        System.out.println(\"First score: \" + scores[0]);\n        System.out.println(\"How many scores? \" + scores.length);\n    }\n}",
+            "output": "First score: 90\nHow many scores? 3",
+            "explain": "Counting starts at ZERO. scores[0] is the first item (90), scores[1] is the second. The .length tells you how many items are inside — notice there are no parentheses after length."
         },
         {
-          "question": "What is the index of the FIRST item in a Java array?",
-          "options": [
-            "1",
-            "0",
-            "-1",
-            "It has no index"
-          ],
-          "answerIndex": 1,
-          "explain": "Arrays start counting at 0, so the first item is at index 0. (Day 9!)"
+            "type": "tip",
+            "html": "<strong>Zero is the start!</strong> The first slot is <code class=\"inline\">[0]</code>, not <code class=\"inline\">[1]</code>. So an array with 3 items uses slots <code class=\"inline\">[0]</code>, <code class=\"inline\">[1]</code>, and <code class=\"inline\">[2]</code>."
         },
         {
-          "question": "Why do we write methods?",
-          "options": [
-            "To make the program run slower",
-            "To give a reusable name to a chunk of code so we don't repeat ourselves",
-            "To delete variables",
-            "To change the screen color"
-          ],
-          "answerIndex": 1,
-          "explain": "A method packages code under a name so you can call it again and again instead of copy-pasting. (Day 10!)"
+            "type": "code",
+            "caption": "Two ways to loop over an array",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        String[] names = {\"Mia\", \"Leo\", \"Zoe\"};\n        for (int i = 0; i < names.length; i++) {\n            System.out.println(\"Hello, \" + names[i] + \"!\");\n        }\n        for (String name : names) {\n            System.out.println(name + \" is here.\");\n        }\n    }\n}",
+            "output": "Hello, Mia!\nHello, Leo!\nHello, Zoe!\nMia is here.\nLeo is here.\nZoe is here.",
+            "explain": "The first loop uses a counter i to grab names[i]. The second is a 'for-each': read it as 'for each name in names'. The for-each is simpler when you just want every item in order."
+        },
+        {
+            "type": "tip",
+            "variant": "warn",
+            "html": "<strong>Watch the edge!</strong> If an array has 3 items, the last slot is <code class=\"inline\">[2]</code>. Asking for <code class=\"inline\">scores[3]</code> reaches past the end and Java throws an <code class=\"inline\">ArrayIndexOutOfBoundsException</code>. Always stop at <code class=\"inline\">length - 1</code>."
+        },
+        {
+            "type": "code",
+            "caption": "The Arrays toolbox: toString and sort",
+            "code": "import java.util.Arrays;\npublic class Main {\n    public static void main(String[] args) {\n        int[] nums = {5, 2, 8, 1};\n        System.out.println(\"Before: \" + Arrays.toString(nums));\n        Arrays.sort(nums);\n        System.out.println(\"After:  \" + Arrays.toString(nums));\n    }\n}",
+            "output": "Before: [5, 2, 8, 1]\nAfter:  [1, 2, 5, 8]",
+            "explain": "You must write import java.util.Arrays; at the top to use these. Arrays.toString() makes an array print nicely. Arrays.sort() puts the numbers in order from smallest to biggest — for free!"
+        },
+        {
+            "type": "text",
+            "heading": "A peek at 2D arrays 🗂️",
+            "html": "<p>An array can even hold other arrays — like a grid, or a tic-tac-toe board. We call this a <strong>2D array</strong>.</p><p><code class=\"inline\">int[][] grid = {{1, 2, 3}, {4, 5, 6}};</code></p><p>Now <code class=\"inline\">grid[0]</code> is the first row, and <code class=\"inline\">grid[0][1]</code> is the second item of that row (which is 2). You'll meet these more later — for now, just know rows of rows are possible!</p>"
+        },
+        {
+            "type": "quiz",
+            "question": "In int[] a = {10, 20, 30}; what is a[1]?",
+            "options": [
+                "10",
+                "20",
+                "30",
+                "It's an error"
+            ],
+            "answerIndex": 1,
+            "explain": "Counting starts at 0, so a[0] is 10 and a[1] is 20."
+        },
+        {
+            "type": "quiz",
+            "question": "An array has 4 items. What happens if you ask for item [4]?",
+            "options": [
+                "You get the last item",
+                "You get a zero",
+                "Java throws an ArrayIndexOutOfBoundsException",
+                "It wraps around to the first item"
+            ],
+            "answerIndex": 2,
+            "explain": "With 4 items the slots are [0], [1], [2], [3]. Asking for [4] reaches past the end, so Java throws an ArrayIndexOutOfBoundsException."
+        },
+        {
+            "type": "quiz",
+            "question": "Which method puts an int array in order from smallest to biggest?",
+            "options": [
+                "Arrays.print()",
+                "Arrays.order()",
+                "Arrays.sort()",
+                "Arrays.length()"
+            ],
+            "answerIndex": 2,
+            "explain": "Arrays.sort() sorts the array in place. Remember to import java.util.Arrays; first."
+        },
+        {
+            "type": "tryit",
+            "title": "Grab the third score",
+            "instructions": "The array has four scores. Print the THIRD score. Remember: counting starts at 0, so the third item lives at index 2!",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {70, 88, 95, 60};\n        System.out.println(\"Third score: \" + scores[___]);\n    }\n}",
+            "check": { "code_includes": "scores[2]" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {70, 88, 95, 60};\n        System.out.println(\"Third score: \" + scores[2]);\n    }\n}",
+            "solutionOutput": "Third score: 95",
+            "passMsg": "Nice — you remembered that the third item is index 2!",
+            "failMsg": "The third score is at index 2 (because counting starts at 0). Use scores[2]."
+        },
+        {
+            "type": "tryit",
+            "title": "Find the average",
+            "instructions": "Loop over the array, add up every number into total, then divide by how many there are. Fill in the blanks so it prints the average.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40};\n        int total = 0;\n        for (int n : nums) {\n            total = total + n;\n        }\n        int average = total / nums.___;\n        System.out.println(\"Average: \" + average);\n    }\n}",
+            "check": { "code_includes": "nums.length" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40};\n        int total = 0;\n        for (int n : nums) {\n            total = total + n;\n        }\n        int average = total / nums.length;\n        System.out.println(\"Average: \" + average);\n    }\n}",
+            "solutionOutput": "Average: 25",
+            "passMsg": "You averaged a whole array — that's real data work!",
+            "failMsg": "To divide by the count of items, use nums.length."
         }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're building a login system. The user gets 3 attempts to enter the correct password. After each wrong try, tell them how many attempts remain. If they fail all 3, lock them out.</p>",
-      "caption": "Login attempt limiter",
-      "code": "public class Main {\n    static boolean checkPassword(String input, String correct) {\n        return input.equals(correct);\n    }\n\n    static void printAttempts(int remaining) {\n        System.out.println(remaining + \" attempt(s) left\");\n    }\n\n    public static void main(String[] args) {\n        String correct = \"java22\";\n        String[] tries = {\"hello\", \"pass\", \"java22\"};\n        int maxAttempts = 3;\n        boolean loggedIn = false;\n\n        for (int i = 0; i < tries.length && i < maxAttempts; i++) {\n            System.out.println(\"Trying: \" + tries[i]);\n            if (checkPassword(tries[i], correct)) {\n                System.out.println(\"Access granted!\");\n                loggedIn = true;\n                break;\n            }\n            printAttempts(maxAttempts - i - 1);\n        }\n        if (!loggedIn) {\n            System.out.println(\"Account locked.\");\n        }\n    }\n}",
-      "output": "Trying: hello\n2 attempt(s) left\nTrying: pass\n1 attempt(s) left\nTrying: java22\nAccess granted!",
-      "explain": "This combines methods (Day 10), a for loop with break (Day 8), conditionals (Day 6), arrays (Day 9), and String comparison (Day 3). Two helper methods keep main clean and readable."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 6–10",
-      "intro": "Prove what you've learned about control flow, arrays, and methods! 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which keyword checks a condition and runs code only when it's true?",
-          "options": [
-            "for",
-            "if",
-            "class",
-            "return"
-          ],
-          "answerIndex": 1,
-          "explain": "if evaluates a boolean condition and runs the code block only when it is true. (Day 6)"
-        },
-        {
-          "question": "In a classic switch statement, what happens without break?",
-          "options": [
-            "The program stops",
-            "Only the matching case runs",
-            "Execution falls through into the next case",
-            "It throws an error"
-          ],
-          "answerIndex": 2,
-          "explain": "Without break, Java falls through to the next case and keeps running. break stops the fall-through. (Day 7)"
-        },
-        {
-          "question": "What is the index of the FIRST element in a Java array?",
-          "options": [
-            "1",
-            "0",
-            "-1",
-            "It depends on the type"
-          ],
-          "answerIndex": 1,
-          "explain": "Java arrays are zero-indexed. The first element is always at index 0. (Day 9)"
-        },
-        {
-          "question": "What return type means a method gives back no value?",
-          "options": [
-            "int",
-            "String",
-            "void",
-            "null"
-          ],
-          "answerIndex": 2,
-          "explain": "void means the method performs an action but returns nothing. (Day 10)"
-        },
-        {
-          "question": "What is method overloading?",
-          "options": [
-            "Writing the same method name with different parameters",
-            "Calling a method too many times",
-            "A method that never returns",
-            "Using static on every method"
-          ],
-          "answerIndex": 0,
-          "explain": "Overloading means multiple methods share a name but differ in their parameter lists. Java picks the right one by the arguments. (Day 10)"
-        }
-      ]
-    },
-    {
-      "type": "example",
-      "scenario": "<p><strong>Scenario:</strong> You're building a login system. The user gets 3 attempts to enter the correct password. After each wrong try, tell them how many attempts remain.</p>",
-      "caption": "Login attempt limiter",
-      "code": "public class Main {\n    static boolean checkPassword(String input, String correct) {\n        return input.equals(correct);\n    }\n\n    static void printAttempts(int remaining) {\n        System.out.println(remaining + \" attempt(s) left\");\n    }\n\n    public static void main(String[] args) {\n        String correct = \"java22\";\n        String[] tries = {\"hello\", \"pass\", \"java22\"};\n        int maxAttempts = 3;\n        boolean loggedIn = false;\n\n        for (int i = 0; i < tries.length && i < maxAttempts; i++) {\n            System.out.println(\"Trying: \" + tries[i]);\n            if (checkPassword(tries[i], correct)) {\n                System.out.println(\"Access granted!\");\n                loggedIn = true;\n                break;\n            }\n            printAttempts(maxAttempts - i - 1);\n        }\n        if (!loggedIn) {\n            System.out.println(\"Account locked.\");\n        }\n    }\n}",
-      "output": "Trying: hello\n2 attempt(s) left\nTrying: pass\n1 attempt(s) left\nTrying: java22\nAccess granted!",
-      "explain": "This combines methods (Day 10), a for loop with break (Day 8), conditionals (Day 6), arrays (Day 9), and String comparison (Day 3)."
-    },
-    {
-      "type": "assessment",
-      "title": "Milestone Exam — Days 6–10",
-      "intro": "Control flow, arrays, and methods! 70% to pass.",
-      "passPct": 70,
-      "questions": [
-        {
-          "question": "Which keyword checks a condition and runs code only when it's true?",
-          "options": [
-            "for",
-            "if",
-            "class",
-            "return"
-          ],
-          "answerIndex": 1,
-          "explain": "if evaluates a boolean condition and runs the block only when true. (Day 6)"
-        },
-        {
-          "question": "In a classic switch, what happens without break?",
-          "options": [
-            "The program stops",
-            "Only the matching case runs",
-            "Execution falls through into the next case",
-            "It throws an error"
-          ],
-          "answerIndex": 2,
-          "explain": "Without break, Java falls through to the next case. break stops it. (Day 7)"
-        },
-        {
-          "question": "What is the index of the FIRST element in a Java array?",
-          "options": [
-            "1",
-            "0",
-            "-1",
-            "It depends on the type"
-          ],
-          "answerIndex": 1,
-          "explain": "Java arrays are zero-indexed. The first element is at index 0. (Day 9)"
-        },
-        {
-          "question": "What return type means a method gives back no value?",
-          "options": [
-            "int",
-            "String",
-            "void",
-            "null"
-          ],
-          "answerIndex": 2,
-          "explain": "void means the method performs an action but returns nothing. (Day 10)"
-        },
-        {
-          "question": "What is method overloading?",
-          "options": [
-            "Same method name with different parameters",
-            "Calling a method too many times",
-            "A method that never returns",
-            "Using static on every method"
-          ],
-          "answerIndex": 0,
-          "explain": "Overloading means multiple methods share a name but differ in parameter lists. (Day 10)"
-        }
-      ]
+    ],
+    "challenge": {
+        "title": "Print a number grid",
+        "instructions": "Use a 2D array to make a little grid. Loop over each row, then each column inside that row, and print the numbers with a space after each. Print a new line after every row.",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        int[][] grid = {\n            {1, 2, 3},\n            {4, 5, 6}\n        };\n        for (int row = 0; row < grid.length; row++) {\n            for (int col = 0; col < grid[row].length; col++) {\n                System.out.print(grid[row][col] + \" \");\n            }\n            // print a new line after each row\n        }\n    }\n}",
+        "check": { "code_includes": "grid[row][col]" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        int[][] grid = {\n            {1, 2, 3},\n            {4, 5, 6}\n        };\n        for (int row = 0; row < grid.length; row++) {\n            for (int col = 0; col < grid[row].length; col++) {\n                System.out.print(grid[row][col] + \" \");\n            }\n            System.out.println();\n        }\n    }\n}",
+        "solutionOutput": "1 2 3 \n4 5 6 ",
+        "hint": "Inside the row loop, after the column loop finishes, call System.out.println() with nothing inside to drop to the next line.",
+        "passMsg": "🏆 A whole grid from arrays inside arrays — Day 9 conquered. You're handling real data now!"
     }
-  ],
-  "challenge": {
-    "type": "tryit",
-    "title": "Build a tiny method toolbox",
-    "instructions": "Write a void method greet(String name) that prints \"Hi, \" then the name then \"!\", and an int method add(int a, int b) that returns the sum. In main, call greet(\"Sam\") and then print add(8, 6). Press Check.",
-    "starter": "public class Main {\n    // write greet(String name) here\n\n    // write add(int a, int b) here\n\n    public static void main(String[] args) {\n        // call greet with \"Sam\"\n        // print add(8, 6)\n    }\n}",
-    "check": {
-      "regex": "static\\s+void\\s+greet"
-    },
-    "solution": "public class Main {\n    static void greet(String name) {\n        System.out.println(\"Hi, \" + name + \"!\");\n    }\n\n    static int add(int a, int b) {\n        return a + b;\n    }\n\n    public static void main(String[] args) {\n        greet(\"Sam\");\n        System.out.println(add(8, 6));\n    }\n}",
-    "solutionOutput": "Hi, Sam!\n14",
-    "hint": "greet uses void and just prints. add uses int and returns a + b. In main, call greet(\"Sam\"); on its own line, then System.out.println(add(8, 6));",
-    "passMsg": "🏆 You built your own toolbox of methods — that is exactly how real programs stay tidy. Day 10 complete!",
-    "failMsg": "Make sure you have a static void greet(String name) method and a static int add(int a, int b) method, then call both from main."
-  }
 }

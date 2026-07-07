@@ -1,153 +1,130 @@
 {
     "day": 16,
-    "emoji": "🛡️",
-    "title": "Exceptions",
-    "subtitle": "Catch problems before they crash your program — and keep running with a friendly message.",
-    "goal": "Understand what exceptions are, catch the common ones with try/catch, use multiple catch and finally, read the exception hierarchy, throw your own exceptions, and write a custom exception class.",
+    "emoji": "🎭",
+    "title": "Polymorphism & Abstract",
+    "subtitle": "One word, many forms — let your objects wear different masks.",
+    "goal": "Understand how a parent-type variable can hold any child object, how the right overridden method runs automatically, and how abstract classes force children to fill in the blanks.",
     "estMinutes": 180,
-    "tags": ["robust"],
+    "tags": ["oop"],
     "blocks": [
         {
             "type": "text",
-            "heading": "Errors are normal 🛡️",
-            "html": "<p>Even the best programs hit problems: a number divided by zero, a missing piece of data, text that was supposed to be a number but wasn't. In Java these problems are called <strong>exceptions</strong>. They are not a sign you are a bad coder — they happen to everyone, every day.</p><p>The trick is to <em>expect</em> them. Instead of letting an exception crash your whole program, you can <strong>catch</strong> it and print a friendly message, then carry on. That's what today is all about: programs that bend instead of break.</p>"
+            "heading": "What is polymorphism? 🎭",
+            "html": "<p><strong>Polymorphism</strong> is a big word that means <em>“many forms.”</em> In Java it means one variable can take on many shapes depending on what you put inside it.</p><p>Imagine a box labeled <code class=\"inline\">Animal</code>. You can drop a <code class=\"inline\">Dog</code> in it, or a <code class=\"inline\">Cat</code>, or a <code class=\"inline\">Cow</code> — the box still says <code class=\"inline\">Animal</code>, but what's inside decides how it behaves. 🐶🐱🐮</p>"
         },
         {
             "type": "text",
-            "heading": "What a crash looks like",
-            "html": "<p>When an exception is not handled, Java stops your program and prints a scary-looking <strong>stack trace</strong>. You may have seen these names before:</p><ul><li><code class=\"inline\">ArithmeticException</code> — dividing a whole number by zero.</li><li><code class=\"inline\">ArrayIndexOutOfBoundsException</code> — reaching for an array slot that doesn't exist.</li><li><code class=\"inline\">NullPointerException</code> — using something that is <code class=\"inline\">null</code> (empty/missing).</li><li><code class=\"inline\">NumberFormatException</code> — turning text like <code class=\"inline\">\"banana\"</code> into a number.</li></ul><p>Today we'll stop these from crashing anything.</p>"
-        },
-        {
-            "type": "text",
-            "heading": "try and catch: your safety net",
-            "html": "<p>You wrap the risky code in a <code class=\"inline\">try</code> block. If something goes wrong inside, Java jumps to the matching <code class=\"inline\">catch</code> block instead of crashing.</p><p><code class=\"inline\">try { risky code } catch (ExceptionType e) { what to do if it breaks }</code></p><p>The <code class=\"inline\">e</code> is the exception object — it carries details, like a message describing what went wrong.</p>"
+            "heading": "A parent box holding a child",
+            "html": "<p>If <code class=\"inline\">Dog</code> extends <code class=\"inline\">Animal</code>, then this line is perfectly legal:</p><p><code class=\"inline\">Animal a = new Dog();</code></p><p>The <em>left side</em> is the box type (Animal). The <em>right side</em> is the real object (a Dog). When you call <code class=\"inline\">a.speak()</code>, Java looks at the <strong>real object</strong> and runs the Dog's version. This is called <strong>dynamic method dispatch</strong> — a fancy name for “the overridden method runs.”</p>"
         },
         {
             "type": "code",
-            "caption": "Catching an out-of-bounds reach",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        try {\n            int[] scores = {90, 80, 70};\n            System.out.println(\"First score: \" + scores[0]);\n            System.out.println(\"Now reaching for score number 5...\");\n            System.out.println(scores[5]);\n            System.out.println(\"This line never runs.\");\n        } catch (ArrayIndexOutOfBoundsException e) {\n            System.out.println(\"Oops! That spot in the array does not exist.\");\n        }\n        System.out.println(\"The program keeps going. No crash!\");\n    }\n}",
-            "output": "First score: 90\nNow reaching for score number 5...\nOops! That spot in the array does not exist.\nThe program keeps going. No crash!",
-            "explain": "The array only has spots 0, 1, and 2. Reaching for scores[5] throws an ArrayIndexOutOfBoundsException, so Java skips the rest of the try and jumps to catch. The 'This line never runs' message is skipped, but the program finishes cleanly."
+            "caption": "A parent variable, a child object",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        Animal b = new Cat();\n        a.speak();\n        b.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"Some animal sound\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}",
+            "output": "Woof!\nMeow!",
+            "explain": "Even though a and b are declared as Animal, Java runs the Dog and Cat versions of speak(). The real object decides which method runs — not the box label."
         },
         {
             "type": "tip",
-            "html": "<strong>Only wrap the risky part.</strong> Don't put your whole program in one giant try block. Wrap just the lines that might fail, so you know exactly what you're protecting."
-        },
-        {
-            "type": "code",
-            "caption": "Catching divide-by-zero and bad text",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        int[] tries = {10, 0, 5};\n\n        for (int divisor : tries) {\n            try {\n                int answer = 100 / divisor;\n                System.out.println(\"100 / \" + divisor + \" = \" + answer);\n            } catch (ArithmeticException e) {\n                System.out.println(\"Cannot divide \" + 100 + \" by \" + divisor + \" — skipping!\");\n            }\n        }\n\n        try {\n            String notANumber = \"banana\";\n            int n = Integer.parseInt(notANumber);\n            System.out.println(n);\n        } catch (NumberFormatException e) {\n            System.out.println(\"'banana' is not a number, so I will use 0 instead.\");\n        }\n\n        System.out.println(\"All done, safe and sound.\");\n    }\n}",
-            "output": "100 / 10 = 10\nCannot divide 100 by 0 — skipping!\n100 / 5 = 20\n'banana' is not a number, so I will use 0 instead.\nAll done, safe and sound.",
-            "explain": "Dividing 100 by 0 throws ArithmeticException — we catch it and skip that one, then keep looping. Integer.parseInt(\"banana\") throws NumberFormatException because 'banana' isn't a number. Both are caught, so the program runs to the friendly final line."
-        },
-        {
-            "type": "text",
-            "heading": "Many catches, and a finally that always runs",
-            "html": "<p>One try can have <strong>several catch blocks</strong>, each handling a different kind of problem. Java runs the first one that matches.</p><p>You can also add a <code class=\"inline\">finally</code> block. The code in <code class=\"inline\">finally</code> runs <strong>no matter what</strong> — whether the try succeeded or an exception was caught. It's perfect for clean-up steps you always want to happen.</p>"
-        },
-        {
-            "type": "code",
-            "caption": "Multiple catch blocks plus finally",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        String[] words = {\"7\", \"oops\", null};\n\n        for (String word : words) {\n            System.out.println(\"Trying word: \" + word);\n            try {\n                int length = word.length();\n                int number = Integer.parseInt(word);\n                System.out.println(\"  Length \" + length + \", number is \" + number);\n            } catch (NullPointerException e) {\n                System.out.println(\"  That word was missing (null)!\");\n            } catch (NumberFormatException e) {\n                System.out.println(\"  That word is not a number!\");\n            } finally {\n                System.out.println(\"  Finished checking this word.\");\n            }\n        }\n\n        System.out.println(\"Every word handled. Nothing crashed.\");\n    }\n}",
-            "output": "Trying word: 7\n  Length 1, number is 7\n  Finished checking this word.\nTrying word: oops\n  That word is not a number!\n  Finished checking this word.\nTrying word: null\n  That word was missing (null)!\n  Finished checking this word.\nEvery word handled. Nothing crashed.",
-            "explain": "\"7\" works fine. \"oops\" has a length but isn't a number, so NumberFormatException is caught. null can't even do .length(), so NullPointerException is caught. Notice the finally line prints EVERY time — success or failure — because finally always runs."
-        },
-        {
-            "type": "text",
-            "heading": "The exception family tree 🌳",
-            "html": "<p>All exceptions belong to one big family. At the top is <code class=\"inline\">Throwable</code>. Below it sits <code class=\"inline\">Exception</code>, and below that is <code class=\"inline\">RuntimeException</code>:</p><p><code class=\"inline\">Throwable → Exception → RuntimeException</code></p><p>The four common ones you met today (ArithmeticException, ArrayIndexOutOfBoundsException, NullPointerException, NumberFormatException) are all <code class=\"inline\">RuntimeException</code>s. Because they share a family, you could even catch them all with a single <code class=\"inline\">catch (Exception e)</code> — though catching the specific type is usually clearer.</p>"
-        },
-        {
-            "type": "tip",
-            "html": "<strong>Checked vs unchecked (light version):</strong> RuntimeExceptions are <em>unchecked</em> — Java doesn't force you to handle them. Other Exceptions (like the custom one we make next) are <em>checked</em> — Java makes you either catch them or mark the method with <code class=\"inline\">throws</code>. Don't worry about memorizing this; just know that's why custom exceptions sometimes need a <code class=\"inline\">throws</code> word.",
+            "html": "<strong>Remember:</strong> the variable type (left side) is the <em>box</em>; the object (right side) is what's <em>inside</em>. The object always wins when deciding which overridden method to run.",
             "variant": "info"
         },
         {
             "type": "text",
-            "heading": "Throwing your own exceptions",
-            "html": "<p>You don't have to wait for Java to throw an exception — you can throw one yourself with <code class=\"inline\">throw new SomethingException(\"message\")</code>. This is how you say \"this situation is not allowed!\"</p><p>You can even make your <strong>own</strong> exception type by extending <code class=\"inline\">Exception</code>. A custom exception is just a small class with a clear name, like <code class=\"inline\">TooYoungException</code>.</p>"
+            "heading": "Treating many objects the same way 🔁",
+            "html": "<p>The real magic is that you can put lots of different children into one <strong>parent array</strong> and loop over them with the same code. You don't need to know exactly what each one is — you just say <code class=\"inline\">speak()</code> and each object does its own thing.</p>"
         },
         {
             "type": "code",
-            "caption": "A custom exception class (Main + one helper class in the same file)",
-            "code": "public class Main {\n    static void checkAge(int age) throws TooYoungException {\n        if (age < 13) {\n            throw new TooYoungException(\"Age \" + age + \" is too young — must be 13 or older.\");\n        }\n        System.out.println(\"Age \" + age + \" is allowed in. Welcome!\");\n    }\n\n    public static void main(String[] args) {\n        int[] ages = {15, 9};\n        for (int age : ages) {\n            try {\n                checkAge(age);\n            } catch (TooYoungException e) {\n                System.out.println(\"Sorry: \" + e.getMessage());\n            }\n        }\n        System.out.println(\"Door check complete.\");\n    }\n}\n\nclass TooYoungException extends Exception {\n    TooYoungException(String message) {\n        super(message);\n    }\n}",
-            "output": "Age 15 is allowed in. Welcome!\nSorry: Age 9 is too young — must be 13 or older.\nDoor check complete.",
-            "explain": "TooYoungException is our own class — it extends Exception and passes a message to super(). checkAge throws it when the age is under 13. Because it's a checked exception, checkAge is marked 'throws TooYoungException', and main catches it. e.getMessage() reads back the message we created. The public class Main comes first; the non-public TooYoungException sits below it in the same file."
+            "caption": "One loop, many different sounds",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Animal[] zoo = { new Dog(), new Cat(), new Cow() };\n        for (Animal animal : zoo) {\n            animal.speak();\n        }\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Dog extends Animal {\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}\n\nclass Cat extends Animal {\n    void speak() {\n        System.out.println(\"Meow!\");\n    }\n}\n\nclass Cow extends Animal {\n    void speak() {\n        System.out.println(\"Moo!\");\n    }\n}",
+            "output": "Woof!\nMeow!\nMoo!",
+            "explain": "The array is an Animal[], but it holds a Dog, a Cat, and a Cow. The loop calls speak() once per animal, and each one answers in its own voice. One loop, three behaviors — that's polymorphism in action."
+        },
+        {
+            "type": "text",
+            "heading": "Abstract classes: a promise to fill in later 📝",
+            "html": "<p>Sometimes a parent class doesn't make sense on its own. What is the “area” of a plain <code class=\"inline\">Shape</code>? You can't say — it depends on whether it's a circle or a square.</p><p>So we mark the class <code class=\"inline\">abstract</code>. An <strong>abstract class</strong> cannot be created directly (no <code class=\"inline\">new Shape()</code>). It can have <strong>abstract methods</strong> — methods with no body, just a promise. Any child <em>must</em> fill them in, or the code won't compile.</p>"
+        },
+        {
+            "type": "code",
+            "caption": "Abstract Shape with Circle and Square",
+            "code": "public class Main {\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(2.0), new Square(3.0) };\n        for (Shape shape : shapes) {\n            System.out.println(\"Area: \" + shape.area());\n        }\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Circle extends Shape {\n    double radius;\n\n    Circle(double radius) {\n        this.radius = radius;\n    }\n\n    double area() {\n        return 3.14 * radius * radius;\n    }\n}\n\nclass Square extends Shape {\n    double side;\n\n    Square(double side) {\n        this.side = side;\n    }\n\n    double area() {\n        return side * side;\n    }\n}",
+            "output": "Area: 12.56\nArea: 9.0",
+            "explain": "Shape promises an area() but doesn't define it. Circle and Square each keep the promise with their own formula. You can store both in a Shape[] and ask for area() without caring which shape it really is."
         },
         {
             "type": "tip",
-            "html": "<strong>Same-file rule:</strong> a file can hold ONE public class (here, <code class=\"inline\">Main</code>), plus any number of <em>non-public</em> classes (like <code class=\"inline\">TooYoungException</code>). Put <code class=\"inline\">Main</code> first so <code class=\"inline\">java Main.java</code> knows where to start.",
-            "variant": "success"
+            "html": "<strong>Heads up:</strong> writing <code class=\"inline\">new Shape()</code> on an abstract class is an error — Java won't let you build something that has unfinished (abstract) methods. You can only build the finished children.",
+            "variant": "warn"
         },
         {
             "type": "quiz",
-            "question": "What does a try/catch let your program do when something goes wrong?",
+            "question": "What does Animal a = new Dog(); a.speak(); print, if Dog overrides speak() to say \"Woof!\"?",
             "options": [
-                "Delete the broken file",
-                "Catch the problem and keep running instead of crashing",
-                "Make the error happen twice",
-                "Turn off the computer"
+                "Some animal sound",
+                "Woof!",
+                "An error, because a is an Animal",
+                "Both the Animal and Dog versions"
             ],
             "answerIndex": 1,
-            "explain": "try runs the risky code; if it throws an exception, catch handles it with a friendly message and the program keeps going — no crash."
+            "explain": "The real object is a Dog, so Java runs the Dog's overridden speak(). That's dynamic method dispatch — the object wins, not the box label."
         },
         {
             "type": "quiz",
-            "question": "When does the code inside a finally block run?",
+            "question": "Why do we make a class abstract?",
             "options": [
-                "Only when the try succeeds",
-                "Only when an exception is caught",
-                "Always — whether or not an exception happened",
-                "Never, it is ignored"
+                "To make it run faster",
+                "So it can be created with new many times",
+                "Because it's incomplete on its own and forces children to fill in certain methods",
+                "To hide it from other files"
             ],
             "answerIndex": 2,
-            "explain": "finally always runs: after a successful try, and also after a caught exception. That's why it's great for clean-up steps."
+            "explain": "An abstract class represents an idea that isn't complete by itself. It cannot be instantiated, and its abstract methods must be implemented by each child."
         },
         {
             "type": "quiz",
-            "question": "Which line correctly throws a custom exception with a message?",
+            "question": "What's the benefit of putting different child objects in one Animal[] array?",
             "options": [
-                "catch new TooYoungException(\"too young\");",
-                "throw new TooYoungException(\"too young\");",
-                "return TooYoungException(\"too young\");",
-                "print TooYoungException(\"too young\");"
+                "It saves memory automatically",
+                "You can loop over them with the same code and each behaves in its own way",
+                "It deletes the children when done",
+                "It turns them all into the same animal"
             ],
             "answerIndex": 1,
-            "explain": "You raise an exception with throw new SomethingException(\"message\"). The message is passed into the exception so catch can read it with getMessage()."
+            "explain": "A parent array lets you treat many objects uniformly. One loop, one method call, but each object responds with its own overridden behavior."
         },
         {
             "type": "tryit",
-            "title": "Survive divide-by-zero",
-            "instructions": "The loop divides 100 by each number, but one of them is 0. Fill in the catch so an ArithmeticException is handled with a friendly message instead of crashing. Press Check.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        int[] numbers = {50, 25, 0, 10};\n        for (int n : numbers) {\n            try {\n                System.out.println(\"100 / \" + n + \" = \" + (100 / n));\n            } catch (___ e) {\n                System.out.println(\"Cannot divide by \" + n + \"!\");\n            }\n        }\n    }\n}",
-            "check": { "code_includes": "ArithmeticException" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        int[] numbers = {50, 25, 0, 10};\n        for (int n : numbers) {\n            try {\n                System.out.println(\"100 / \" + n + \" = \" + (100 / n));\n            } catch (ArithmeticException e) {\n                System.out.println(\"Cannot divide by \" + n + \"!\");\n            }\n        }\n    }\n}",
-            "solutionOutput": "100 / 50 = 2\n100 / 25 = 4\nCannot divide by 0!\n100 / 10 = 10",
-            "passMsg": "Nice — dividing by zero no longer crashes your loop!",
-            "failMsg": "The exception thrown by 100 / 0 is an ArithmeticException — put that type inside the catch parentheses."
+            "title": "Give the parrot a voice",
+            "instructions": "A Parrot is an Animal, but right now its speak() just prints ___. Change the text inside Parrot's speak() so it prints Squawk! Then press Check.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"___\");\n    }\n}",
+            "check": { "code_includes": "Squawk!" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Animal pet = new Parrot();\n        pet.speak();\n    }\n}\n\nclass Animal {\n    void speak() {\n        System.out.println(\"...\");\n    }\n}\n\nclass Parrot extends Animal {\n    void speak() {\n        System.out.println(\"Squawk!\");\n    }\n}",
+            "solutionOutput": "Squawk!",
+            "passMsg": "Squawk! The parrot found its voice — that's an overridden method running through a parent variable.",
+            "failMsg": "Keep pet declared as Animal, and make Parrot's speak() print exactly Squawk! inside the quotes."
         },
         {
             "type": "tryit",
-            "title": "Handle bad text",
-            "instructions": "Integer.parseInt(\"five\") will throw a NumberFormatException because \"five\" is not digits. Fill in the catch type so it prints a friendly message. Press Check.",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        try {\n            String text = \"five\";\n            int value = Integer.parseInt(text);\n            System.out.println(\"The number is \" + value);\n        } catch (___ e) {\n            System.out.println(\"That was not a number!\");\n        }\n    }\n}",
-            "check": { "code_includes": "NumberFormatException" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        try {\n            String text = \"five\";\n            int value = Integer.parseInt(text);\n            System.out.println(\"The number is \" + value);\n        } catch (NumberFormatException e) {\n            System.out.println(\"That was not a number!\");\n        }\n    }\n}",
-            "solutionOutput": "That was not a number!",
-            "passMsg": "Great — your program politely handles text that isn't a number!",
-            "failMsg": "Turning \"five\" into an int throws a NumberFormatException — use that type in the catch."
+            "title": "Finish the abstract Shape",
+            "instructions": "Rectangle extends the abstract Shape but its area() returns 0.0 — wrong! Make area() return width * height so the program prints Area: 20.0.",
+            "starter": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return 0.0;\n    }\n}",
+            "check": { "regex": "width\\s*\\*\\s*height" },
+            "solution": "public class Main {\n    public static void main(String[] args) {\n        Shape s = new Rectangle(4.0, 5.0);\n        System.out.println(\"Area: \" + s.area());\n    }\n}\n\nabstract class Shape {\n    abstract double area();\n}\n\nclass Rectangle extends Shape {\n    double width;\n    double height;\n\n    Rectangle(double width, double height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    double area() {\n        return width * height;\n    }\n}",
+            "solutionOutput": "Area: 20.0",
+            "passMsg": "Perfect — Rectangle kept the promise made by abstract Shape, and 4 * 5 gives 20.0.",
+            "failMsg": "Inside Rectangle's area(), return width * height instead of 0.0."
         }
     ],
     "challenge": {
-        "type": "tryit",
-        "title": "Build a custom exception",
-        "instructions": "Write a custom exception called NotEnoughMoneyException (extends Exception). In buyTicket(int money), if money is less than 10, throw new NotEnoughMoneyException with a message saying how many coins there are; otherwise print that a ticket was bought. main already loops over {15, 4} and catches the exception. Keep public class Main FIRST and the exception class below it. Press Check.",
-        "starter": "public class Main {\n    static void buyTicket(int money) throws NotEnoughMoneyException {\n        // if money < 10, throw new NotEnoughMoneyException(\"...\")\n        // otherwise print: Ticket bought with <money> coins!\n    }\n\n    public static void main(String[] args) {\n        int[] wallets = {15, 4};\n        for (int money : wallets) {\n            try {\n                buyTicket(money);\n            } catch (NotEnoughMoneyException e) {\n                System.out.println(\"No ticket: \" + e.getMessage());\n            }\n        }\n        System.out.println(\"Ticket booth closed.\");\n    }\n}\n\n// write the NotEnoughMoneyException class here (extends Exception)\n",
-        "check": { "regex": "class\\s+NotEnoughMoneyException\\s+extends\\s+Exception" },
-        "solution": "public class Main {\n    static void buyTicket(int money) throws NotEnoughMoneyException {\n        if (money < 10) {\n            throw new NotEnoughMoneyException(\"Need 10 coins, but only have \" + money + \".\");\n        }\n        System.out.println(\"Ticket bought with \" + money + \" coins!\");\n    }\n\n    public static void main(String[] args) {\n        int[] wallets = {15, 4};\n        for (int money : wallets) {\n            try {\n                buyTicket(money);\n            } catch (NotEnoughMoneyException e) {\n                System.out.println(\"No ticket: \" + e.getMessage());\n            }\n        }\n        System.out.println(\"Ticket booth closed.\");\n    }\n}\n\nclass NotEnoughMoneyException extends Exception {\n    NotEnoughMoneyException(String message) {\n        super(message);\n    }\n}",
-        "solutionOutput": "Ticket bought with 15 coins!\nNo ticket: Need 10 coins, but only have 4.\nTicket booth closed.",
-        "hint": "Make a class NotEnoughMoneyException extends Exception with a constructor that calls super(message). Inside buyTicket, use 'if (money < 10) throw new NotEnoughMoneyException(...)'. Remember: public class Main goes first, the exception class goes below it.",
-        "passMsg": "🏆 You designed your own exception and threw it on purpose — that's how real programs guard against bad situations. Day 16 complete!",
-        "failMsg": "Make sure you have a 'class NotEnoughMoneyException extends Exception' with a super(message) constructor, and that buyTicket throws it when money < 10."
+        "title": "Build a one-line band 🥁🎸🎹",
+        "instructions": "Make an abstract class Instrument with an abstract method play(). Create three children — Drum, Guitar, and Piano — that each override play() to print their own sound. Put all three in an Instrument[] array and loop over it so the program prints:\nBoom boom!\nTwang!\nPlink plink!",
+        "starter": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\n// Add Guitar and Piano classes below, then add them to the band array.\n",
+        "check": { "regex": "new\\s+Drum\\(\\)[\\s\\S]*new\\s+Guitar\\(\\)[\\s\\S]*new\\s+Piano\\(\\)" },
+        "solution": "public class Main {\n    public static void main(String[] args) {\n        Instrument[] band = { new Drum(), new Guitar(), new Piano() };\n        for (Instrument instrument : band) {\n            instrument.play();\n        }\n    }\n}\n\nabstract class Instrument {\n    abstract void play();\n}\n\nclass Drum extends Instrument {\n    void play() {\n        System.out.println(\"Boom boom!\");\n    }\n}\n\nclass Guitar extends Instrument {\n    void play() {\n        System.out.println(\"Twang!\");\n    }\n}\n\nclass Piano extends Instrument {\n    void play() {\n        System.out.println(\"Plink plink!\");\n    }\n}",
+        "solutionOutput": "Boom boom!\nTwang!\nPlink plink!",
+        "hint": "Each instrument needs its own class that extends Instrument and overrides play(). Then write { new Drum(), new Guitar(), new Piano() } in the array so the loop plays all three.",
+        "passMsg": "🏆 The whole band plays from one loop — that's polymorphism plus abstract classes working together. Day 14 done!"
     }
 }
