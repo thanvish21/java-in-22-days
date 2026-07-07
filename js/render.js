@@ -240,6 +240,69 @@
         wrap.appendChild(box);
         return wrap;
       }
+      case "example": {
+        const wrap = el("div", "block");
+        const card = el("div", "example-card");
+        card.appendChild(el("h3", null, "🌍 Real-Life Example"));
+        if (b.scenario) card.appendChild(el("div", "example-scenario", b.scenario));
+        if (b.code) card.appendChild(makeCodeBox(b.code, { caption: b.caption || "See it in action 👇", output: b.output, noRun: !!b.noRun }));
+        if (b.explain) card.appendChild(el("p", "explain", b.explain));
+        wrap.appendChild(card);
+        return wrap;
+      }
+      case "assessment": {
+        const wrap = el("div", "block assessment-card");
+        wrap.appendChild(el("h2", null, "📝 " + (b.title || "Milestone Assessment")));
+        if (b.intro) wrap.appendChild(el("p", "assessment-intro", b.intro));
+        const form = el("div", "assessment-form");
+        const qEls = [];
+        (b.questions || []).forEach((q, qi) => {
+          const qw = el("div", "assessment-q");
+          qw.appendChild(el("h3", null, (qi + 1) + ". " + (q.question || "")));
+          const opts = el("div", "quiz-opts");
+          (q.options || []).forEach((text, oi) => {
+            const btn = el("button", "quiz-opt", escapeInline(text));
+            btn.dataset.qi = qi;
+            btn.dataset.oi = oi;
+            btn.addEventListener("click", () => {
+              opts.querySelectorAll(".quiz-opt").forEach(b => b.classList.remove("selected"));
+              btn.classList.add("selected");
+            });
+            opts.appendChild(btn);
+          });
+          qw.appendChild(opts);
+          const expl = el("div", "quiz-explain", q.explain || "");
+          qw.appendChild(expl);
+          qEls.push({ q, opts, expl });
+          form.appendChild(qw);
+        });
+        wrap.appendChild(form);
+        const resultBox = el("div", "assessment-result");
+        const submitBtn = el("button", "btn btn-check", "Submit Assessment");
+        submitBtn.addEventListener("click", () => {
+          let correct = 0;
+          qEls.forEach(({ q, opts, expl }) => {
+            const sel = opts.querySelector(".selected");
+            const picked = sel ? parseInt(sel.dataset.oi) : -1;
+            const isRight = picked === q.answerIndex;
+            if (isRight) correct++;
+            opts.querySelectorAll(".quiz-opt").forEach(b => b.classList.add("disabled"));
+            if (sel) sel.classList.add(isRight ? "correct" : "wrong");
+            const rightBtn = opts.children[q.answerIndex];
+            if (rightBtn && !isRight) { rightBtn.classList.add("correct"); rightBtn.textContent += " ✓"; }
+            expl.classList.add("show");
+          });
+          const total = qEls.length;
+          const pct = Math.round((correct / total) * 100);
+          const pass = pct >= (b.passPct || 70);
+          resultBox.className = "assessment-result show " + (pass ? "pass" : "fail");
+          resultBox.innerHTML = (pass ? "🎉" : "📖") + " You scored " + correct + "/" + total + " (" + pct + "%) — " + (pass ? "You passed!" : "Review and try again.");
+          submitBtn.disabled = true;
+        });
+        wrap.appendChild(submitBtn);
+        wrap.appendChild(resultBox);
+        return wrap;
+      }
       default: {
         const wrap = el("div", "block");
         wrap.appendChild(el("p", null, "[unknown block: " + escapeInline(b.type || "?") + "]"));

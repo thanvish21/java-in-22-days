@@ -11,7 +11,7 @@ Skips blocks marked "noRun" (input-based / illustrative).
 import json, os, sys, glob, tempfile, subprocess
 
 DATA = os.path.join(os.path.dirname(__file__), "data")
-BLOCK_TYPES = {"text", "code", "tip", "quiz", "tryit", "surprise"}
+BLOCK_TYPES = {"text", "code", "tip", "quiz", "tryit", "surprise", "example", "assessment"}
 errors, warnings, snippet_count = [], [], 0
 
 
@@ -21,6 +21,8 @@ def collect_code(day, data):
         t = b.get("type")
         if t == "code" and b.get("code") and not b.get("noRun"):
             yield (f"d{day} block{i} code", b["code"], b.get("output"))
+        if t == "example" and b.get("code") and not b.get("noRun"):
+            yield (f"d{day} block{i} example.code", b["code"], b.get("output"))
         if t == "tryit" and b.get("solution"):
             yield (f"d{day} block{i} tryit.solution", b["solution"], b.get("solutionOutput"))
     c = data.get("challenge")
@@ -45,6 +47,16 @@ def check_schema(day, data):
             ai = b.get("answerIndex")
             if not isinstance(ai, int) or ai < 0 or ai >= len(opts):
                 errors.append(f"day{day:02d} block{i}: answerIndex {ai} out of range (0..{len(opts)-1})")
+        if t == "assessment":
+            qs = b.get("questions", [])
+            if not qs:
+                errors.append(f"day{day:02d} block{i}: assessment has no questions")
+            for qi, q in enumerate(qs):
+                label = f"day{day:02d} block{i} q{qi}"
+                opts = q.get("options", [])
+                ai = q.get("answerIndex")
+                if not isinstance(ai, int) or ai < 0 or ai >= len(opts):
+                    errors.append(f"{label}: answerIndex {ai} out of range (0..{len(opts)-1})")
 
 
 def run_snippet(label, code, expected):

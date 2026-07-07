@@ -576,3 +576,36 @@ pre.code-static { margin: 0; padding: 12px 14px; color: var(--code-ink); font-fa
   .hero h1 .accent { -webkit-text-fill-color: currentColor; color: var(--brand); background: none; }
   .day-card:hover { transform: translateY(-3px); }
 }
+
+/* ===== Real-life example cards ===== */
+.example-card {
+  background: linear-gradient(135deg, var(--bg-card), color-mix(in srgb, var(--brand) 6%, var(--bg-card)));
+  border: 2px solid color-mix(in srgb, var(--brand) 25%, transparent);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+.example-card h3 { margin: 0 0 .75rem; color: var(--brand); }
+.example-scenario { margin-bottom: 1rem; line-height: 1.7; }
+
+/* ===== Assessment / exam cards ===== */
+.assessment-card {
+  background: linear-gradient(135deg, var(--bg-card), color-mix(in srgb, var(--brand-2) 8%, var(--bg-card)));
+  border: 2px solid color-mix(in srgb, var(--brand-2) 30%, transparent);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.assessment-card h2 { margin: 0 0 .5rem; color: var(--brand-2); }
+.assessment-intro { color: var(--ink-soft); margin-bottom: 1rem; }
+.assessment-q { margin-bottom: 1.25rem; }
+.assessment-q h3 { font-size: 1rem; margin: 0 0 .5rem; }
+.quiz-opt.selected { outline: 3px solid var(--brand); outline-offset: 2px; }
+.quiz-opt.disabled { pointer-events: none; opacity: .85; }
+.assessment-result {
+  display: none; margin-top: 1rem; padding: 1rem; border-radius: var(--radius-sm);
+  font-weight: 700; font-size: 1.1rem; text-align: center;
+}
+.assessment-result.show { display: block; }
+.assessment-result.pass { background: color-mix(in srgb, var(--green) 15%, var(--bg-card)); color: var(--green-deep); }
+.assessment-result.fail { background: color-mix(in srgb, var(--red) 12%, var(--bg-card)); color: var(--red); }

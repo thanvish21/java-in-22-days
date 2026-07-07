@@ -191,6 +191,148 @@
           "explain": "Scanner (from java.util.Scanner) reads text and numbers the user types in. (Day 5!)"
         }
       ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You work at a café in India. A customer's bill is ₹850 and they want to leave a 12% tip. Write a program that calculates the tip and total — no keyboard input needed, just hardcoded values.</p>",
+      "caption": "Café tip calculator",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        double bill = 850.0;\n        double tipPct = 12.0;\n        double tip = bill * tipPct / 100;\n        double total = bill + tip;\n        System.out.println(String.format(\"Bill:  %.2f\", bill));\n        System.out.println(String.format(\"Tip:   %.2f\", tip));\n        System.out.println(String.format(\"Total: %.2f\", total));\n    }\n}",
+      "output": "Bill:  850.00\nTip:   102.00\nTotal: 952.00",
+      "explain": "This uses variables (Day 2), math operators (Day 4), and String.format (Day 5) to build a real café calculator. No Scanner needed — the values are baked in so it runs anywhere."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 1–5",
+      "intro": "Time to prove what you've learned! Answer all 5 questions, then hit Submit. You need 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "What does System.out.println() do?",
+          "options": [
+            "Prints text and moves to a new line",
+            "Reads input from the keyboard",
+            "Deletes a variable",
+            "Creates a new class"
+          ],
+          "answerIndex": 0,
+          "explain": "println prints whatever is inside the parentheses and then moves the cursor to a new line. (Day 1)"
+        },
+        {
+          "question": "Which type stores a whole number like 42?",
+          "options": [
+            "String",
+            "double",
+            "int",
+            "boolean"
+          ],
+          "answerIndex": 2,
+          "explain": "int holds whole numbers. double is for decimals, String is for text, and boolean is for true/false. (Day 2)"
+        },
+        {
+          "question": "How do you compare two Strings for equal text?",
+          "options": [
+            "a == b",
+            "a.equals(b)",
+            "a + b",
+            "a.compare(b)"
+          ],
+          "answerIndex": 1,
+          "explain": "Use .equals() to compare the actual text content of two Strings. == checks object identity, not content. (Day 3)"
+        },
+        {
+          "question": "What does 7 / 2 give when both are ints?",
+          "options": [
+            "3.5",
+            "3",
+            "4",
+            "An error"
+          ],
+          "answerIndex": 1,
+          "explain": "Integer division drops the decimal part. 7 / 2 = 3. Use 7.0 / 2 to get 3.5. (Day 4)"
+        },
+        {
+          "question": "Which Scanner method reads a decimal number like 3.5?",
+          "options": [
+            "nextLine()",
+            "nextInt()",
+            "nextDouble()",
+            "nextWord()"
+          ],
+          "answerIndex": 2,
+          "explain": "nextDouble() reads numbers with decimal points. nextInt() only reads whole numbers. (Day 5)"
+        }
+      ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You work at a café in India. A customer's bill is ₹850 and they want to leave a 12% tip. Write a program that calculates the tip and total — no keyboard input needed, just hardcoded values.</p>",
+      "caption": "Café tip calculator",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        double bill = 850.0;\n        double tipPct = 12.0;\n        double tip = bill * tipPct / 100;\n        double total = bill + tip;\n        System.out.println(String.format(\"Bill:  %.2f\", bill));\n        System.out.println(String.format(\"Tip:   %.2f\", tip));\n        System.out.println(String.format(\"Total: %.2f\", total));\n    }\n}",
+      "output": "Bill:  850.00\nTip:   102.00\nTotal: 952.00",
+      "explain": "This uses variables (Day 2), math operators (Day 4), and String.format (Day 5) to build a real café calculator. No Scanner needed — the values are baked in so it runs anywhere."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 1–5",
+      "intro": "Time to prove what you've learned! Answer all 5 questions, then hit Submit. You need 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "What does System.out.println() do?",
+          "options": [
+            "Prints text and moves to a new line",
+            "Reads input from the keyboard",
+            "Deletes a variable",
+            "Creates a new class"
+          ],
+          "answerIndex": 0,
+          "explain": "println prints whatever is inside the parentheses and then moves the cursor to a new line. (Day 1)"
+        },
+        {
+          "question": "Which type stores a whole number like 42?",
+          "options": [
+            "String",
+            "double",
+            "int",
+            "boolean"
+          ],
+          "answerIndex": 2,
+          "explain": "int holds whole numbers. double is for decimals, String is for text, boolean is true/false. (Day 2)"
+        },
+        {
+          "question": "How do you compare two Strings for equal text?",
+          "options": [
+            "a == b",
+            "a.equals(b)",
+            "a + b",
+            "a.compare(b)"
+          ],
+          "answerIndex": 1,
+          "explain": "Use .equals() to compare the actual text content. == checks object identity, not content. (Day 3)"
+        },
+        {
+          "question": "What does 7 / 2 give when both are ints?",
+          "options": [
+            "3.5",
+            "3",
+            "4",
+            "An error"
+          ],
+          "answerIndex": 1,
+          "explain": "Integer division drops the decimal part. 7 / 2 = 3. Use 7.0 / 2 to get 3.5. (Day 4)"
+        },
+        {
+          "question": "Which Scanner method reads a decimal number like 3.5?",
+          "options": [
+            "nextLine()",
+            "nextInt()",
+            "nextDouble()",
+            "nextWord()"
+          ],
+          "answerIndex": 2,
+          "explain": "nextDouble() reads numbers with decimal points. nextInt() only reads whole numbers. (Day 5)"
+        }
+      ]
     }
   ],
   "challenge": {

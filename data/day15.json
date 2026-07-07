@@ -201,6 +201,148 @@
           "explain": "A class uses implements to fulfill an interface, promising to provide all the methods the interface lists. (Day 15!)"
         }
       ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You're building a student grade system. Different grading strategies (percentage-based, pass/fail) should all work through the same interface. Use an interface to define a contract, then two classes implement it differently.</p>",
+      "caption": "Flexible grading system using interfaces",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        Grader pct = new PercentGrader();\n        Grader pf = new PassFailGrader();\n        System.out.println(\"Score 85:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(85));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(85));\n        System.out.println(\"Score 45:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(45));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(45));\n    }\n}\n\ninterface Grader {\n    String grade(int score);\n}\n\nclass PercentGrader implements Grader {\n    public String grade(int score) {\n        if (score >= 90) return \"A\";\n        if (score >= 80) return \"B\";\n        if (score >= 70) return \"C\";\n        if (score >= 60) return \"D\";\n        return \"F\";\n    }\n}\n\nclass PassFailGrader implements Grader {\n    public String grade(int score) {\n        return score >= 50 ? \"PASS\" : \"FAIL\";\n    }\n}",
+      "output": "Score 85:\n  Percent grade: B\n  Pass/Fail:     PASS\nScore 45:\n  Percent grade: F\n  Pass/Fail:     FAIL",
+      "explain": "Both PercentGrader and PassFailGrader implement the Grader interface but grade differently. The main method uses the interface type, so it works with any grading strategy — that's programming to an interface (Day 15), using classes (Day 11), encapsulation (Day 12), and conditionals (Day 6)."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 11–15",
+      "intro": "OOP checkpoint! Classes, objects, encapsulation, inheritance, and interfaces. 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which keyword creates a new object from a class?",
+          "options": [
+            "class",
+            "new",
+            "static",
+            "void"
+          ],
+          "answerIndex": 1,
+          "explain": "The new keyword builds a fresh object from a class blueprint, e.g. Dog d = new Dog(); (Day 11)"
+        },
+        {
+          "question": "Why do we make fields private and use getters/setters?",
+          "options": [
+            "To make the code longer",
+            "To hide and protect data so it changes only in safe ways",
+            "Because Java requires it",
+            "To make methods run faster"
+          ],
+          "answerIndex": 1,
+          "explain": "Encapsulation hides internal data. Setters can validate new values before accepting them. (Day 12)"
+        },
+        {
+          "question": "Which keyword lets a subclass reuse code from a parent class?",
+          "options": [
+            "implements",
+            "extends",
+            "import",
+            "return"
+          ],
+          "answerIndex": 1,
+          "explain": "A subclass uses extends to inherit fields and methods from its superclass. (Day 13)"
+        },
+        {
+          "question": "What does @Override do?",
+          "options": [
+            "Deletes the parent method",
+            "Marks that this method replaces one from the parent",
+            "Makes the method run twice",
+            "Prevents the method from being called"
+          ],
+          "answerIndex": 1,
+          "explain": "@Override tells Java this method intentionally replaces one from the parent class, and Java checks the signature matches. (Day 14)"
+        },
+        {
+          "question": "How many interfaces can a single class implement?",
+          "options": [
+            "Exactly one",
+            "At most two",
+            "As many as you want",
+            "Zero — interfaces can't be implemented"
+          ],
+          "answerIndex": 2,
+          "explain": "A class can implement any number of interfaces, separated by commas: class Duck implements Swimmer, Runner. (Day 15)"
+        }
+      ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You're building a student grade system. Different grading strategies (percentage-based, pass/fail) should all work through the same interface.</p>",
+      "caption": "Flexible grading system using interfaces",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        Grader pct = new PercentGrader();\n        Grader pf = new PassFailGrader();\n        System.out.println(\"Score 85:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(85));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(85));\n        System.out.println(\"Score 45:\");\n        System.out.println(\"  Percent grade: \" + pct.grade(45));\n        System.out.println(\"  Pass/Fail:     \" + pf.grade(45));\n    }\n}\n\ninterface Grader {\n    String grade(int score);\n}\n\nclass PercentGrader implements Grader {\n    public String grade(int score) {\n        if (score >= 90) return \"A\";\n        if (score >= 80) return \"B\";\n        if (score >= 70) return \"C\";\n        if (score >= 60) return \"D\";\n        return \"F\";\n    }\n}\n\nclass PassFailGrader implements Grader {\n    public String grade(int score) {\n        return score >= 50 ? \"PASS\" : \"FAIL\";\n    }\n}",
+      "output": "Score 85:\n  Percent grade: B\n  Pass/Fail:     PASS\nScore 45:\n  Percent grade: F\n  Pass/Fail:     FAIL",
+      "explain": "Both graders implement the Grader interface but grade differently. The main method uses the interface type — that's programming to an interface (Day 15)."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 11–15",
+      "intro": "OOP checkpoint! Classes, encapsulation, inheritance, and interfaces. 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which keyword creates a new object from a class?",
+          "options": [
+            "class",
+            "new",
+            "static",
+            "void"
+          ],
+          "answerIndex": 1,
+          "explain": "The new keyword builds a fresh object from a class blueprint. (Day 11)"
+        },
+        {
+          "question": "Why make fields private and use getters/setters?",
+          "options": [
+            "To make code longer",
+            "To hide and protect data so it changes only in safe ways",
+            "Because Java requires it",
+            "To make methods faster"
+          ],
+          "answerIndex": 1,
+          "explain": "Encapsulation hides internal data. Setters can validate values. (Day 12)"
+        },
+        {
+          "question": "Which keyword lets a subclass reuse code from a parent?",
+          "options": [
+            "implements",
+            "extends",
+            "import",
+            "return"
+          ],
+          "answerIndex": 1,
+          "explain": "A subclass uses extends to inherit fields and methods. (Day 13)"
+        },
+        {
+          "question": "What does @Override do?",
+          "options": [
+            "Deletes the parent method",
+            "Marks that this method replaces one from the parent",
+            "Makes the method run twice",
+            "Prevents the method from being called"
+          ],
+          "answerIndex": 1,
+          "explain": "@Override tells Java this method replaces one from the parent class. (Day 14)"
+        },
+        {
+          "question": "How many interfaces can a single class implement?",
+          "options": [
+            "Exactly one",
+            "At most two",
+            "As many as you want",
+            "Zero"
+          ],
+          "answerIndex": 2,
+          "explain": "A class can implement any number of interfaces, separated by commas. (Day 15)"
+        }
+      ]
     }
   ],
   "challenge": {

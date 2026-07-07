@@ -182,6 +182,148 @@
           "explain": "A method packages code under a name so you can call it again and again instead of copy-pasting. (Day 10!)"
         }
       ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You're building a login system. The user gets 3 attempts to enter the correct password. After each wrong try, tell them how many attempts remain. If they fail all 3, lock them out.</p>",
+      "caption": "Login attempt limiter",
+      "code": "public class Main {\n    static boolean checkPassword(String input, String correct) {\n        return input.equals(correct);\n    }\n\n    static void printAttempts(int remaining) {\n        System.out.println(remaining + \" attempt(s) left\");\n    }\n\n    public static void main(String[] args) {\n        String correct = \"java22\";\n        String[] tries = {\"hello\", \"pass\", \"java22\"};\n        int maxAttempts = 3;\n        boolean loggedIn = false;\n\n        for (int i = 0; i < tries.length && i < maxAttempts; i++) {\n            System.out.println(\"Trying: \" + tries[i]);\n            if (checkPassword(tries[i], correct)) {\n                System.out.println(\"Access granted!\");\n                loggedIn = true;\n                break;\n            }\n            printAttempts(maxAttempts - i - 1);\n        }\n        if (!loggedIn) {\n            System.out.println(\"Account locked.\");\n        }\n    }\n}",
+      "output": "Trying: hello\n2 attempt(s) left\nTrying: pass\n1 attempt(s) left\nTrying: java22\nAccess granted!",
+      "explain": "This combines methods (Day 10), a for loop with break (Day 8), conditionals (Day 6), arrays (Day 9), and String comparison (Day 3). Two helper methods keep main clean and readable."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 6–10",
+      "intro": "Prove what you've learned about control flow, arrays, and methods! 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which keyword checks a condition and runs code only when it's true?",
+          "options": [
+            "for",
+            "if",
+            "class",
+            "return"
+          ],
+          "answerIndex": 1,
+          "explain": "if evaluates a boolean condition and runs the code block only when it is true. (Day 6)"
+        },
+        {
+          "question": "In a classic switch statement, what happens without break?",
+          "options": [
+            "The program stops",
+            "Only the matching case runs",
+            "Execution falls through into the next case",
+            "It throws an error"
+          ],
+          "answerIndex": 2,
+          "explain": "Without break, Java falls through to the next case and keeps running. break stops the fall-through. (Day 7)"
+        },
+        {
+          "question": "What is the index of the FIRST element in a Java array?",
+          "options": [
+            "1",
+            "0",
+            "-1",
+            "It depends on the type"
+          ],
+          "answerIndex": 1,
+          "explain": "Java arrays are zero-indexed. The first element is always at index 0. (Day 9)"
+        },
+        {
+          "question": "What return type means a method gives back no value?",
+          "options": [
+            "int",
+            "String",
+            "void",
+            "null"
+          ],
+          "answerIndex": 2,
+          "explain": "void means the method performs an action but returns nothing. (Day 10)"
+        },
+        {
+          "question": "What is method overloading?",
+          "options": [
+            "Writing the same method name with different parameters",
+            "Calling a method too many times",
+            "A method that never returns",
+            "Using static on every method"
+          ],
+          "answerIndex": 0,
+          "explain": "Overloading means multiple methods share a name but differ in their parameter lists. Java picks the right one by the arguments. (Day 10)"
+        }
+      ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You're building a login system. The user gets 3 attempts to enter the correct password. After each wrong try, tell them how many attempts remain.</p>",
+      "caption": "Login attempt limiter",
+      "code": "public class Main {\n    static boolean checkPassword(String input, String correct) {\n        return input.equals(correct);\n    }\n\n    static void printAttempts(int remaining) {\n        System.out.println(remaining + \" attempt(s) left\");\n    }\n\n    public static void main(String[] args) {\n        String correct = \"java22\";\n        String[] tries = {\"hello\", \"pass\", \"java22\"};\n        int maxAttempts = 3;\n        boolean loggedIn = false;\n\n        for (int i = 0; i < tries.length && i < maxAttempts; i++) {\n            System.out.println(\"Trying: \" + tries[i]);\n            if (checkPassword(tries[i], correct)) {\n                System.out.println(\"Access granted!\");\n                loggedIn = true;\n                break;\n            }\n            printAttempts(maxAttempts - i - 1);\n        }\n        if (!loggedIn) {\n            System.out.println(\"Account locked.\");\n        }\n    }\n}",
+      "output": "Trying: hello\n2 attempt(s) left\nTrying: pass\n1 attempt(s) left\nTrying: java22\nAccess granted!",
+      "explain": "This combines methods (Day 10), a for loop with break (Day 8), conditionals (Day 6), arrays (Day 9), and String comparison (Day 3)."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 6–10",
+      "intro": "Control flow, arrays, and methods! 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which keyword checks a condition and runs code only when it's true?",
+          "options": [
+            "for",
+            "if",
+            "class",
+            "return"
+          ],
+          "answerIndex": 1,
+          "explain": "if evaluates a boolean condition and runs the block only when true. (Day 6)"
+        },
+        {
+          "question": "In a classic switch, what happens without break?",
+          "options": [
+            "The program stops",
+            "Only the matching case runs",
+            "Execution falls through into the next case",
+            "It throws an error"
+          ],
+          "answerIndex": 2,
+          "explain": "Without break, Java falls through to the next case. break stops it. (Day 7)"
+        },
+        {
+          "question": "What is the index of the FIRST element in a Java array?",
+          "options": [
+            "1",
+            "0",
+            "-1",
+            "It depends on the type"
+          ],
+          "answerIndex": 1,
+          "explain": "Java arrays are zero-indexed. The first element is at index 0. (Day 9)"
+        },
+        {
+          "question": "What return type means a method gives back no value?",
+          "options": [
+            "int",
+            "String",
+            "void",
+            "null"
+          ],
+          "answerIndex": 2,
+          "explain": "void means the method performs an action but returns nothing. (Day 10)"
+        },
+        {
+          "question": "What is method overloading?",
+          "options": [
+            "Same method name with different parameters",
+            "Calling a method too many times",
+            "A method that never returns",
+            "Using static on every method"
+          ],
+          "answerIndex": 0,
+          "explain": "Overloading means multiple methods share a name but differ in parameter lists. (Day 10)"
+        }
+      ]
     }
   ],
   "challenge": {

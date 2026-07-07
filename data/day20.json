@@ -182,6 +182,148 @@
           "explain": "An enum is perfect for a fixed list of named values, like Color.RED, Color.GREEN, Color.BLUE. (Day 20!)"
         }
       ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You manage a small inventory. Each product has a name, category (enum), and price (record). List all products, then filter only the ones under ₹500 and print a summary.</p>",
+      "caption": "Inventory report with enum + record",
+      "code": "import java.util.ArrayList;\n\npublic class Main {\n    enum Category { ELECTRONICS, FOOD, CLOTHING }\n\n    record Product(String name, Category cat, double price) {}\n\n    public static void main(String[] args) {\n        ArrayList<Product> inv = new ArrayList<>();\n        inv.add(new Product(\"Headphones\", Category.ELECTRONICS, 1200.0));\n        inv.add(new Product(\"Rice 5kg\", Category.FOOD, 320.0));\n        inv.add(new Product(\"T-Shirt\", Category.CLOTHING, 450.0));\n        inv.add(new Product(\"USB Cable\", Category.ELECTRONICS, 150.0));\n\n        System.out.println(\"=== Full Inventory ===\");\n        for (Product p : inv) {\n            System.out.println(p.name() + \" [\" + p.cat() + \"] - Rs.\" + p.price());\n        }\n\n        System.out.println(\"\\n=== Under Rs.500 ===\");\n        int count = 0;\n        for (Product p : inv) {\n            if (p.price() < 500) {\n                System.out.println(\"- \" + p.name() + \" (Rs.\" + p.price() + \")\");\n                count++;\n            }\n        }\n        System.out.println(count + \" affordable item(s)\");\n    }\n}",
+      "output": "=== Full Inventory ===\nHeadphones [ELECTRONICS] - Rs.1200.0\nRice 5kg [FOOD] - Rs.320.0\nT-Shirt [CLOTHING] - Rs.450.0\nUSB Cable [ELECTRONICS] - Rs.150.0\n\n=== Under Rs.500 ===\n- Rice 5kg (Rs.320.0)\n- T-Shirt (Rs.450.0)\n- USB Cable (Rs.150.0)\n3 affordable item(s)",
+      "explain": "This uses an enum for fixed categories (Day 20), a record for immutable product data (Day 20), an ArrayList to hold the inventory (Day 17), and a for-each loop with an if filter (Days 6, 8)."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 16–20",
+      "intro": "Exceptions, collections, generics, and modern Java! 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which pair of keywords handles risky code and catches errors?",
+          "options": [
+            "if / else",
+            "try / catch",
+            "for / while",
+            "new / class"
+          ],
+          "answerIndex": 1,
+          "explain": "try runs code that might fail; catch handles the exception so the program doesn’t crash. (Day 16)"
+        },
+        {
+          "question": "What makes ArrayList different from a plain array?",
+          "options": [
+            "ArrayList is always size 10",
+            "ArrayList can grow and shrink dynamically",
+            "ArrayList only holds numbers",
+            "ArrayList cannot use a for-each loop"
+          ],
+          "answerIndex": 1,
+          "explain": "An ArrayList resizes automatically when you add() or remove() items. A plain array has a fixed length. (Day 17)"
+        },
+        {
+          "question": "Which collection stores key-value pairs?",
+          "options": [
+            "ArrayList",
+            "HashMap",
+            "int[]",
+            "boolean"
+          ],
+          "answerIndex": 1,
+          "explain": "HashMap maps each key to a value, like map.put(\"name\", \"Sam\") and map.get(\"name\") returns \"Sam\". (Day 18)"
+        },
+        {
+          "question": "What does T in Box<T> represent?",
+          "options": [
+            "The letter T literally",
+            "A type placeholder you fill in when using the class",
+            "The number ten",
+            "A boolean flag"
+          ],
+          "answerIndex": 1,
+          "explain": "T is a generic type parameter. Box<String> makes a Box holding Strings; Box<Integer> holds Integers. (Day 19)"
+        },
+        {
+          "question": "What does a record give you for free?",
+          "options": [
+            "Constructor, getters, equals, and toString",
+            "A way to change its fields later",
+            "A database connection",
+            "An inheritance hierarchy"
+          ],
+          "answerIndex": 0,
+          "explain": "A record auto-generates constructor, getters (named like fields), equals, hashCode, and toString. Data is immutable. (Day 20)"
+        }
+      ]
+    },
+    {
+      "type": "example",
+      "scenario": "<p><strong>Scenario:</strong> You manage a small inventory. Each product has a name, category (enum), and price (record). List all products, then filter only the ones under ₹500.</p>",
+      "caption": "Inventory report with enum + record",
+      "code": "import java.util.ArrayList;\n\npublic class Main {\n    enum Category { ELECTRONICS, FOOD, CLOTHING }\n\n    record Product(String name, Category cat, double price) {}\n\n    public static void main(String[] args) {\n        ArrayList<Product> inv = new ArrayList<>();\n        inv.add(new Product(\"Headphones\", Category.ELECTRONICS, 1200.0));\n        inv.add(new Product(\"Rice 5kg\", Category.FOOD, 320.0));\n        inv.add(new Product(\"T-Shirt\", Category.CLOTHING, 450.0));\n        inv.add(new Product(\"USB Cable\", Category.ELECTRONICS, 150.0));\n\n        System.out.println(\"=== Full Inventory ===\");\n        for (Product p : inv) {\n            System.out.println(p.name() + \" [\" + p.cat() + \"] - Rs.\" + p.price());\n        }\n\n        System.out.println(\"\\n=== Under Rs.500 ===\");\n        int count = 0;\n        for (Product p : inv) {\n            if (p.price() < 500) {\n                System.out.println(\"- \" + p.name() + \" (Rs.\" + p.price() + \")\");\n                count++;\n            }\n        }\n        System.out.println(count + \" affordable item(s)\");\n    }\n}",
+      "output": "=== Full Inventory ===\nHeadphones [ELECTRONICS] - Rs.1200.0\nRice 5kg [FOOD] - Rs.320.0\nT-Shirt [CLOTHING] - Rs.450.0\nUSB Cable [ELECTRONICS] - Rs.150.0\n\n=== Under Rs.500 ===\n- Rice 5kg (Rs.320.0)\n- T-Shirt (Rs.450.0)\n- USB Cable (Rs.150.0)\n3 affordable item(s)",
+      "explain": "Uses enum for categories (Day 20), record for products (Day 20), ArrayList (Day 17), and for-each with if filter (Days 6, 8)."
+    },
+    {
+      "type": "assessment",
+      "title": "Milestone Exam — Days 16–20",
+      "intro": "Exceptions, collections, generics, and modern Java! 70% to pass.",
+      "passPct": 70,
+      "questions": [
+        {
+          "question": "Which pair of keywords handles risky code and catches errors?",
+          "options": [
+            "if / else",
+            "try / catch",
+            "for / while",
+            "new / class"
+          ],
+          "answerIndex": 1,
+          "explain": "try runs code that might fail; catch handles the exception. (Day 16)"
+        },
+        {
+          "question": "What makes ArrayList different from a plain array?",
+          "options": [
+            "Always size 10",
+            "Can grow and shrink dynamically",
+            "Only holds numbers",
+            "Cannot use for-each"
+          ],
+          "answerIndex": 1,
+          "explain": "ArrayList resizes automatically when you add() or remove(). (Day 17)"
+        },
+        {
+          "question": "Which collection stores key-value pairs?",
+          "options": [
+            "ArrayList",
+            "HashMap",
+            "int[]",
+            "boolean"
+          ],
+          "answerIndex": 1,
+          "explain": "HashMap maps each key to a value. (Day 18)"
+        },
+        {
+          "question": "What does T in Box<T> represent?",
+          "options": [
+            "The letter T literally",
+            "A type placeholder you fill in when using the class",
+            "The number ten",
+            "A boolean flag"
+          ],
+          "answerIndex": 1,
+          "explain": "T is a generic type parameter — a placeholder for any type. (Day 19)"
+        },
+        {
+          "question": "What does a record give you for free?",
+          "options": [
+            "Constructor, getters, equals, and toString",
+            "A way to change fields later",
+            "A database connection",
+            "An inheritance hierarchy"
+          ],
+          "answerIndex": 0,
+          "explain": "A record auto-generates constructor, getters, equals, hashCode, and toString. Immutable. (Day 20)"
+        }
+      ]
     }
   ],
   "challenge": {
