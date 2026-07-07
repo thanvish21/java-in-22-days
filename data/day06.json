@@ -44,6 +44,19 @@
       "options": ["To play games", "To save code, track changes, and share with others", "To make their computer run faster", "To write emails"],
       "answerIndex": 1,
       "explain": "GitHub is like Google Drive for code. It saves your work and lets you show it off."
+    },
+    {
+      "type": "recapgame",
+      "gameType": "sorter",
+      "title": "Sort the code",
+      "instructions": "Drag the lines into the correct order to make this Java program work.",
+      "lines": [
+        "public class Main {",
+        "    public static void main(String[] args) {",
+        "        System.out.println(\"Hello, GitHub!\");",
+        "    }",
+        "}"
+      ]
     }
   ],
   "challenge": {

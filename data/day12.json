@@ -32,6 +32,18 @@
       "type": "text",
       "heading": "Push it up",
       "html": "<p>Don't forget to push this new project to GitHub! Create a new repository for it.</p>"
+    },
+    {
+      "type": "recapgame",
+      "gameType": "match",
+      "title": "Match concepts",
+      "instructions": "Click a card on the left, then its match on the right!",
+      "pairs": [
+        {"left": "Scanner", "right": "Reads user input from the keyboard"},
+        {"left": "while", "right": "Repeats code as long as a condition is true"},
+        {"left": "if/else", "right": "Chooses between two paths based on a condition"},
+        {"left": "System.out.println", "right": "Prints a line to the console"}
+      ]
     }
   ],
   "challenge": {

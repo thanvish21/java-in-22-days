@@ -26,6 +26,22 @@
       "type": "text",
       "heading": "Share your code",
       "html": "<p>Commit and push to GitHub. You are building a real Java portfolio now!</p>"
+    },
+    {
+      "type": "recapgame",
+      "gameType": "sorter",
+      "title": "Sort the code",
+      "instructions": "Drag the lines into the correct order to build a working ArrayList program.",
+      "lines": [
+        "import java.util.ArrayList;",
+        "public class Main {",
+        "    public static void main(String[] args) {",
+        "        ArrayList<String> names = new ArrayList<>();",
+        "        names.add(\"Thanvish\");",
+        "        System.out.println(names);",
+        "    }",
+        "}"
+      ]
     }
   ],
   "challenge": {

@@ -232,6 +232,7 @@
       }
       case "quiz": return renderQuiz(b);
       case "surprise": return renderSurprise(b);
+      case "recapgame": return renderRecapGame(b);
       case "tip": {
         const wrap = el("div", "block");
         const box = el("div", "tip" + (b.variant === "warn" ? " warn" : ""));
@@ -349,6 +350,234 @@
     if (b.intro) wrap.appendChild(el("p", "surprise-intro", escapeInline(b.intro)));
     (b.questions || []).forEach((q) => wrap.appendChild(renderQuizQuestion(q)));
     return wrap;
+  }
+
+  // ---- Recap Game (fun end-of-milestone mini-game) ----
+  // Two flavors: "sorter" (drag/reorder code lines) and "match" (match pairs).
+  function renderRecapGame(b) {
+    const wrap = el("div", "block recapgame");
+    wrap.appendChild(el("h3", null, "🎮 " + escapeInline(b.title || "Recap Game")));
+    if (b.instructions) wrap.appendChild(el("p", "recapgame-instructions", escapeInline(b.instructions)));
+    if (b.gameType === "match") {
+      wrap.appendChild(renderMatchGame(b));
+    } else {
+      // Default to sorter
+      wrap.appendChild(renderSorterGame(b));
+    }
+    return wrap;
+  }
+
+  // Fisher-Yates shuffle (returns a new array). Ensures result differs from
+  // input when possible so the player actually has something to solve.
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    // If array of 2+ elements ended up identical to source, swap first two.
+    if (a.length > 1 && a.every((v, i) => v === arr[i])) {
+      [a[0], a[1]] = [a[1], a[0]];
+    }
+    return a;
+  }
+
+  function renderSorterGame(b) {
+    const container = el("div", "sorter-game");
+    const correct = (b.lines || []).slice();
+    let current = shuffled(correct);
+
+    const list = el("div", "sorter-list");
+    container.appendChild(list);
+
+    function rebuild() {
+      list.innerHTML = "";
+      current.forEach((line, idx) => {
+        const row = el("div", "sorter-row");
+        row.setAttribute("draggable", "true");
+        row.dataset.idx = String(idx);
+
+        const handle = el("span", "sorter-handle", "⋮⋮");
+        row.appendChild(handle);
+
+        const codeCell = el("pre", "sorter-code");
+        codeCell.textContent = line;
+        row.appendChild(codeCell);
+
+        const controls = el("div", "sorter-controls");
+        const up = el("button", "sorter-btn", "▲");
+        up.title = "Move up";
+        up.disabled = idx === 0;
+        up.addEventListener("click", () => moveRow(idx, idx - 1));
+        const down = el("button", "sorter-btn", "▼");
+        down.title = "Move down";
+        down.disabled = idx === current.length - 1;
+        down.addEventListener("click", () => moveRow(idx, idx + 1));
+        controls.appendChild(up);
+        controls.appendChild(down);
+        row.appendChild(controls);
+
+        // Drag & drop
+        row.addEventListener("dragstart", (e) => {
+          row.classList.add("dragging");
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", String(idx));
+          }
+        });
+        row.addEventListener("dragend", () => row.classList.remove("dragging"));
+        row.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          row.classList.add("drag-over");
+        });
+        row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+        row.addEventListener("drop", (e) => {
+          e.preventDefault();
+          row.classList.remove("drag-over");
+          const from = parseInt((e.dataTransfer && e.dataTransfer.getData("text/plain")) || "-1", 10);
+          const to = idx;
+          if (from >= 0 && from !== to) moveRow(from, to);
+        });
+
+        list.appendChild(row);
+      });
+    }
+
+    function moveRow(from, to) {
+      if (to < 0 || to >= current.length) return;
+      const [item] = current.splice(from, 1);
+      current.splice(to, 0, item);
+      rebuild();
+    }
+
+    rebuild();
+
+    const toolbar = el("div", "recapgame-toolbar");
+    const checkBtn = el("button", "btn btn-check", "🔎 Check Order");
+    const resetBtn = el("button", "btn btn-soft", "🔀 Shuffle");
+    toolbar.appendChild(checkBtn);
+    toolbar.appendChild(resetBtn);
+    container.appendChild(toolbar);
+
+    const result = el("div", "recapgame-result");
+    container.appendChild(result);
+
+    checkBtn.addEventListener("click", () => {
+      const win = current.every((v, i) => v === correct[i]);
+      if (win) {
+        result.className = "recapgame-result show win";
+        result.innerHTML = '<div class="recapgame-big">✅</div>'
+          + '<div class="recapgame-msg">Perfect Order!</div>'
+          + '<div class="recapgame-xp">🏆 +100 XP!</div>';
+        checkBtn.disabled = true;
+        resetBtn.disabled = true;
+        list.querySelectorAll(".sorter-row").forEach(r => r.classList.add("locked"));
+      } else {
+        result.className = "recapgame-result show lose";
+        result.innerHTML = '<div class="recapgame-big">❌</div>'
+          + '<div class="recapgame-msg">Not quite — try rearranging!</div>';
+        container.classList.remove("shake");
+        // Force reflow so animation replays.
+        void container.offsetWidth;
+        container.classList.add("shake");
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      current = shuffled(correct);
+      rebuild();
+      result.className = "recapgame-result";
+      result.innerHTML = "";
+    });
+
+    return container;
+  }
+
+  function renderMatchGame(b) {
+    const container = el("div", "match-game");
+    const pairs = (b.pairs || []).slice();
+    const lefts = pairs.map((p) => p.left);
+    const rights = shuffled(pairs.map((p) => p.right));
+    // Guard against unlikely shuffled-into-order case: shuffled() already handles it.
+
+    const board = el("div", "match-board");
+    const leftCol = el("div", "match-col match-left");
+    const rightCol = el("div", "match-col match-right");
+    board.appendChild(leftCol);
+    board.appendChild(rightCol);
+    container.appendChild(board);
+
+    let selectedLeft = null; // { btn, value }
+    let matchedCount = 0;
+    let busy = false;
+
+    // Build the correct-answer lookup: left value -> right value.
+    const answer = {};
+    pairs.forEach((p) => { answer[p.left] = p.right; });
+
+    const result = el("div", "recapgame-result");
+    container.appendChild(result);
+
+    function clearSelection() {
+      if (selectedLeft && selectedLeft.btn) selectedLeft.btn.classList.remove("selected");
+      selectedLeft = null;
+    }
+
+    lefts.forEach((val) => {
+      const btn = el("button", "match-card match-card-left", escapeInline(val));
+      btn.addEventListener("click", () => {
+        if (busy || btn.classList.contains("matched")) return;
+        clearSelection();
+        selectedLeft = { btn: btn, value: val };
+        btn.classList.add("selected");
+      });
+      leftCol.appendChild(btn);
+    });
+
+    rights.forEach((val) => {
+      const btn = el("button", "match-card match-card-right", escapeInline(val));
+      btn.addEventListener("click", () => {
+        if (busy || btn.classList.contains("matched")) return;
+        if (!selectedLeft) {
+          // Flash a hint by briefly wiggling the button.
+          btn.classList.add("nudge");
+          setTimeout(() => btn.classList.remove("nudge"), 400);
+          return;
+        }
+        const expected = answer[selectedLeft.value];
+        if (expected === val) {
+          // Correct!
+          selectedLeft.btn.classList.remove("selected");
+          selectedLeft.btn.classList.add("matched");
+          btn.classList.add("matched");
+          selectedLeft.btn.disabled = true;
+          btn.disabled = true;
+          selectedLeft = null;
+          matchedCount++;
+          if (matchedCount === pairs.length) {
+            result.className = "recapgame-result show win";
+            result.innerHTML = '<div class="recapgame-big">🏆</div>'
+              + '<div class="recapgame-msg">Perfect Recall!</div>'
+              + '<div class="recapgame-xp">+200 XP!</div>';
+          }
+        } else {
+          // Wrong — flash red on both and deselect.
+          busy = true;
+          const leftBtn = selectedLeft.btn;
+          leftBtn.classList.add("wrong");
+          btn.classList.add("wrong");
+          setTimeout(() => {
+            leftBtn.classList.remove("wrong", "selected");
+            btn.classList.remove("wrong");
+            selectedLeft = null;
+            busy = false;
+          }, 600);
+        }
+      });
+      rightCol.appendChild(btn);
+    });
+
+    return container;
   }
 
   // ---- full lesson ----
