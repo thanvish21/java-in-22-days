@@ -140,6 +140,36 @@
           "url": "https://www.hackerrank.com/challenges/java-1d-array-introduction/problem"
         }
       ]
+    },
+    {
+      "type": "flashcards",
+      "title": "Array flashcards",
+      "cards": [
+        {
+          "front": "int[] arr = new int[5]",
+          "back": "Create array of 5 ints"
+        },
+        {
+          "front": "arr[0]",
+          "back": "First item (index starts at 0)"
+        },
+        {
+          "front": "arr.length",
+          "back": "Number of items (no parentheses)"
+        },
+        {
+          "front": "arr[arr.length-1]",
+          "back": "Last item"
+        },
+        {
+          "front": "int[] a = {1,2,3}",
+          "back": "Array literal"
+        },
+        {
+          "front": "Arrays.sort(arr)",
+          "back": "Sorts array in place"
+        }
+      ]
     }
   ],
   "challenge": {

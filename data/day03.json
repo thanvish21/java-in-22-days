@@ -158,6 +158,36 @@
           "url": "https://www.hackerrank.com/challenges/java-strings-introduction/problem"
         }
       ]
+    },
+    {
+      "type": "flashcards",
+      "title": "String methods flashcards",
+      "cards": [
+        {
+          "front": "s.length()",
+          "back": "Number of characters"
+        },
+        {
+          "front": "s.toUpperCase()",
+          "back": "Returns UPPERCASE copy"
+        },
+        {
+          "front": "s.toLowerCase()",
+          "back": "Returns lowercase copy"
+        },
+        {
+          "front": "s.trim()",
+          "back": "Removes leading/trailing spaces"
+        },
+        {
+          "front": "s.equals(t)",
+          "back": "TRUE test for text (never use ==)"
+        },
+        {
+          "front": "s.charAt(0)",
+          "back": "First character"
+        }
+      ]
     }
   ],
   "challenge": {

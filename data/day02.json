@@ -160,6 +160,36 @@
           "url": "https://www.hackerrank.com/challenges/welcome-to-java/problem"
         }
       ]
+    },
+    {
+      "type": "flashcards",
+      "title": "Java types flashcards",
+      "cards": [
+        {
+          "front": "int",
+          "back": "Whole number (5, -3, 100)"
+        },
+        {
+          "front": "double",
+          "back": "Decimal number (3.14, 2.5)"
+        },
+        {
+          "front": "String",
+          "back": "Text in \"quotes\""
+        },
+        {
+          "front": "boolean",
+          "back": "true or false"
+        },
+        {
+          "front": "char",
+          "back": "Single character in 'quotes'"
+        },
+        {
+          "front": "final",
+          "back": "Can't be reassigned (constant)"
+        }
+      ]
     }
   ],
   "challenge": {

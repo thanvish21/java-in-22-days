@@ -1,129 +1,167 @@
 {
-    "day": 13,
-    "emoji": "🏗️",
-    "title": "Classes & Objects",
-    "subtitle": "Build your own LEGO-style blueprints, then snap real things out of them.",
-    "goal": "Understand what a class and an object are, write a class with fields, a constructor, and instance methods, and make several objects from it using the new keyword.",
-    "estMinutes": 180,
-    "tags": ["oop"],
-    "blocks": [
+  "day": 13,
+  "emoji": "🏗️",
+  "title": "Classes & Objects",
+  "subtitle": "Build your own LEGO-style blueprints, then snap real things out of them.",
+  "goal": "Understand what a class and an object are, write a class with fields, a constructor, and instance methods, and make several objects from it using the new keyword.",
+  "estMinutes": 180,
+  "tags": [
+    "oop"
+  ],
+  "blocks": [
+    {
+      "type": "text",
+      "heading": "Blueprints and the things you build 🏗️",
+      "html": "<p>Imagine a <strong>cookie cutter</strong>. The cutter itself is not a cookie — it is the <em>shape</em> that decides how every cookie will look. Press it into the dough once, twice, ten times, and you get ten cookies. They share the same shape, but each one is its own cookie.</p><p>In Java a <strong>class</strong> is the cookie cutter (the blueprint). An <strong>object</strong> is a cookie you actually made from it. One class, many objects. Today you learn to design your own cutters and stamp out objects with them.</p>"
+    },
+    {
+      "type": "text",
+      "heading": "Fields: what an object remembers",
+      "html": "<p>Every object can <em>remember</em> things about itself. A dog remembers its name. A player remembers its score. Those memories are called <strong>fields</strong> (also called <em>instance variables</em>) — little boxes inside each object that hold its own values.</p><p>Below is a tiny class <code class=\"inline\">Dog</code> with one field, <code class=\"inline\">name</code>. Notice the rule: every runnable program needs a <code class=\"inline\">public class Main</code> with <code class=\"inline\">main</code>, and our helper class <code class=\"inline\">Dog</code> sits in the same file <em>without</em> the word <code class=\"inline\">public</code>.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "A class is a blueprint; new builds an object from it",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog();\n        rex.name = \"Rex\";\n        System.out.println(\"My dog is named \" + rex.name);\n    }\n}\n\nclass Dog {\n    String name;\n}",
+      "output": "My dog is named Rex",
+      "explain": "class Dog is the blueprint. new Dog() builds one real object and rex points to it. rex.name reaches inside that object to set and read its name field. Only Main is public; Dog is a plain helper class in the same file."
+    },
+    {
+      "type": "tip",
+      "html": "<strong>One public class per file.</strong> The file must be named after the public class, so it is <code class=\"inline\">Main.java</code>. Helper classes like <code class=\"inline\">Dog</code> live in the same file but are <em>not</em> marked public."
+    },
+    {
+      "type": "text",
+      "heading": "Constructors and this 🛠️",
+      "html": "<p>Setting <code class=\"inline\">rex.name</code> by hand after building is clumsy. A <strong>constructor</strong> is a special set-up method that runs the moment you say <code class=\"inline\">new</code>. It lets you hand over values right away, like filling in a form when you build the object.</p><p>Inside the constructor the word <code class=\"inline\">this</code> means <em>this exact object</em>. So <code class=\"inline\">this.name = name</code> reads as: <em>“put the name I was given into MY own name box.”</em> It tells apart the object's field from the value passed in.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "A constructor sets up the object; this points at itself",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        Dog bella = new Dog(\"Bella\");\n        rex.bark();\n        bella.bark();\n    }\n}\n\nclass Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n\n    void bark() {\n        System.out.println(this.name + \" says: Woof!\");\n    }\n}",
+      "output": "Rex says: Woof!\nBella says: Woof!",
+      "explain": "Dog(String name) is the constructor — it runs at new Dog(\"Rex\"). this.name = name stores the given name in that object's own box. bark() is an instance method: each dog barks with its own name. Two separate objects, two separate names, one shared blueprint."
+    },
+    {
+      "type": "text",
+      "heading": "Instance methods: things an object can DO",
+      "html": "<p>Fields are what an object <em>knows</em>; <strong>instance methods</strong> are what an object can <em>do</em>. A <code class=\"inline\">Player</code> can score points. A <code class=\"inline\">Rectangle</code> can work out its own area. Each method runs on one specific object and can use that object's own fields.</p>"
+    },
+    {
+      "type": "code",
+      "caption": "Objects with their own data and behavior",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(10);\n        hero.addScore(5);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Rectangle box = new Rectangle(4, 3);\n        System.out.println(\"Area is \" + box.area());\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}\n\nclass Rectangle {\n    int width;\n    int height;\n\n    Rectangle(int width, int height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    int area() {\n        return this.width * this.height;\n    }\n}",
+      "output": "Hero has 15 points\nArea is 12",
+      "explain": "Player starts at score 0, then addScore(10) and addScore(5) grow its own score to 15. Rectangle(4, 3) stores width and height, and area() multiplies them to return 12. Three classes in one file, but still only one public class: Main."
+    },
+    {
+      "type": "tip",
+      "html": "<strong>new makes a fresh object every time.</strong> Two <code class=\"inline\">new Dog(...)</code> calls give two separate dogs with separate memories. Changing one never touches the other.",
+      "variant": "info"
+    },
+    {
+      "type": "quiz",
+      "question": "What is the difference between a class and an object?",
+      "options": [
+        "They are exactly the same thing",
+        "A class is the blueprint; an object is a real thing built from it with new",
+        "A class is faster than an object",
+        "An object is the blueprint; a class is built from it"
+      ],
+      "answerIndex": 1,
+      "explain": "A class is the cookie cutter (blueprint). An object is a cookie stamped out of it using the new keyword. One class can make many objects."
+    },
+    {
+      "type": "quiz",
+      "question": "Inside a constructor, what does this.name = name do?",
+      "options": [
+        "Deletes the name field",
+        "Stores the value passed in into this object's own name field",
+        "Creates a brand new class",
+        "Prints the name to the screen"
+      ],
+      "answerIndex": 1,
+      "explain": "this means this exact object. this.name is the object's own field; name is the value handed to the constructor. So it saves the given value into this object's memory."
+    },
+    {
+      "type": "quiz",
+      "question": "How many public classes can a single .java file have?",
+      "options": [
+        "As many as you want",
+        "Exactly one, and the file is named after it",
+        "Zero, public is not allowed",
+        "Exactly two"
+      ],
+      "answerIndex": 1,
+      "explain": "Only one public class per file, and the file name must match it (Main.java). Helper classes in the same file are written without public."
+    },
+    {
+      "type": "tryit",
+      "title": "Give the Cat a name and a meow",
+      "instructions": "Finish the Cat class. Add a field name, a constructor that takes a name and stores it with this.name, and a meow() method that prints the cat's name followed by ' says: Meow!'. The Main code is already calling new Cat(\"Whiskers\").",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    // 1. add a field: String name;\n    // 2. add a constructor Cat(String name) that does this.name = name;\n    // 3. add void meow() that prints  name + \" says: Meow!\"\n}",
+      "check": {
+        "code_includes": "this.name = name"
+      },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    String name;\n\n    Cat(String name) {\n        this.name = name;\n    }\n\n    void meow() {\n        System.out.println(this.name + \" says: Meow!\");\n    }\n}",
+      "solutionOutput": "Whiskers says: Meow!",
+      "passMsg": "Purr-fect! You built a class with a field, a constructor, and a method.",
+      "failMsg": "Make sure your constructor uses this.name = name and meow() prints the name plus \" says: Meow!\"."
+    },
+    {
+      "type": "tryit",
+      "title": "Build two players from one blueprint",
+      "instructions": "The Player class is finished. In main, create a SECOND player named \"Luna\", give her 20 points with addScore(20), then print her name and score just like Hero. One class, two separate objects!",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        // Make a second player named Luna, give her 20 points, then print her info\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
+      "check": {
+        "regex": "new\\s+Player\\s*\\(\\s*\"Luna\"\\s*\\)"
+      },
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Player luna = new Player(\"Luna\");\n        luna.addScore(20);\n        System.out.println(luna.name + \" has \" + luna.score + \" points\");\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
+      "solutionOutput": "Hero has 50 points\nLuna has 20 points",
+      "passMsg": "Two objects, two scores, one blueprint — that is the heart of OOP!",
+      "failMsg": "Create a second Player with new Player(\"Luna\"), call luna.addScore(20), then print luna.name and luna.score."
+    },
+    {
+      "type": "flashcards",
+      "title": "Classes flashcards",
+      "cards": [
         {
-            "type": "text",
-            "heading": "Blueprints and the things you build 🏗️",
-            "html": "<p>Imagine a <strong>cookie cutter</strong>. The cutter itself is not a cookie — it is the <em>shape</em> that decides how every cookie will look. Press it into the dough once, twice, ten times, and you get ten cookies. They share the same shape, but each one is its own cookie.</p><p>In Java a <strong>class</strong> is the cookie cutter (the blueprint). An <strong>object</strong> is a cookie you actually made from it. One class, many objects. Today you learn to design your own cutters and stamp out objects with them.</p>"
+          "front": "class Dog { }",
+          "back": "Blueprint for Dog objects"
         },
         {
-            "type": "text",
-            "heading": "Fields: what an object remembers",
-            "html": "<p>Every object can <em>remember</em> things about itself. A dog remembers its name. A player remembers its score. Those memories are called <strong>fields</strong> (also called <em>instance variables</em>) — little boxes inside each object that hold its own values.</p><p>Below is a tiny class <code class=\"inline\">Dog</code> with one field, <code class=\"inline\">name</code>. Notice the rule: every runnable program needs a <code class=\"inline\">public class Main</code> with <code class=\"inline\">main</code>, and our helper class <code class=\"inline\">Dog</code> sits in the same file <em>without</em> the word <code class=\"inline\">public</code>.</p>"
+          "front": "new Dog()",
+          "back": "Creates a new Dog instance"
         },
         {
-            "type": "code",
-            "caption": "A class is a blueprint; new builds an object from it",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog();\n        rex.name = \"Rex\";\n        System.out.println(\"My dog is named \" + rex.name);\n    }\n}\n\nclass Dog {\n    String name;\n}",
-            "output": "My dog is named Rex",
-            "explain": "class Dog is the blueprint. new Dog() builds one real object and rex points to it. rex.name reaches inside that object to set and read its name field. Only Main is public; Dog is a plain helper class in the same file."
+          "front": "this.name",
+          "back": "Refers to this object's field"
         },
         {
-            "type": "tip",
-            "html": "<strong>One public class per file.</strong> The file must be named after the public class, so it is <code class=\"inline\">Main.java</code>. Helper classes like <code class=\"inline\">Dog</code> live in the same file but are <em>not</em> marked public."
+          "front": "Constructor",
+          "back": "Method with class name — runs on new"
         },
         {
-            "type": "text",
-            "heading": "Constructors and this 🛠️",
-            "html": "<p>Setting <code class=\"inline\">rex.name</code> by hand after building is clumsy. A <strong>constructor</strong> is a special set-up method that runs the moment you say <code class=\"inline\">new</code>. It lets you hand over values right away, like filling in a form when you build the object.</p><p>Inside the constructor the word <code class=\"inline\">this</code> means <em>this exact object</em>. So <code class=\"inline\">this.name = name</code> reads as: <em>“put the name I was given into MY own name box.”</em> It tells apart the object's field from the value passed in.</p>"
+          "front": "public",
+          "back": "Access from anywhere"
         },
         {
-            "type": "code",
-            "caption": "A constructor sets up the object; this points at itself",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Dog rex = new Dog(\"Rex\");\n        Dog bella = new Dog(\"Bella\");\n        rex.bark();\n        bella.bark();\n    }\n}\n\nclass Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n\n    void bark() {\n        System.out.println(this.name + \" says: Woof!\");\n    }\n}",
-            "output": "Rex says: Woof!\nBella says: Woof!",
-            "explain": "Dog(String name) is the constructor — it runs at new Dog(\"Rex\"). this.name = name stores the given name in that object's own box. bark() is an instance method: each dog barks with its own name. Two separate objects, two separate names, one shared blueprint."
-        },
-        {
-            "type": "text",
-            "heading": "Instance methods: things an object can DO",
-            "html": "<p>Fields are what an object <em>knows</em>; <strong>instance methods</strong> are what an object can <em>do</em>. A <code class=\"inline\">Player</code> can score points. A <code class=\"inline\">Rectangle</code> can work out its own area. Each method runs on one specific object and can use that object's own fields.</p>"
-        },
-        {
-            "type": "code",
-            "caption": "Objects with their own data and behavior",
-            "code": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(10);\n        hero.addScore(5);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Rectangle box = new Rectangle(4, 3);\n        System.out.println(\"Area is \" + box.area());\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}\n\nclass Rectangle {\n    int width;\n    int height;\n\n    Rectangle(int width, int height) {\n        this.width = width;\n        this.height = height;\n    }\n\n    int area() {\n        return this.width * this.height;\n    }\n}",
-            "output": "Hero has 15 points\nArea is 12",
-            "explain": "Player starts at score 0, then addScore(10) and addScore(5) grow its own score to 15. Rectangle(4, 3) stores width and height, and area() multiplies them to return 12. Three classes in one file, but still only one public class: Main."
-        },
-        {
-            "type": "tip",
-            "html": "<strong>new makes a fresh object every time.</strong> Two <code class=\"inline\">new Dog(...)</code> calls give two separate dogs with separate memories. Changing one never touches the other.",
-            "variant": "info"
-        },
-        {
-            "type": "quiz",
-            "question": "What is the difference between a class and an object?",
-            "options": [
-                "They are exactly the same thing",
-                "A class is the blueprint; an object is a real thing built from it with new",
-                "A class is faster than an object",
-                "An object is the blueprint; a class is built from it"
-            ],
-            "answerIndex": 1,
-            "explain": "A class is the cookie cutter (blueprint). An object is a cookie stamped out of it using the new keyword. One class can make many objects."
-        },
-        {
-            "type": "quiz",
-            "question": "Inside a constructor, what does this.name = name do?",
-            "options": [
-                "Deletes the name field",
-                "Stores the value passed in into this object's own name field",
-                "Creates a brand new class",
-                "Prints the name to the screen"
-            ],
-            "answerIndex": 1,
-            "explain": "this means this exact object. this.name is the object's own field; name is the value handed to the constructor. So it saves the given value into this object's memory."
-        },
-        {
-            "type": "quiz",
-            "question": "How many public classes can a single .java file have?",
-            "options": [
-                "As many as you want",
-                "Exactly one, and the file is named after it",
-                "Zero, public is not allowed",
-                "Exactly two"
-            ],
-            "answerIndex": 1,
-            "explain": "Only one public class per file, and the file name must match it (Main.java). Helper classes in the same file are written without public."
-        },
-        {
-            "type": "tryit",
-            "title": "Give the Cat a name and a meow",
-            "instructions": "Finish the Cat class. Add a field name, a constructor that takes a name and stores it with this.name, and a meow() method that prints the cat's name followed by ' says: Meow!'. The Main code is already calling new Cat(\"Whiskers\").",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    // 1. add a field: String name;\n    // 2. add a constructor Cat(String name) that does this.name = name;\n    // 3. add void meow() that prints  name + \" says: Meow!\"\n}",
-            "check": { "code_includes": "this.name = name" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Cat c = new Cat(\"Whiskers\");\n        c.meow();\n    }\n}\n\nclass Cat {\n    String name;\n\n    Cat(String name) {\n        this.name = name;\n    }\n\n    void meow() {\n        System.out.println(this.name + \" says: Meow!\");\n    }\n}",
-            "solutionOutput": "Whiskers says: Meow!",
-            "passMsg": "Purr-fect! You built a class with a field, a constructor, and a method.",
-            "failMsg": "Make sure your constructor uses this.name = name and meow() prints the name plus \" says: Meow!\"."
-        },
-        {
-            "type": "tryit",
-            "title": "Build two players from one blueprint",
-            "instructions": "The Player class is finished. In main, create a SECOND player named \"Luna\", give her 20 points with addScore(20), then print her name and score just like Hero. One class, two separate objects!",
-            "starter": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        // Make a second player named Luna, give her 20 points, then print her info\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
-            "check": { "regex": "new\\s+Player\\s*\\(\\s*\"Luna\"\\s*\\)" },
-            "solution": "public class Main {\n    public static void main(String[] args) {\n        Player hero = new Player(\"Hero\");\n        hero.addScore(50);\n        System.out.println(hero.name + \" has \" + hero.score + \" points\");\n\n        Player luna = new Player(\"Luna\");\n        luna.addScore(20);\n        System.out.println(luna.name + \" has \" + luna.score + \" points\");\n    }\n}\n\nclass Player {\n    String name;\n    int score;\n\n    Player(String name) {\n        this.name = name;\n        this.score = 0;\n    }\n\n    void addScore(int points) {\n        this.score = this.score + points;\n    }\n}",
-            "solutionOutput": "Hero has 50 points\nLuna has 20 points",
-            "passMsg": "Two objects, two scores, one blueprint — that is the heart of OOP!",
-            "failMsg": "Create a second Player with new Player(\"Luna\"), call luna.addScore(20), then print luna.name and luna.score."
+          "front": "private",
+          "back": "Access only inside this class"
         }
-    ],
-    "challenge": {
-        "title": "Design a BankAccount class",
-        "instructions": "Build a BankAccount class with two fields: owner (String) and balance (int). Write a constructor that takes an owner name and starts the balance at 0. Add a deposit(int amount) method that adds to the balance, and a show() method that prints the owner and balance like 'Maya has 150 in the bank'. In main, create an account for \"Maya\", deposit 100, deposit 50, then call show().",
-        "starter": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        // deposit 100, then deposit 50, then call acc.show();\n    }\n}\n\nclass BankAccount {\n    // fields: String owner; int balance;\n    // constructor BankAccount(String owner) -> this.owner = owner; this.balance = 0;\n    // void deposit(int amount) -> add amount to balance\n    // void show() -> print owner + \" has \" + balance + \" in the bank\"\n}",
-        "check": { "code_includes": "class BankAccount" },
-        "solution": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        acc.deposit(100);\n        acc.deposit(50);\n        acc.show();\n    }\n}\n\nclass BankAccount {\n    String owner;\n    int balance;\n\n    BankAccount(String owner) {\n        this.owner = owner;\n        this.balance = 0;\n    }\n\n    void deposit(int amount) {\n        this.balance = this.balance + amount;\n    }\n\n    void show() {\n        System.out.println(this.owner + \" has \" + this.balance + \" in the bank\");\n    }\n}",
-        "solutionOutput": "Maya has 150 in the bank",
-        "hint": "Start balance at 0 in the constructor. deposit adds to this.balance. After depositing 100 then 50, the balance is 150.",
-        "passMsg": "🏆 You designed a whole class from scratch — fields, a constructor, and methods. Day 11 complete, you are thinking in objects now!"
+      ]
     }
+  ],
+  "challenge": {
+    "title": "Design a BankAccount class",
+    "instructions": "Build a BankAccount class with two fields: owner (String) and balance (int). Write a constructor that takes an owner name and starts the balance at 0. Add a deposit(int amount) method that adds to the balance, and a show() method that prints the owner and balance like 'Maya has 150 in the bank'. In main, create an account for \"Maya\", deposit 100, deposit 50, then call show().",
+    "starter": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        // deposit 100, then deposit 50, then call acc.show();\n    }\n}\n\nclass BankAccount {\n    // fields: String owner; int balance;\n    // constructor BankAccount(String owner) -> this.owner = owner; this.balance = 0;\n    // void deposit(int amount) -> add amount to balance\n    // void show() -> print owner + \" has \" + balance + \" in the bank\"\n}",
+    "check": {
+      "code_includes": "class BankAccount"
+    },
+    "solution": "public class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Maya\");\n        acc.deposit(100);\n        acc.deposit(50);\n        acc.show();\n    }\n}\n\nclass BankAccount {\n    String owner;\n    int balance;\n\n    BankAccount(String owner) {\n        this.owner = owner;\n        this.balance = 0;\n    }\n\n    void deposit(int amount) {\n        this.balance = this.balance + amount;\n    }\n\n    void show() {\n        System.out.println(this.owner + \" has \" + this.balance + \" in the bank\");\n    }\n}",
+    "solutionOutput": "Maya has 150 in the bank",
+    "hint": "Start balance at 0 in the constructor. deposit adds to this.balance. After depositing 100 then 50, the balance is 150.",
+    "passMsg": "🏆 You designed a whole class from scratch — fields, a constructor, and methods. Day 11 complete, you are thinking in objects now!"
+  }
 }

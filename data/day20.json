@@ -145,6 +145,36 @@
           "url": "https://www.hackerrank.com/challenges/java-arraylist/problem"
         }
       ]
+    },
+    {
+      "type": "flashcards",
+      "title": "ArrayList flashcards",
+      "cards": [
+        {
+          "front": "ArrayList<Integer>",
+          "back": "Resizable list of Integers"
+        },
+        {
+          "front": "list.add(x)",
+          "back": "Adds x to the end"
+        },
+        {
+          "front": "list.get(i)",
+          "back": "Item at index i"
+        },
+        {
+          "front": "list.size()",
+          "back": "Number of items"
+        },
+        {
+          "front": "list.remove(0)",
+          "back": "Removes item at index 0"
+        },
+        {
+          "front": "list.contains(x)",
+          "back": "True if list has x"
+        }
+      ]
     }
   ],
   "challenge": {

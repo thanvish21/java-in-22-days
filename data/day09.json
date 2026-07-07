@@ -192,6 +192,36 @@
           "url": "https://www.hackerrank.com/challenges/java-loops/problem"
         }
       ]
+    },
+    {
+      "type": "flashcards",
+      "title": "Loop flashcards",
+      "cards": [
+        {
+          "front": "for (int i=0; i<n; i++)",
+          "back": "Counter loop from 0 to n-1"
+        },
+        {
+          "front": "while (cond)",
+          "back": "Repeats while condition is true"
+        },
+        {
+          "front": "break",
+          "back": "Exits the loop immediately"
+        },
+        {
+          "front": "continue",
+          "back": "Skips to the next iteration"
+        },
+        {
+          "front": "for (int x : arr)",
+          "back": "Enhanced for: each item in array"
+        },
+        {
+          "front": "i++",
+          "back": "Shortcut for i = i + 1"
+        }
+      ]
     }
   ],
   "challenge": {
