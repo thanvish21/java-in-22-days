@@ -5,7 +5,10 @@
   "subtitle": "Give the computer little labeled boxes to remember things for you.",
   "goal": "Create variables in Java, pick the right type for the job (int, double, char, boolean, and friends), reassign and print them, and meet the handy var keyword.",
   "estMinutes": 180,
-  "tags": ["basics", "beginner"],
+  "tags": [
+    "basics",
+    "beginner"
+  ],
   "blocks": [
     {
       "type": "text",
@@ -108,7 +111,13 @@
       "title": "Make a pet box",
       "instructions": "Create a String variable called petName with your pet's name (or a made-up one), and an int variable called petAge with its age. Then print a sentence using both. Press Check when it runs.",
       "starter": "public class Main {\n    public static void main(String[] args) {\n        // TODO: change these values to describe your own pet\n        String petName = \"___\";\n        int petAge = 0;\n        System.out.println(\"My pet is \" + petName + \" and is \" + petAge + \" years old.\");\n    }\n}",
-      "check": { "code_includes": ["String petName", "int petAge", "System.out.println"] },
+      "check": {
+        "code_includes": [
+          "String petName",
+          "int petAge",
+          "System.out.println"
+        ]
+      },
       "solution": "public class Main {\n    public static void main(String[] args) {\n        String petName = \"Rex\";\n        int petAge = 3;\n        System.out.println(\"My pet is \" + petName + \" and is \" + petAge + \" years old.\");\n    }\n}",
       "solutionOutput": "My pet is Rex and is 3 years old.\n",
       "passMsg": "Nice — two boxes, two types, one sentence!",
@@ -119,18 +128,52 @@
       "title": "Add up the fruit",
       "instructions": "There are 4 apples and 5 oranges. Make an int variable called total that holds apples + oranges, then print it. The answer should be 9.",
       "starter": "public class Main {\n    public static void main(String[] args) {\n        int apples = 4;\n        int oranges = 5;\n        // TODO: make a variable called total that adds apples and oranges\n        int total = 0;\n        System.out.println(\"Total fruit: \" + total);\n    }\n}",
-      "check": { "regex": "int\\s+total\\s*=\\s*apples\\s*\\+\\s*oranges" },
+      "check": {
+        "regex": "int\\s+total\\s*=\\s*apples\\s*\\+\\s*oranges"
+      },
       "solution": "public class Main {\n    public static void main(String[] args) {\n        int apples = 4;\n        int oranges = 5;\n        int total = apples + oranges;\n        System.out.println(\"Total fruit: \" + total);\n    }\n}",
       "solutionOutput": "Total fruit: 9\n",
       "passMsg": "9 fruit — you can do math with variables now!",
       "failMsg": "Set total to apples + oranges (not a fixed number), so Java does the adding for you."
+    },
+    {
+      "type": "practice",
+      "title": "Practice variables on LeetCode & Codeforces",
+      "intro": "Beginner problems to lock in what you learned.",
+      "problems": [
+        {
+          "platform": "LeetCode",
+          "title": "Two Sum",
+          "difficulty": "Easy",
+          "url": "https://leetcode.com/problems/two-sum/"
+        },
+        {
+          "platform": "Codeforces",
+          "title": "Watermelon",
+          "difficulty": "Easy",
+          "url": "https://codeforces.com/problemset/problem/4/A"
+        },
+        {
+          "platform": "HackerRank",
+          "title": "Java Hello World",
+          "difficulty": "Easy",
+          "url": "https://www.hackerrank.com/challenges/welcome-to-java/problem"
+        }
+      ]
     }
   ],
   "challenge": {
     "title": "Build your own ID card",
     "instructions": "Make four variables that describe a person (real or made-up): a String for name, an int for age, a double for height in meters, and a boolean for whether they can code. Print each one on its own line, like a little ID card.",
     "starter": "public class Main {\n    public static void main(String[] args) {\n        // TODO: fill in your own details using the right types\n        String name = \"___\";\n        System.out.println(\"Name: \" + name);\n    }\n}",
-    "check": { "code_includes": ["String name", "int age", "double height", "boolean canCode"] },
+    "check": {
+      "code_includes": [
+        "String name",
+        "int age",
+        "double height",
+        "boolean canCode"
+      ]
+    },
     "solution": "public class Main {\n    public static void main(String[] args) {\n        String name = \"Sam\";\n        int age = 12;\n        double height = 1.5;\n        boolean canCode = true;\n        System.out.println(\"Name: \" + name);\n        System.out.println(\"Age: \" + age);\n        System.out.println(\"Height: \" + height);\n        System.out.println(\"Can code: \" + canCode);\n    }\n}",
     "solutionOutput": "Name: Sam\nAge: 12\nHeight: 1.5\nCan code: true\n",
     "hint": "Pick the right type for each fact: text goes in a String, whole numbers in an int, decimals in a double, and yes/no in a boolean. Use one System.out.println per line.",

@@ -11,7 +11,7 @@ Skips blocks marked "noRun" (input-based / illustrative).
 import json, os, sys, glob, tempfile, subprocess
 
 DATA = os.path.join(os.path.dirname(__file__), "data")
-BLOCK_TYPES = {"text", "code", "tip", "quiz", "tryit", "surprise", "example", "assessment", "recapgame"}
+BLOCK_TYPES = {"text", "code", "tip", "quiz", "tryit", "surprise", "example", "assessment", "recapgame", "practice"}
 errors, warnings, snippet_count = [], [], 0
 
 
