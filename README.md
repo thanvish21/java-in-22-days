@@ -89,3 +89,14 @@ verify-java.py        runs + asserts every snippet; schema-checks every lesson
 ```
 
 **Hard rules for authoring:** every runnable `code`/`solution` is a complete program with a `public class Main` and `public static void main(String[] args)`. `output`/`solutionOutput` must be the exact stdout — always confirm with `python3 verify-java.py`. No `Scanner`/`System.in` in verified snippets (mark those `noRun`). Standard library only, single file, Java 21.
+
+## 🤖 AI Tutor Setup
+
+The AI tutor (JavaBuddy) uses [OpenRouter](https://openrouter.ai) for free AI model access.
+
+1. Sign up at [openrouter.ai](https://openrouter.ai) (free)
+2. Create an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+3. Add `OPENROUTER_API_KEY` to your Vercel project environment variables
+4. Deploy — the tutor will use `google/gemini-pro-1.5-exp` (with LLaMA-3 fallback), both 100% free
+
+The tutor automatically knows which lesson the student is on and can see their code editor contents.
