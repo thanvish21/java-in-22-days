@@ -2,7 +2,8 @@
 (function () {
   "use strict";
 
-  var API_URL = "https://openrouter.ai/api/v1/chat/completions";
+  // Same-origin proxy (api/tutor.js) — keeps the OpenRouter key server-side.
+  var API_URL = "/api/tutor";
   var MAX_MSG = 2000;
 
   // ---- State ----

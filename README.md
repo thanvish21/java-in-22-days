@@ -27,10 +27,12 @@ The front end POSTs `{ "language": "java", "code": "<source>" }` and reads `stdo
 No build step. Just serve the folder over HTTP (lessons are loaded with `fetch`, which won't work from `file://`):
 
 ```bash
-cd java-pro
+cd java-in-22-days
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
+
+Note: the AI tutor and the Matrix's Run/Grade buttons need the Vercel serverless functions in `api/`, so those stay dark on a plain static server — everything else works.
 
 ## Verify the lessons
 
@@ -62,8 +64,12 @@ css/styles.css        Java-themed styling (shared class names with the renderer)
 js/runner-config.js   one line: JAVA_RUN_ENDPOINT (null disables Run buttons)
 js/render.js          turns a lesson JSON object into interactive DOM
 js/app.js             hash router, localStorage progress, day-unlock, badges
+js/ai-tutor.js        JavaBuddy chat panel; talks to /api/tutor
+api/                  Vercel serverless functions: tutor.js (OpenRouter proxy),
+                      run.js + grade.js (Judge0 proxies for the Matrix)
 data/manifest.json    the Pro map (day, emoji, title, tag)
 data/dayNN.json       one lesson per file (see schema below)
+matrix/               ⚡ Pro Mode: the 1% HFT Matrix track (own README inside)
 verify-java.py        runs + asserts every snippet; schema-checks every lesson
 ```
 
@@ -92,11 +98,11 @@ verify-java.py        runs + asserts every snippet; schema-checks every lesson
 
 ## 🤖 AI Tutor Setup
 
-The AI tutor (JavaBuddy) uses [OpenRouter](https://openrouter.ai) for free AI model access.
+The AI tutor (JavaBuddy) uses [OpenRouter](https://openrouter.ai) for free AI model access. The browser never sees the key: the chat panel posts to the same-origin `api/tutor.js` function, which proxies to OpenRouter.
 
 1. Sign up at [openrouter.ai](https://openrouter.ai) (free)
 2. Create an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
 3. Add `OPENROUTER_API_KEY` to your Vercel project environment variables
-4. Deploy — the tutor will use `google/gemini-pro-1.5-exp` (with LLaMA-3 fallback), both 100% free
+4. Deploy — the tutor defaults to `meta-llama/llama-3.3-70b-instruct:free`; set `OPENROUTER_MODEL` to use any other OpenRouter model id
 
-The tutor automatically knows which lesson the student is on and can see their code editor contents.
+Without the key, the tutor answers with a clear "not configured" message instead of failing silently. The tutor automatically knows which lesson the student is on and can see their code editor contents.
