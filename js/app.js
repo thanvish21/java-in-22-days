@@ -5,7 +5,6 @@
   const TOTAL_DAYS = 25;
   const STORE_KEY = "java25_progress_v1";
   const app = document.getElementById("app");
-  let advanceTimer = null;
 
   // ---- progress state (localStorage) ----
   function loadProgress() {
@@ -15,20 +14,44 @@
         const p = JSON.parse(raw);
         const completed = (p && typeof p.completed === "object" && p.completed) ? p.completed : {};
         const lastDay = (p && Number.isFinite(p.lastDay)) ? p.lastDay : 1;
-        return { completed: completed, lastDay: lastDay };
+        return { completed, lastDay };
       }
     } catch (e) { /* ignore */ }
     return { completed: {}, lastDay: 1 };
   }
   function saveProgress(p) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(p)); }
+    catch (e) { /* private mode / quota: progress just won't persist */ }
   }
   let progress = loadProgress();
+  let autoAdvanceTimer = null;
 
   const isDone = (d) => !!progress.completed[d];
   const completedCount = () => Object.keys(progress.completed).filter((k) => progress.completed[k]).length;
-  // Day 1 is always open; day N opens once day N-1 is done.
-  const isUnlocked = (d) => d === 1 || isDone(d - 1);
+
+  // ---- timed module-test gates: day -> module test that must be PASSED first ----
+  const TESTS_KEY = "java25_tests_v1";
+  const GATES = { 6: 2, 11: 3, 16: 4, 22: 5 }; // ponytail: mirrors data/modules.json boundaries
+  function testPassed(moduleId) {
+    try {
+      const t = JSON.parse(localStorage.getItem(TESTS_KEY) || "{}");
+      return !!t[moduleId];
+    } catch (e) { return false; }
+  }
+  function markTestPassed(moduleId) {
+    try {
+      const t = JSON.parse(localStorage.getItem(TESTS_KEY) || "{}");
+      t[moduleId] = true;
+      localStorage.setItem(TESTS_KEY, JSON.stringify(t));
+    } catch (e) { /* private mode */ }
+  }
+
+  // Day 1 always open; day N opens once day N-1 done AND any gating module test is passed.
+  const isUnlocked = (d) => {
+    if (d === 1) return true;
+    if (!isDone(d - 1)) return false;
+    return GATES[d] ? testPassed(GATES[d]) : true;
+  };
 
   function markDone(d) {
     progress.completed[d] = true;
@@ -62,7 +85,7 @@
 
   // ---- views ----
   async function viewHome() {
-    app.innerHTML = '<div class="center-msg">Loading your journey… ☕</div>';
+    app.innerHTML = '<div class="center-msg">Loading your journey… 🐍</div>';
     let days;
     try { days = await getManifest(); }
     catch (e) { app.innerHTML = '<div class="center-msg">Could not load lessons. Run this on a server (see README).</div>'; return; }
@@ -74,8 +97,8 @@
     hero.className = "view-enter";
     hero.innerHTML =
       '<section class="hero">' +
-        "<h1>Learn <span class=\"accent\">Java</span> in 25 Days ☕</h1>" +
-        "<p>Friendly bite-sized lessons with real Java code. Read it, predict what it prints, then reveal the real output — and check your own code as you write it. Simple enough for a curious kid, deep enough to take you from zero to pro.</p>" +
+        "<h1>Learn <span class=\"accent\">java</span> in 25 Days 🐍</h1>" +
+        "<p>Friendly bite-sized lessons with real code you run right here. Simple enough for a curious kid, deep enough to take you from zero to pro.</p>" +
         '<button class="hero-cta" id="startBtn">' + (done > 0 ? "▶ Continue Day " + (Number(progress.lastDay) || 1) : "🚀 Start Day 1") + "</button>" +
         '<div class="progress-wrap">' +
           '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
@@ -92,7 +115,7 @@
       card.style.setProperty("--i", Math.min(i, 12));
       if (unlocked) card.href = "#/day/" + d.day;
       card.innerHTML =
-        '<div class="day-emoji">' + (d.emoji || "☕") + "</div>" +
+        '<div class="day-emoji">' + (d.emoji || "🐍") + "</div>" +
         '<div class="day-num">Day ' + d.day + "</div>" +
         '<div class="day-title">' + d.title + "</div>" +
         '<div class="day-meta">' + (d.tag ? "#" + d.tag : "") + "</div>";
@@ -116,25 +139,42 @@
     day = Number(day);
     if (!day || day < 1 || day > TOTAL_DAYS) return viewHome();
     if (!isUnlocked(day)) {
-      app.innerHTML = '<div class="center-msg">🔒 Finish Day ' + (day - 1) +
-        ' first to unlock this one!<br><br><a class="hero-cta" href="#/day/' + (day - 1) + '">Go to Day ' + (day - 1) + "</a></div>";
+      if (isDone(day - 1) && GATES[day] && !testPassed(GATES[day])) {
+        app.innerHTML = '<div class="center-msg">📝 Pass the <strong>Module ' + GATES[day] +
+          ' Test</strong> (30-min exam) to unlock Day ' + day +
+          '!<br><br><a class="hero-cta" href="#/test/' + GATES[day] + '">Take Module ' + GATES[day] + " Test</a></div>";
+      } else {
+        app.innerHTML = '<div class="center-msg">🔒 Finish Day ' + (day - 1) +
+          ' first to unlock this one!<br><br><a class="hero-cta" href="#/day/' + (day - 1) + '">Go to Day ' + (day - 1) + "</a></div>";
+      }
       window.scrollTo(0, 0);
       return;
     }
 
-    app.innerHTML = '<div class="center-msg">Opening Day ' + day + "… ☕</div>";
+    app.innerHTML = '<div class="center-msg">Opening Day ' + day + "… 🐍</div>";
     let data;
     try { data = await getLesson(day); }
     catch (e) {
-      const msg = e.status === 404
-        ? "📝 Day " + day + " is being written! Check back soon."
-        : "😕 Couldn't load Day " + day + ". Run this on a server (see README) — opening the files directly with file:// won't work.";
-      app.innerHTML = '<div class="center-msg">' + msg +
-        '<br><br><a class="hero-cta" href="#/">🏠 Back home</a></div>';
+      if (e && e.status === 404) {
+        app.innerHTML = '<div class="center-msg">📝 Day ' + day + " is being written! Check back soon." +
+          '<br><br><a class="hero-cta" href="#/">🏠 Back home</a></div>';
+      } else {
+        app.innerHTML = '<div class="center-msg">😕 Couldn\'t load this lesson — if you opened the file directly, run it on a server (see README).' +
+          '<br><br><a class="hero-cta" href="#/">🏠 Back home</a></div>';
+      }
       return;
     }
 
     const view = window.Render.renderLesson(data);
+
+    // Warm up Pyodide in the background so the first Run feels instant.
+    // Swallow any rejection (offline/CDN slow) — the real error surfaces on Run.
+    if (window.JavaRunner) {
+      try {
+        const warm = window.JavaRunner.getPyodide();
+        if (warm && typeof warm.catch === "function") warm.catch(() => {});
+      } catch (e) { /* ignore */ }
+    }
 
     // lesson footer: prev / complete / next
     const nav = document.createElement("div");
@@ -156,7 +196,7 @@
       if (!wasDone) {
         celebrate(day);
         if (day < TOTAL_DAYS) {
-          advanceTimer = setTimeout(() => { location.hash = "#/day/" + (day + 1); }, 1400);
+          autoAdvanceTimer = setTimeout(() => { location.hash = "#/day/" + (day + 1); }, 1400);
         }
       }
     });
@@ -181,11 +221,11 @@
 
   // ---- badge / celebration toast ----
   const BADGES = {
-    1: ["🐣", "First Steps!", "You wrote your first Java!"],
-    7: ["🔥", "One Week Strong!", "A full week of Java down."],
+    1: ["🐣", "First Steps!", "You wrote your first java!"],
+    7: ["🔥", "One Week Strong!", "A full week of java down."],
     14: ["⚡", "Two Weeks!", "You're officially dangerous now."],
     21: ["🧠", "Almost a Pro!", "21 days. One to go!"],
-    25: ["🏆", "JAVA PRO!", "You finished all 25 days. Incredible!"],
+    25: ["🏆", "java PRO!", "You finished all 25 days. Incredible!"],
   };
   function celebrate(day) {
     const badge = BADGES[day] || ["🎉", "Day " + day + " done!", "On to the next one!"];
@@ -207,36 +247,33 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
   }
 
+  // ---- expose state for the course/sidebar module ----
+  const listeners = [];
+  window.Java25 = {
+    TOTAL_DAYS,
+    isDone, isUnlocked, completedCount,
+    lastDay: () => progress.lastDay,
+    getManifest, getLesson,
+    GATES, testPassed, markTestPassed,
+    onChange: (fn) => listeners.push(fn),
+    notify: () => listeners.forEach((fn) => { try { fn(); } catch (e) {} }),
+  };
+  window.Java22 = window.Java25; // course.js uses Java22
+  const origMarkDone = markDone;
+  markDone = function (d) { origMarkDone(d); window.Java25.notify(); };
+
   // ---- router ----
   function route() {
-    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+    if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
     const hash = location.hash || "#/";
     let m;
     if ((m = hash.match(/^#\/day\/(\d+)/))) viewDay(m[1]);
+    else if ((m = hash.match(/^#\/test\/(\d+)/)) && window.Course) window.Course.viewModuleTest(app, Number(m[1]));
+    else if (hash.startsWith("#/modules") && window.Course) window.Course.viewModules(app);
+    else if (hash.startsWith("#/exam") && window.Course) window.Course.viewExam(app);
     else viewHome();
+    if (window.Course) window.Course.syncSidebar();
   }
-
-  // ---- theme (light / dark) ----
-  const THEME_KEY = "java25_theme";
-  function loadTheme() {
-    try {
-      const t = localStorage.getItem(THEME_KEY);
-      if (t === "dark" || t === "light") return t;
-    } catch (e) { /* ignore */ }
-    return "light";
-  }
-  function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    const btn = document.getElementById("themeToggle");
-    if (btn) btn.textContent = theme === "dark" ? "☀️" : "🌙";
-  }
-  let theme = loadTheme();
-  applyTheme(theme);
-  document.getElementById("themeToggle").addEventListener("click", () => {
-    theme = theme === "dark" ? "light" : "dark";
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
-    applyTheme(theme);
-  });
 
   // ---- reset ----
   document.getElementById("resetBtn").addEventListener("click", () => {
@@ -248,6 +285,26 @@
       route();
     }
   });
+
+  // ---- theme toggle ----
+  const THEME_KEY = "java25_theme";
+  const themeBtn = document.getElementById("themeToggle");
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (themeBtn) themeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+  function loadTheme() {
+    try { return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light"; }
+    catch (e) { return "light"; }
+  }
+  applyTheme(loadTheme());
+  if (themeBtn) {
+    themeBtn.addEventListener("click", () => {
+      const next = loadTheme() === "dark" ? "light" : "dark";
+      applyTheme(next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode / quota */ }
+    });
+  }
 
   window.addEventListener("hashchange", route);
   updateStreak();
